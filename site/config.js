@@ -12,5 +12,6 @@ window.TB_CONFIG = {
   caseContract: "0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67",    // TiebreakCaseV3: set by scripts/deploy-v3.sh
   caseContractV2: "0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3",  // second case contract (deadlines, reviewer consent). It has a flaw (the person who opens a case can answer for both sides), so the site no longer uses it
   caseContractV1: "0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987",  // the first, simpler case contract (no deadlines); still on-chain
+  showcase: {caseId: 1, agreementId: 1},                           // the real mainnet case shown on the home page (played by the team)
   published: {warranty: {circuitId: 13, ruleSetId: 1}}
 };

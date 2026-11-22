@@ -1,0 +1,28 @@
+// Receipt page and the home page's real-case card. Reads the real, final case #1 on X Layer mainnet (immutable), so no fork is needed.
+import puppeteer from "puppeteer-core";
+import fs from "node:fs";
+const BASE = process.env.BASE || "http://localhost:8090/index.html";
+const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(p => fs.existsSync(p));
+const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage();
+let fails = 0; const ok = (n, c, x) => { if (!c) fails++; console.log((c ? "PASS " : "FAIL ") + n + (c ? "" : " " + (x ?? ""))); };
+const T = sel => p.$eval(sel, e => e.textContent).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
+const until = async (f, ms = 15000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f().catch(() => false)) return true; await w(300); } return false; };
+const errs = []; p.on("pageerror", e => errs.push(e.message));
+await p.setViewport({width: 1280, height: 900});
+await p.goto(BASE); await w(1200);
+ok("home shows the real case read from X Layer", await until(async () => /Covered/.test(await T("#realcase")) && /Decided/.test(await T("#realcase"))), await T("#realcase"));
+ok("it says the team played every role", /wallets we controlled/.test(await T("main")));
+ok("it links to the case, the receipt and the agreement", (await p.$$eval("#realcase a", a => a.map(x => x.getAttribute("href")))).join(",") === "#case/1,#receipt/1,#agreement/1");
+await p.goto(BASE + "#receipt/1"); await w(800);
+ok("the receipt shows the result and the reason", await until(async () => /Covered/.test(await T("#rc .rres")) && /Every condition/.test(await T("#rc .rwhy"))), await T("#rc"));
+ok("it lists all seven questions", (await p.$$("#rc .rt tbody tr")).length >= 7);
+ok("it names who settled what", /Reviewer/.test(await T("#rc")) && /Both agreed/.test(await T("#rc")));
+ok("the published rules are re-run live and agree", await until(async () => /same result/.test(await T("#rp"))), await T("#rp"));
+ok("it has a print button", !!(await p.$("#prt")));
+await p.emulateMediaType("print");
+ok("printing hides the site header, footer and buttons", await p.evaluate(() => getComputedStyle(document.querySelector("header")).display === "none" && getComputedStyle(document.querySelector("footer")).display === "none" && getComputedStyle(document.querySelector(".noprint")).display === "none"));
+await p.emulateMediaType("screen");
+await p.goto(BASE + "#receipt/999999"); await w(1500);
+ok("a missing case is explained", /doesn't exist|could not be reached/.test(await T("main")), await T("main"));
+ok("no page errors", errs.length === 0, errs.join(" | "));
+await b.close(); console.log(fails ? fails + " FAILED" : "all passed"); process.exit(fails ? 1 : 0);

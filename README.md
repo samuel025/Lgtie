@@ -4,6 +4,8 @@ A business publishes its policy as a checker. Customers answer plain yes/no ques
 
 Prototype for the X Layer TapeOut Accelerate hackathon. The project was first called Tiebreak; it is now **LGtie**. The deployed contracts keep their original names (`RuleSetRegistry`, `TiebreakCase`, `TiebreakCaseV2`) because renaming them in the source would no longer match the bytecode on-chain.
 
+**Receipts.** Any decided case has a one-page result receipt at `#receipt/<case id>` (questions, who answered what, who settled each, parties, evidence fingerprints, and a live re-run of the published rules) that prints or saves as a PDF. The home page links to a real mainnet case played by the team.
+
 ## What is live (X Layer mainnet, chain 196)
 
 | Thing | Address / id |

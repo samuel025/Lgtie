@@ -216,7 +216,7 @@
     if (c.status === 3) $("#final").innerHTML = `<div class="res nodec" role="status"><div class="big">No decision</div><div class="why">${c.filerIn && c.deciderIn ? "The reviewer did not decide in time." : "The answers were not all in on time."} Nobody wins by default. The two sides can open a new case.</div></div>`;
     if (c.status === 2) {
       const r = TB.run(P, fin);
-      $("#final").innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(r.why)}</div><div class="row"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><button class="btn small ghost" id="cl" type="button">Copy link</button></div>
+      $("#final").innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(r.why)}</div><div class="row"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><button class="btn small ghost" id="cl" type="button">Copy link</button><a class="btn small ghost" href="#receipt/${id}">Receipt</a></div>
         <p class="small">Final answers: ${P.questions.map((q, i) => (i + 1) + "=" + (fin[i] ? "yes" : "no")).join(", ")}. Rule set ${c.ruleSetId}, circuit #${CFG.published[K.key].circuitId}. ${c.disputed ? "The reviewer decided " + bitsToArr(c.disputed, nQ).filter(Boolean).length + " disputed question(s); everything else was agreed." : "Both sides agreed on every question."}</p>
         <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p></div>`;
       $("#cl").onclick = async e => { try { await navigator.clipboard.writeText(location.href); e.target.textContent = "Copied"; } catch { prompt("Copy:", location.href); } };
@@ -224,6 +224,44 @@
         if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
         .catch(() => { const b = $("#rp"); b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; });
     }
+  }
+
+  // ---------- a decided case as a one-page receipt (print or save as PDF), and a short summary for the home page ----------
+  async function readCase(id) {
+    const c = decodeCase(await call(SEL.get + w(id))), n = Number(BigInt(await call(SEL.evCount + w(id))));
+    const ev = await Promise.all(Array.from({length: n}, (_, i) => call(SEL.evAt + w(id) + w(i)).then(decodeEvidence)));
+    return {c, ev};
+  }
+  async function summary(id) {
+    const {c} = await readCase(id), K = policyOf(c.ruleSetId); if (!K) throw new Error("unknown rule set");
+    const P = K.policy, nQ = P.questions.length, dis = bitsToArr(c.disputed, nQ).filter(Boolean).length, fin = bitsToArr(c.finalAnswers, nQ);
+    return {id, status: c.status, statusText: STATUS[c.status], name: P.name, nQ, nDisputed: dis, agreementId: c.agreementId, result: c.status === 2 ? P.results[c.result] : null, why: c.status === 2 ? TB.run(P, fin).why : ""};
+  }
+  async function receipt(id) {
+    if (!deployed()) { upgrading("Receipt"); return; }
+    main.innerHTML = `<h1>Receipt</h1><p class="mute">Reading from X Layer…</p>`;
+    let c, ev; try { ({c, ev} = await readCase(id)); } catch { main.innerHTML = `<h1>Receipt</h1><p class="err">That case doesn't exist, or X Layer could not be reached.</p><p><a href="#case">Back</a></p>`; return; }
+    const K = policyOf(c.ruleSetId); if (!K) { main.innerHTML = `<h1>Receipt</h1><p>This case uses a rule set this page does not know how to display.</p>`; return; }
+    if (c.status !== 2) { main.innerHTML = `<h1>Receipt for case #${esc(id)}</h1><div class="note">This case is <b>${STATUS[c.status].toLowerCase()}</b>, so there is no result to print yet.</div><p><a href="#case/${esc(id)}">Back to the case</a></p>`; return; }
+    const P = K.policy, nQ = P.questions.length, fa = bitsToArr(c.filerAnswers, nQ), da = bitsToArr(c.deciderAnswers, nQ), dis = bitsToArr(c.disputed, nQ), fin = bitsToArr(c.finalAnswers, nQ), yn = v => v ? "Yes" : "No";
+    const r = TB.run(P, fin), cond = k => `question ${k.q + 1} is ${k.yes ? "yes" : "no"}`, fired = r.ruleIndex >= 0 ? `Rule ${r.ruleIndex + 1} decided it: ${P.rules[r.ruleIndex].conds.map(cond).join(" and ")}.` : "No rule matched, so the default result applied.";
+    const rows = P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${yn(fa[i])}</td><td>${yn(da[i])}</td><td><b>${yn(fin[i])}</b></td><td>${dis[i] ? "Reviewer" : "Both agreed"}</td></tr>`).join("");
+    const ex = (kind, a) => `${CFG.explorer}/${kind}/${a}`, link = location.href.split("#")[0] + "#case/" + id;
+    main.innerHTML = `<article class="receipt" id="rc">
+      <div class="rhead"><span class="rbrand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</span><span class="small mute">Result receipt · case #${esc(id)}</span></div>
+      <p class="small mute rk">${esc(P.name)}</p><h1 class="rres">${esc(P.results[c.result])}</h1><p class="rwhy">${esc(r.why)}</p><p class="small mute">${esc(fired)}</p>
+      <table class="rt"><thead><tr><th>Question</th><th>Filer</th><th>Decider</th><th>Final</th><th>Settled by</th></tr></thead><tbody>${rows}</tbody></table>
+      <dl class="rd"><dt>Filer</dt><dd><code>${c.filer}</code></dd><dt>Decider</dt><dd><code>${c.decider}</code></dd><dt>Reviewer</dt><dd><code>${c.reviewer}</code></dd>
+        <dt>Agreement</dt><dd>${c.agreementId ? "#" + c.agreementId + " (rules, reviewer and time limits fixed in advance)" : "none"}</dd><dt>Opened</dt><dd>${when(c.openedAt)}</dd>
+        <dt>Rule set</dt><dd>#${c.ruleSetId} · circuit #${CFG.published[K.key].circuitId} on the TapeOut processor</dd></dl>
+      ${ev.length ? `<h4>Evidence fingerprints</h4><table class="rt"><tbody>${ev.map(e => `<tr><td>${esc(e.question === WHOLE ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 50) : "?"))}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 18)}…</code></td></tr>`).join("")}</tbody></table><p class="small mute">The files are not stored by LGtie. Each fingerprint shows a file hasn't changed since it was recorded.</p>` : ""}
+      <div class="rver"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><p class="small">Check it yourself: open <a href="${link}">${link}</a> or read case ${esc(id)} on the <a href="${ex("address", CFG.caseContract)}" target="_blank" rel="noopener">case contract</a>. The re-run is a free read of the rules published on X Layer.</p></div>
+      <p class="small mute rfine">This receipt shows how published rules applied to the answers given. It does not prove the answers are true, and it is not legal advice. LGtie holds no funds and is an unaudited prototype.</p></article>
+      <div class="row noprint"><button class="btn" id="prt" type="button">Print or save as PDF</button><a class="btn ghost" href="#case/${esc(id)}">Back to the case</a></div>`;
+    $("#prt").onclick = () => window.print();
+    call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
+      if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this receipt."; } })
+      .catch(() => { const b = $("#rp"); if (b) { b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; } });
   }
 
   // ---------- records read from the chain (activity, not correctness) ----------
@@ -284,5 +322,5 @@
       <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
   }
 
-  window.TB_CASES = {list, view, reviewers, reviewer, agreements, agreement, business};
+  window.TB_CASES = {summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
 })();

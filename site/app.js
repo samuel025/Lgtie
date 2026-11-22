@@ -94,6 +94,10 @@
     </div></section>
     <div class="wrap"><section class="panel make">${art("sun")}<div><h2>Publish your own checker</h2><p class="lede">Paste your rules, check the circuit against them, and get a link customers can use.</p><div class="cta"><a class="btn" href="#build">Open the builder <span class="arr">→</span></a></div></div></section></div>
     <section class="sec"><div class="wrap">
+      <div class="sechead"><h2>Not a mock-up.</h2><p class="lede">We ran a complete case on X Layer mainnet: an agreement, a case, answers from both sides and a free re-run. All three roles were wallets we controlled, so treat it as a demonstration, not a customer.</p></div>
+      <div class="card realcase" id="realcase" style="margin-top:28px"><p class="mute small">Reading the case from X Layer…</p></div>
+    </div></section>
+    <section class="sec"><div class="wrap">
       <div class="sechead"><h2>What it does not do.</h2></div>
       <div class="trio">
         <div><h3>It can't tell if an answer is true</h3><p>If someone gives a false answer, the result follows it. A reviewer decides disputed facts, and a reviewer can be wrong.</p></div>
@@ -110,6 +114,18 @@
       </div></div></section>
     <div class="wrap"><section class="panel finish">${art("ember")}<div><h2>Try it in a minute.</h2><div class="cta"><a class="btn" href="#check/warranty">Open the warranty checker <span class="arr">→</span></a></div></div></section></div>`;
     window.TB_HERO.mountHero(main.querySelector("#heroviz")); window.TB_HERO.countUps(main);
+    realCase();
+  }
+  // The home page's real-case card: read live from X Layer, with the honest note that the team played every role.
+  async function realCase() {
+    const box = main.querySelector("#realcase"), sc = (window.TB_CONFIG || {}).showcase; if (!box) return;
+    if (!sc || !sc.caseId || /^0x0+$/.test(window.TB_CONFIG.caseContract || "")) { box.parentElement.parentElement.remove(); return; }
+    try {
+      const s = await window.TB_CASES.summary(sc.caseId); if (!main.contains(box)) return;
+      const agreed = s.nQ - s.nDisputed, line = s.nDisputed ? `${agreed} of ${s.nQ} answers were agreed, and the reviewer decided the other ${s.nDisputed}.` : `Both sides agreed on all ${s.nQ} answers.`;
+      box.innerHTML = `<div class="rcgrid"><div><span class="tag">Case #${sc.caseId} · ${esc(s.statusText)}</span><h3 class="rcres">${s.result ? esc(s.result) : "Not decided yet"}</h3>${s.why ? `<p>${esc(s.why)}</p>` : ""}<p class="small mute">${esc(s.name)}. ${s.status === 2 ? esc(line) : ""} Read from X Layer just now.</p></div>
+        <div class="rcbtn"><a class="btn" href="#case/${sc.caseId}">Open the case</a>${s.status === 2 ? `<a class="btn ghost" href="#receipt/${sc.caseId}">See the receipt</a>` : ""}${sc.agreementId ? `<a class="btn ghost" href="#agreement/${sc.agreementId}">See the agreement</a>` : ""}</div></div>`;
+    } catch { if (main.contains(box)) box.innerHTML = `<p class="small mute">Could not read the case from X Layer right now. <a href="#case/${sc.caseId}">Open it directly</a>.</p>`; }
   }
 
   // Snippets for putting a checker on another website (static: a script tag that adds an iframe, or a plain iframe).
@@ -200,7 +216,7 @@
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
   const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
-  const REVEAL = ".hcopy>*,.stage,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
+  const REVEAL = ".hcopy>*,.stage,.realcase,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
   let armed = false, armTimer = 0;
   function scan() {
     if (!armed || !io) return;
@@ -226,6 +242,7 @@
     if (view === "agreement") return key ? window.TB_CASES.agreement(key) : window.TB_CASES.agreements();
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
+    if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();

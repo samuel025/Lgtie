@@ -252,6 +252,26 @@ main[data-step="all"] [data-s]{display:block}main[data-step="all"] .row[data-s]{
 .tryit .vsvg{background:#fff;border-radius:20px;padding:10px;margin:0 0 12px}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @media(max-width:700px){.stepper .st{display:none}.stepper button.on .st{display:inline}.stepper button{padding-right:6px}.stepper button.on{padding-right:14px}}
+
+/* ---------- receipt and the home page's real case ---------- */
+.receipt{background:#fff;border:1px solid var(--warm);border-radius:28px;padding:34px 38px;margin:10px 0 18px}
+.rhead{display:flex;justify-content:space-between;gap:12px;align-items:center;border-bottom:1px solid var(--warm);padding-bottom:14px;margin-bottom:20px}
+.rbrand{display:inline-flex;gap:10px;align-items:center;font:300 24px var(--serif);letter-spacing:-.04em}.rbrand svg{width:24px;height:24px}
+.rk{margin:0}.rres{font-size:clamp(36px,6vw,58px);margin:.1em 0 .15em}.rwhy{font-size:18px;margin:.2em 0}
+.rt{width:100%;border-collapse:collapse;font-size:14px;margin:18px 0}.rt th{text-align:left}.rt td,.rt th{padding:8px 12px 8px 0}.rt td:not(:first-child),.rt th:not(:first-child){white-space:nowrap}
+.rd{display:grid;grid-template-columns:max-content 1fr;gap:6px 20px;font-size:14px;margin:18px 0}.rd dt{color:var(--stone)}.rd dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.rver{background:var(--paper);border-radius:18px;padding:14px 18px;margin:20px 0 12px}.rver p{margin:8px 0 0}
+.rfine{margin-top:16px}
+.rcgrid{display:flex;gap:24px;justify-content:space-between;align-items:center;flex-wrap:wrap}.rcres{font-size:clamp(34px,5vw,48px);margin:.3em 0 .1em}.rcbtn{display:flex;gap:10px;flex-wrap:wrap}
+@media print{
+  header,footer,.noprint,.stepnav{display:none!important}
+  body{background:#fff!important}main{max-width:none!important;padding:0!important}
+  .receipt{border:0;border-radius:0;padding:0}.rver{background:#fff;border:1px solid #bbb}
+  *{animation:none!important;transition:none!important}.js .rv{opacity:1!important;transform:none!important}
+  a{text-decoration:none;color:#000}
+  .receipt{font-size:12px}.receipt .rres{font-size:38px;margin:.05em 0}.receipt .rwhy{font-size:14px}.rt{font-size:11px;margin:10px 0}.rt td,.rt th{padding:4px 10px 4px 0}
+  .rd{font-size:11px;gap:3px 14px;margin:10px 0}.rhead{padding-bottom:8px;margin-bottom:10px}.rver{padding:8px 12px;margin:10px 0 6px}.receipt h4{margin:10px 0 2px}.rfine{margin-top:8px}
+}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>

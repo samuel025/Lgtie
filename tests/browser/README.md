@@ -10,6 +10,7 @@ npm i puppeteer-core            # in any folder; then run: node <path>/checker.m
 | File | What it covers | Needs |
 | --- | --- | --- |
 | `checker.mjs` | home, checker, shared links, builder error messages, verify, about, phone width; confirms results against circuit #13 on mainnet | network (reads X Layer) |
+| `receipt.mjs` | the home page's real-case card and the printable receipt (read live from mainnet case #1; print layout hides the site chrome) | network |
 | `hero.mjs` | the home hero draws the real 39-gate circuit, tapping an answer changes the result, autoplay, the count-up facts, the card icons, and the circuit on checker pages | network |
 | `builder.mjs` | the visual rule builder: forms, text view, spreadsheet paste, AI-reply loading | none |
 | `embed.mjs` | the embeddable checker and its demo page | network |
