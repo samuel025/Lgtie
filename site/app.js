@@ -152,6 +152,7 @@ default: Covered : Shown when no rule matched</pre></details>`;
     window.scrollTo(0, 0);
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
+    if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return build();
     if (view === "verify") return verify();
     if (view === "about") return about();
