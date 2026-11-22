@@ -140,6 +140,7 @@
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
     if (view === "embed") return check(key || "warranty", rest.join("/"), true);
+    if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();

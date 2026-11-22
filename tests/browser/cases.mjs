@@ -13,7 +13,7 @@ let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL "
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 25000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await w(300); } return false; }
 await p.setRequestInterception(true);
-p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", body: fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/caseContract: "0x0+"/, `caseContract: "${V2}"`)}); else r.continue(); });
+p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", body: fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/caseContract: "0x[0-9a-fA-F]{40}"/, `caseContract: "${V2}"`)}); else r.continue(); });
 await p.evaluateOnNewDocument(ANVIL => { window.ethereum = {request: async ({method, params}) => {
   if (method === "eth_requestAccounts" || method === "eth_accounts") return [localStorage.getItem("acct")];
   if (method === "eth_chainId") return "0xc4"; if (method === "wallet_switchEthereumChain") return null;
@@ -46,7 +46,7 @@ const verdict = await arpc("eth_call", [{to: V2, data: "0xd3dc1fdf" + BigInt(idA
 // ---- B. the decider proposes a different reviewer; the filer must accept
 const hB = await openCase(REV); await as(DEC, hB); await connect(); await until(async () => !!(await p.$("#prop")));
 await p.type("#newrev", REV2); await p.click("#prop");
-ok("a counter-proposal replaces the reviewer and resets acceptance", await until(async () => /0x7e57…0e02: filer not yet, decider accepted ✓/.test(await T("main"))), (await T("main")).slice(0, 400));
+ok("a counter-proposal replaces the reviewer and resets acceptance", await until(async () => /0x7e57…0e02 \(record\): filer not yet, decider accepted ✓/.test(await T("main"))), (await T("main")).slice(0, 400));
 await as(FILER, hB); await connect(); await until(async () => !!(await p.$("#acc"))); await p.click("#acc");
 ok("the filer accepts the new reviewer", await until(async () => /filer accepted ✓, decider accepted ✓/.test(await T("main"))));
 await as(OTHER, hB); await connect(); ok("a stranger cannot change the reviewer", await until(async () => /Only the filer and the decider can change the reviewer/.test(await T("main"))));
@@ -63,6 +63,16 @@ await until(async () => /Waiting for the reviewer/.test(await T("main"))); await
 await as(OTHER, hD); await connect(); await until(async () => !!(await p.$("#closeit"))); await p.click("#closeit");
 ok("a ghosted reviewer ends the case with no decision", await until(async () => /No decision/.test(await T(".res .big"))) && /reviewer did not decide in time/.test(await T(".res .why")), await T("main"));
 const v2 = await arpc("eth_call", [{to: V2, data: "0xd3dc1fdf" + BigInt(hD.split("/")[1]).toString(16).padStart(64, "0")}, "latest"]); ok("an expired case has no final verdict", BigInt("0x" + v2.slice(2, 66)) === 0n);
+// ---- E. reviewer record: activity read from the chain
+await as(OTHER, "#reviewer/" + REV); await until(async () => /\d+ cases?/.test(await T(".stats")));
+const st = await T(".stats"), tbl = await T("main");
+ok("the reviewer record counts cases, decisions, missed deadlines and unaccepted reviews", /3 cases/.test(st) && /1 decided/.test(st) && /0 missed the deadline/.test(st) && /1 never accepted/.test(st) && /0 open/.test(st), st);
+ok("it says what happened on each case", /Decided the disputed questions/.test(tbl) && /Not accepted by both sides/.test(tbl) && /expired before it reached the reviewer/.test(tbl) && /cannot show whether a decision was right/.test(tbl), tbl.slice(0, 500));
+await as(OTHER, "#reviewer/" + REV2); await until(async () => /\d+ cases?/.test(await T(".stats")));
+ok("a swapped-in reviewer shows an open case", /1 case/.test(await T(".stats")) && /1 open/.test(await T(".stats")), await T(".stats"));
+await as(OTHER, "#reviewer"); await until(async () => /Reviewers/.test(await T("h1")) && (await p.$$("tbody tr")).length >= 2);
+ok("the reviewers list shows every reviewer", (await p.$$("tbody tr")).length === 2, (await T("main")).slice(0, 300));
+await as(OTHER, "#reviewer/not-an-address"); ok("a bad address is explained", /not a wallet address/.test(await T("main")));
 ok("no page errors", errs.length === 0, errs.join(" | "));
 await p.screenshot({path: "/tmp/tb-case2.png", fullPage: true});
 await b.close(); console.log(fails ? fails + " FAILED" : "all passed"); process.exit(fails ? 1 : 0);

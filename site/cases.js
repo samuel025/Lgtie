@@ -40,7 +40,7 @@
         <div class="wide"><label><span>Evidence note, optional</span><input id="evd" type="text" placeholder="e.g. the repair centre report reference"></label></div>
         <p class="small mute">Only a fingerprint of the evidence note goes on-chain. You are the filer, and your wallet accepts the reviewer by opening the case. The reviewer must be a different person from both sides.</p>
         <div class="row"><button class="btn" id="open" type="button">Open case</button><span id="msg" class="small"></span></div></div>
-      <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div></div>`;
+      <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div><p class="small"><a href="#reviewer">See every reviewer's record</a></p></div>`;
     $("#lk").onclick = () => { const n = Number($("#cn").value); if (n) location.hash = "#case/" + n; };
     $("#open").onclick = async () => {
       const msg = $("#msg"), dec = $("#dec").value.trim(), rev = $("#rev").value.trim();
@@ -72,7 +72,7 @@
       <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Filer ${short(c.filer)} · Decider ${short(c.decider)}${me ? " · You are " + short(me) : ""}</span></p>
       ${live ? `<p class="small ${late ? "err" : "mute"}">${c.status === 0 ? "Answers due by " : "The reviewer has until "}${when(deadline)}${late ? ". That time has passed." : "."}</p>` : ""}
       <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Filer</th><th>Decider</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="card"><h3>Reviewer</h3><p class="small">${short(c.reviewer)}: filer ${ok(c.filerOk)}, decider ${ok(c.deciderOk)}. ${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
+      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): filer ${ok(c.filerOk)}, decider ${ok(c.deciderOk)}. ${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
       <div id="act"></div><div id="final"></div>`;
     // reviewer controls
     if (live && !late) {
@@ -134,5 +134,49 @@
     }
   }
 
-  window.TB_CASES = {list, view};
+  // ---------- reviewer record (read-only, from the chain) ----------
+  // Scans the most recent cases and tallies what each reviewer address did. It shows activity, not correctness: nothing on-chain can say whether a decision was right.
+  async function scanCases(limit) {
+    const n = Number(BigInt(await call(SEL.count))), out = [], lo = Math.max(1, n - limit + 1);
+    for (let i = n; i >= lo; i -= 10) {
+      const ids = []; for (let k = i; k > i - 10 && k >= lo; k--) ids.push(k);
+      const got = await Promise.all(ids.map(id => call(SEL.get + w(id)).then(h => ({id, ...decodeCase(h)}), () => null)));
+      got.forEach(c => c && out.push(c));
+    }
+    return {total: n, cases: out, truncated: n > limit};
+  }
+  function classify(c) { // what this case means for its reviewer
+    if (c.status === 2) return c.disputed !== 0n ? "decided" : "notNeeded";
+    if (c.status === 3) return (c.filerIn && c.deciderIn) ? ((c.filerOk && c.deciderOk) ? "ghosted" : "neverAccepted") : "beforeReview";
+    return "pending";
+  }
+  const LABEL = {decided: "Decided the disputed questions", ghosted: "Accepted, but did not decide in time", neverAccepted: "Not accepted by both sides before time ran out", pending: "Still open", notNeeded: "Not needed (both sides agreed)", beforeReview: "Case expired before it reached the reviewer"};
+  const tally = cs => { const t = {decided: 0, ghosted: 0, neverAccepted: 0, pending: 0, notNeeded: 0, beforeReview: 0}; cs.forEach(c => t[classify(c)]++); return t; };
+
+  async function reviewers() {
+    if (!deployed()) { list(); return; }
+    main.innerHTML = `<h1>Reviewers</h1><p class="mute">Reading cases from X Layer…</p>`;
+    let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewers</h1><p class="err">X Layer could not be reached.</p>`; return; }
+    const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
+    const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
+    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each reviewer did on cases, read straight from X Layer. It shows who decided and who did not, not whether a decision was right. Nothing on-chain can tell that.</p>
+      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>Missed deadline</th><th>Never accepted</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
+      <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
+  }
+
+  async function reviewer(addr) {
+    if (!deployed()) { list(); return; }
+    if (!ADDR.test(addr)) { main.innerHTML = `<h1>Reviewer record</h1><p class="err">That is not a wallet address. <a href="#reviewer">See all reviewers</a>.</p>`; return; }
+    main.innerHTML = `<h1>Reviewer ${short(addr)}</h1><p class="mute">Reading cases from X Layer…</p>`;
+    let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewer ${short(addr)}</h1><p class="err">X Layer could not be reached.</p>`; return; }
+    const mine = sc.cases.filter(c => c.reviewer.toLowerCase() === addr.toLowerCase()).sort((a, b) => b.id - a.id), t = tally(mine);
+    const rows = mine.map(c => { const k = classify(c), P = (policyOf(c.ruleSetId) || {}).policy; return `<tr><td><a href="#case/${c.id}">#${c.id}</a></td><td>${esc(P ? P.name : "Rule set " + c.ruleSetId)}</td><td>${LABEL[k]}</td><td>${c.status === 2 && P ? esc(P.results[c.result]) : ""}</td></tr>`; }).join("");
+    main.innerHTML = `<h1>Reviewer ${short(addr)}</h1><p class="small mute"><code>${addr}</code> · <a href="#reviewer">All reviewers</a></p>
+      <div class="stats"><span>${mine.length} case${mine.length === 1 ? "" : "s"}</span><span>${t.decided} decided</span><span>${t.ghosted} missed the deadline</span><span>${t.neverAccepted} never accepted</span><span>${t.pending} open</span></div>
+      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Case</th><th>Rule set</th><th>What happened</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">This address has not been named reviewer on any case yet.</p>`}</div>
+      <div class="note">This is a record of activity. It cannot show whether a decision was right: only the people involved can judge that. Both sides should still decide for themselves whether to accept a reviewer.</div>
+      <p class="small mute">${sc.truncated ? `Based on the latest 200 of ${sc.total} cases.` : `Based on all ${sc.total} case${sc.total === 1 ? "" : "s"}.`}</p>`;
+  }
+
+  window.TB_CASES = {list, view, reviewers, reviewer};
 })();
