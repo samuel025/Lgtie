@@ -32,4 +32,4 @@ A contract that holds funds is a much bigger target than one that only records d
 
 ## Deployed addresses
 
-`TiebreakCaseV2` is written and tested; its mainnet address is recorded in `site/config.js` (`caseContract`) once `scripts/deploy-case-v2.sh deploy` has been run. The first case contract (`caseContractV1`) has no reviewer acceptance, no deadlines and no `verdict` function.
+`TiebreakCaseV2` is on X Layer mainnet at `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3` (also in `site/config.js` as `caseContract`). The first case contract (`caseContractV1`, `0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987`) has no reviewer acceptance, no deadlines and no `verdict` function.

@@ -12,7 +12,7 @@ Prototype for the X Layer TapeOut Accelerate hackathon. Product brief: https://c
 | Warranty rule set circuit | #13 (7 inputs, 2 outputs, 39 NAND gates) |
 | `RuleSetRegistry` | `0x25E87D367316038a2d3B6A4fe3d58AA453D4c219` (rule set #1 = "Warranty claims") |
 | `TiebreakCase` (v1, simple) | `0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987` |
-| `TiebreakCaseV2` | written and tested, **not deployed yet**: run `scripts/deploy-case-v2.sh deploy` (about 0.0001 OKB) |
+| `TiebreakCaseV2` | `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3` (reviewer acceptance, deadlines, verdict reader; used by the site) |
 
 `node tests/mainnet-verify.mjs` runs circuit #13 on mainnet for all 128 answer combinations and compares with the rules (read-only).
 
