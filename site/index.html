@@ -4,7 +4,7 @@
 <title>LGtie: check a decision before it is made</title>
 <meta name="theme-color" content="#ffffff">
 <meta name="description" content="Publish your policy as a checker anyone can trust. Customers see the result and the reason, and anyone can re-run it.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23111111'/%3E%3Cpath d='M8 17l5 5 11-12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23111'/%3E%3Cpath d='M6.5 6.5h5a5.5 5.5 0 010 11h-5z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/%3E%3Ccircle cx='19.2' cy='12' r='1.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
 <style>
 :root{
   --ink:#111111;--canvas:#ffffff;--cream:#f6f5f3;--ash:#6d6c6b;--stone:#b1b1af;--pearl:#ecebea;--charcoal:#272625;--midnight:#10054d;--indigo:#2e2460;
@@ -95,7 +95,7 @@ details.card{padding:14px 20px}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(232,64,13,.5)}60%{box-shadow:0 0 0 7px rgba(232,64,13,0)}}
 .hero h1{max-width:920px}
 .hero-grid{display:block}.hero-copy{min-width:0}
-@media(min-width:960px){.hero{padding:72px 0 96px}.hero-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:48px;align-items:center}.hero-grid .demo{margin:0;max-width:none;transform:rotate(1.2deg);transition:transform .6s var(--ease)}.hero-grid .demo:hover{transform:rotate(0) translateY(-4px)}}
+@media(min-width:960px){.hero{padding:72px 0 96px}.hero-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);gap:48px;align-items:center}}
 .cta{display:flex;gap:10px;flex-wrap:wrap;margin:26px 0 0}
 .demo{margin:48px 0 0;max-width:560px;background:#fff;border-radius:12px;padding:18px 20px;box-shadow:var(--sh-xl);position:relative}
 .demo .tag{position:absolute;top:-11px;left:18px;background:var(--ink);color:#fff;border-radius:9999px;padding:3px 11px;font-size:12px}
@@ -122,6 +122,41 @@ details.card{padding:14px 20px}
 .finalcta .btn{background:#fff;color:var(--ink)}.finalcta .btn.neutral{background:rgba(255,255,255,.12);color:#fff}
 footer{background:var(--charcoal);color:rgba(255,255,255,.62);padding:36px 20px 44px;font-size:14px}footer .wrap{padding:0}footer a{color:#fff}
 .embedfoot{margin-top:10px}
+
+/* ---------- project graphics: the live circuit, bit tokens, traces, proof strip ---------- */
+.viz{background:#fff;border-radius:12px;padding:16px;box-shadow:var(--sh-xl);position:relative;margin-top:36px}
+.vqs{display:flex;flex-wrap:wrap;gap:6px}
+.vq{display:inline-flex;align-items:center;gap:7px;border:0;border-radius:9999px;padding:4px 5px 4px 6px;background:var(--cream);font:inherit;font-size:13px;cursor:pointer;color:var(--ink);transition:background .35s var(--ease),transform .2s var(--ease)}
+.vq:hover{transform:translateY(-1px)}.vq:active{transform:scale(.97)}
+.vq .vn{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#fff;font-size:11px;font-weight:500}
+.vq .vy{border-radius:9999px;padding:1px 8px;font-size:12px;background:#fff}
+.vq[data-a="1"]{background:var(--mint)}.vq[data-a="0"]{background:var(--pink)}
+.vsvg{margin:10px -4px 8px}.circ{width:100%;height:auto;display:block}
+.circ .w{fill:none;stroke:#d9d8d6;stroke-width:1;transition:stroke .5s var(--ease)}
+.circ .w.on{stroke:#111;stroke-width:1.3;stroke-dasharray:3 5;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-16}}
+.circ .g{fill:#fff;stroke:#b1b1af;stroke-width:1.2;transition:fill .45s var(--ease),stroke .45s var(--ease)}
+.circ .g.on{fill:#111;stroke:#111}.circ .g.in{stroke:#111}.circ .g.in.on{fill:var(--mint)}.circ .g.in.off{fill:var(--pink)}
+.circ .g.out{stroke:#111;stroke-width:1.6}.circ .g.out.on{fill:var(--violet)}
+.vres{background:var(--violet);border-radius:12px;padding:12px 16px}.vres.pop{animation:resin .5s var(--ease) both}
+.vlab{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:rgba(17,17,17,.55)}.vres .big{font-size:28px;letter-spacing:-.03em;line-height:1.1}
+.vnote{margin:10px 2px 0}
+.hero-grid .viz{margin:0}
+.confetti i{display:grid;place-items:center;font:600 13px ui-monospace,SFMono-Regular,Menlo,monospace;color:#111;width:34px!important;height:34px!important;border-radius:9px!important}
+.confetti .c4,.confetti .c7{transform:none!important}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.9;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' fill='none' stroke='%23111' stroke-opacity='.07' stroke-width='1.2'%3E%3Cpath d='M0 46h54v34h46M120 0v58h46M24 200v-44h66v-36M200 130h-40v-30h-26'/%3E%3Ccircle cx='100' cy='80' r='3'/%3E%3Ccircle cx='166' cy='58' r='3'/%3E%3Ccircle cx='90' cy='120' r='3'/%3E%3Ccircle cx='134' cy='100' r='3'/%3E%3C/svg%3E");-webkit-mask-image:linear-gradient(to bottom,#000 45%,transparent);mask-image:linear-gradient(to bottom,#000 45%,transparent)}
+.brand svg{width:26px;height:26px;flex:none;transition:transform .5s var(--ease)}.brand:hover svg{transform:rotate(-8deg) scale(1.06)}
+.cat .ic{width:36px;height:36px;margin-bottom:2px;transition:transform .5s var(--ease)}.cat:hover .ic{transform:rotate(-7deg) scale(1.1)}
+.proof{padding:0 0 28px}.proof .wrap{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.pf{background:var(--cream);border-radius:12px;padding:18px 20px}.pf b{display:block;font-size:46px;font-weight:400;letter-spacing:-.05em;line-height:1}.pf small{font-size:20px;color:var(--ash);letter-spacing:-.02em}
+.pf>span{display:block;margin-top:8px;color:var(--ash);font-size:15px;line-height:1.35}
+.step .n{animation:ping 6s ease-out infinite}.step:nth-child(2) .n{animation-delay:1.2s}.step:nth-child(3) .n{animation-delay:2.4s}.step:nth-child(4) .n{animation-delay:3.6s}.step:nth-child(5) .n{animation-delay:4.8s}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}14%,100%{box-shadow:0 0 0 12px rgba(255,255,255,0)}}
+.circ-card .vsvg{margin:8px 0 4px}
+.confetti .c1{left:30%;top:90%}.confetti .c2{left:94%;top:7%}.confetti .c3{left:80%;top:91%}.confetti .c4{left:52%;top:8%}.confetti .c5{left:62%;top:92%}.confetti .c6{left:3%;top:92%}.confetti .c7{left:44%;top:93%}
+@media(max-width:959px){.confetti .c1,.confetti .c4,.confetti .c5,.confetti .c7{display:none}}
+.circ .g.in{stroke-width:1.5}.circ .w.on{stroke-width:1.5}
+body.embed .circ-card{display:none}
 /* ---------- motion: scroll reveal and page entrance (transform and opacity only) ---------- */
 .js .rv{opacity:0;transform:translateY(18px);transition:opacity .7s var(--ease),transform .7s var(--ease);transition-delay:var(--d,0s)}
 .js .rv.in{opacity:1;transform:none}
@@ -136,9 +171,9 @@ body.embed .rv{opacity:1!important;transform:none!important}body.embed main.ente
 @media(max-width:700px){.bar{padding:10px 16px;gap:6px 10px}.bar .cta-r{display:none}nav{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none;margin:0 -4px}nav::-webkit-scrollbar{display:none}nav a{white-space:nowrap;padding:6px 9px}.confetti .c4,.confetti .c7{display:none}.hero{padding:36px 0 64px}.sec,.dark,.finalcta{padding:60px 0}}
 </style></head>
 <body>
-<header><div class="bar"><a class="brand" href="#"><i></i>LGtie</a>
+<header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
 <nav id="nav"><a href="#check/warranty" data-k="check">Check a claim</a><a href="#agree" data-k="agree">Agreements</a><a href="#case" data-k="case">Settle a dispute</a><a href="#build" data-k="build">For businesses</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#about" data-k="about">How it works</a></nav><a class="btn small cta-r" href="#check/warranty">Try a checker <span class="arr">→</span></a></div></header>
 <main id="main"></main>
 <footer><div class="wrap"><div><b style="color:#fff;font-weight:500">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div><div style="margin-top:10px"><a href="#about">How it works</a> · <a href="#verify">Verify a circuit</a> · <a href="#reviewer">Reviewer records</a> · <a href="#agree">Agreements</a></div></div></footer>
-<script src="rules.js"></script><script src="config.js"></script><script src="wallet.js"></script><script src="publish.js"></script><script src="builder.js"></script><script src="cases.js"></script><script src="app.js"></script>
+<script src="rules.js"></script><script src="hero.js"></script><script src="config.js"></script><script src="wallet.js"></script><script src="publish.js"></script><script src="builder.js"></script><script src="cases.js"></script><script src="app.js"></script>
 </body></html>
