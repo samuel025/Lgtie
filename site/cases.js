@@ -213,7 +213,7 @@
       };
     });
     const ci = $("#closeit"); if (ci) ci.onclick = async () => { try { if (!me) await window.TB_WALLET.connect(); await send(SEL.expire + w(id)); view(id); } catch (e) { $("#cmsg").textContent = friendly(e); } };
-    if (c.status === 3) $("#final").innerHTML = `<div class="res" role="status" style="border-color:var(--warn);background:var(--warn2)"><div class="big">No decision</div><div class="why">${c.filerIn && c.deciderIn ? "The reviewer did not decide in time." : "The answers were not all in on time."} Nobody wins by default. The two sides can open a new case.</div></div>`;
+    if (c.status === 3) $("#final").innerHTML = `<div class="res nodec" role="status"><div class="big">No decision</div><div class="why">${c.filerIn && c.deciderIn ? "The reviewer did not decide in time." : "The answers were not all in on time."} Nobody wins by default. The two sides can open a new case.</div></div>`;
     if (c.status === 2) {
       const r = TB.run(P, fin);
       $("#final").innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(r.why)}</div><div class="row"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><button class="btn small ghost" id="cl" type="button">Copy link</button></div>

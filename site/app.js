@@ -34,34 +34,49 @@
   }
 
   // ---------- views ----------
+  // Flowing signal lines: a quiet wave illustration made of thin paths (monochrome).
+  function waves() {
+    const paths = [[0.5, 20, 0], [0.45, 26, 60], [0.5, 32, 120], [0.55, 24, 30], [0.5, 38, 90], [0.6, 22, 150], [0.55, 30, 10], [0.62, 18, 100]].map(([yf, amp, ph], i) => {
+      const y0 = 30 + i * 21 + yf * 8, step = 100; let d = `M${-240 - ph} ${y0}Q${-190 - ph} ${y0 - amp} ${-140 - ph} ${y0}`;
+      for (let x = -40 - ph; x < 1500; x += step) d += `T${x} ${y0}`;
+      return `<path d="${d}" opacity="${(0.55 - i * 0.045).toFixed(2)}"/>`;
+    }).join("");
+    return `<div class="waves" aria-hidden="true"><svg viewBox="0 0 1200 210" preserveAspectRatio="none">${paths}</svg></div>`;
+  }
   function home() {
+    const I = k => ({
+      check: '<rect x="6" y="4" width="20" height="24" rx="4"/><path d="M11 12l2 2 4-4M11 20l2 2 4-4M20 12h3M20 20h3"/>',
+      build: '<rect x="4" y="5" width="14" height="22" rx="3"/><path d="M8 11h6M8 15h6M8 19h4"/><path d="M19 16h2M21 12.5h2.5a3.5 3.5 0 010 7H21z"/>',
+      agree: '<circle cx="12" cy="16" r="7"/><circle cx="20" cy="16" r="7"/><path d="M13.5 16.5l2 2 3.5-4"/>',
+      verify: '<circle cx="14" cy="14" r="8"/><path d="M20 20l7 7M11 11h2.5a3 3 0 010 6H11z"/>',
+      review: '<path d="M16 5v21M9 26h14M5 10h22M5 10l-3 8h6zM27 10l-3 8h6z"/>'}[k]);
+    const ic = k => `<svg class="ic" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I(k)}</svg>`;
     main.innerHTML = `
-    <section class="hero"><div class="hero-bg" aria-hidden="true"></div>
-      <div class="confetti" aria-hidden="true"><i class="c1">1</i><i class="c2">0</i><i class="c3">1</i><i class="c4">0</i><i class="c5">1</i><i class="c6">0</i><i class="c7">1</i></div>
-      <div class="wrap hero-grid"><div class="hero-copy">
-        <span class="pill"><b></b>Rules anyone can re-run</span>
-        <h1>Know if you are covered before you file.</h1>
-        <p class="lede">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
-        <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="btn neutral" href="#build">Publish your own policy</a></div></div>
-        <div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div>
-      </div></section>
-    <section class="proof"><div class="wrap">
-      <div class="pf"><b><span data-count="39">0</span></b><span>NAND gates in the live warranty circuit, published as circuit #13</span></div>
-      <div class="pf"><b><span data-count="128">0</span><small>/128</small></b><span>answer combinations checked against the rules on X Layer mainnet</span></div>
-      <div class="pf"><b><span data-count="0">0</span></b><span>funds held by any LGtie contract</span></div>
+    <section class="hero2"><div class="wrap">
+      <span class="tag">Rules anyone can re-run</span>
+      <h1>Know if you are covered before you file.</h1>
+      <p class="sub">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
+      <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="link" href="#build">Publish your own policy</a></div>
+      <div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div>
+    </div></section>
+    ${waves()}
+    <section class="facts"><div class="wrap">
+      <div class="fact"><b><span data-count="39">0</span></b><span>NAND gates in the live warranty circuit, published as circuit #13</span></div>
+      <div class="fact"><b><span data-count="128">0</span><small>/128</small></b><span>answer combinations checked against the rules on X Layer mainnet</span></div>
+      <div class="fact"><b><span data-count="0">0</span></b><span>funds held by any LGtie contract</span></div>
     </div></section>
     <section class="sec"><div class="wrap">
-      <span class="eyebrow">Everything in one place</span><h2>Pick where you start.</h2>
-      <p class="lede">Each part has its own colour, from a first check to a public record of how disputes ended.</p>
+      <h2>Pick where you start.</h2>
+      <p class="lede">From a first check to a public record of how disputes ended.</p>
       <div class="cats">
-        <a class="cat pink" href="#check/warranty"><svg class="ic" viewBox="0 0 32 32" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="20" height="24" rx="4"/><path d="M11 12l2 2 4-4M11 20l2 2 4-4M20 12h3M20 20h3"/></svg><span class="eyebrow">Customers</span><h3>Check a claim</h3><p>Answer yes or no, see the result and the exact reason. No account, no wallet.</p><span class="go">Open the checker <span class="arr">→</span></span></a>
-        <a class="cat mint" href="#build"><svg class="ic" viewBox="0 0 32 32" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="14" height="22" rx="3"/><path d="M8 11h6M8 15h6M8 19h4"/><path d="M19 16h2M21 12.5h2.5a3.5 3.5 0 010 7H21z"/></svg><span class="eyebrow">Businesses</span><h3>Publish your policy</h3><p>Paste your rules and get a checker you can put on your support page.</p><span class="go">Build a checker <span class="arr">→</span></span></a>
-        <a class="cat canary" href="#agree"><svg class="ic" viewBox="0 0 32 32" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="16" r="7"/><circle cx="20" cy="16" r="7"/><path d="M13.5 16.5l2 2 3.5-4"/></svg><span class="eyebrow">Both sides</span><h3>Agree first</h3><p>Fix the rules, the reviewer and the time limits before any dispute starts.</p><span class="go">Make an agreement <span class="arr">→</span></span></a>
-        <a class="cat violet" href="#verify"><svg class="ic" viewBox="0 0 32 32" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14" cy="14" r="8"/><path d="M20 20l7 7M11 11h2.5a3 3 0 010 6H11z"/></svg><span class="eyebrow">Anyone in doubt</span><h3>Check it yourself</h3><p>Re-run a published rule set on X Layer and see the same answer.</p><span class="go">Verify a circuit <span class="arr">→</span></span></a>
-        <a class="cat aqua" href="#reviewer"><svg class="ic" viewBox="0 0 32 32" fill="none" stroke="#111" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 5v21M9 26h14M5 10h22M5 10l-3 8h6zM27 10l-3 8h6z"/></svg><span class="eyebrow">Reviewers</span><h3>See the record</h3><p>Who decided, who missed a deadline, read straight from the chain.</p><span class="go">Reviewer records <span class="arr">→</span></span></a>
+        <a class="cat" href="#check/warranty">${ic("check")}<h3>Check a claim</h3><p>Answer yes or no, see the result and the exact reason. No account, no wallet.</p><span class="go">Open the checker <span class="arr">→</span></span></a>
+        <a class="cat" href="#build">${ic("build")}<h3>Publish your policy</h3><p>Paste your rules and get a checker you can put on your support page.</p><span class="go">Build a checker <span class="arr">→</span></span></a>
+        <a class="cat" href="#agree">${ic("agree")}<h3>Agree first</h3><p>Fix the rules, the reviewer and the time limits before any dispute starts.</p><span class="go">Make an agreement <span class="arr">→</span></span></a>
+        <a class="cat" href="#verify">${ic("verify")}<h3>Check it yourself</h3><p>Re-run a published rule set on X Layer and see the same answer.</p><span class="go">Verify a circuit <span class="arr">→</span></span></a>
+        <a class="cat" href="#reviewer">${ic("review")}<h3>See the record</h3><p>Who decided and who missed a deadline, read straight from the chain.</p><span class="go">Reviewer records <span class="arr">→</span></span></a>
       </div></div></section>
-    <section class="dark"><div class="wrap">
-      <span class="eyebrow" style="color:rgba(255,255,255,.55)">How a dispute works</span><h2>Dispute the facts, not the verdict.</h2>
+    <section class="sec"><div class="wrap">
+      <h2>Dispute the facts, not the verdict.</h2>
       <p class="lede">Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.</p>
       <div class="steps">
         <div class="step"><span class="n">1</span><h3>Publish the rules</h3><p>The business writes its policy once. It is stored on X Layer and can't be changed.</p></div>
@@ -70,8 +85,8 @@
         <div class="step"><span class="n">4</span><h3>The circuit gives the result</h3><p>The published rules turn the final answers into a result and a reason.</p></div>
         <div class="step"><span class="n">5</span><h3>Anyone can re-run it</h3><p>One free read on X Layer returns the same result, with no account.</p></div>
       </div></div></section>
-    <section class="sec cream"><div class="wrap">
-      <span class="eyebrow">Straight talk</span><h2>What it does not do.</h2>
+    <section class="sec"><div class="wrap">
+      <h2>What it does not do.</h2>
       <div class="limits">
         <div><h3>It can't tell if an answer is true</h3><p>If someone gives a false answer, the result follows it. A reviewer decides disputed facts, and a reviewer can be wrong.</p></div>
         <div><h3>It holds no money</h3><p>The contracts record decisions only. A separate contract can read a verdict and pay out.</p></div>
@@ -79,7 +94,7 @@
       </div></div></section>
     <section class="finalcta"><div class="wrap">
       <h2>Try it in a minute.</h2><p>Answer seven questions and watch the result get confirmed by a circuit on X Layer.</p>
-      <div class="cta" style="justify-content:center"><a class="btn" href="#check/warranty">Open the warranty checker <span class="arr">→</span></a><a class="btn neutral" href="#about">How it works</a></div>
+      <div class="cta"><a class="btn" href="#check/warranty">Open the warranty checker <span class="arr">→</span></a><a class="link" href="#about">How it works</a></div>
     </div></section>`;
     window.TB_HERO.mountHero(main.querySelector("#heroviz")); window.TB_HERO.countUps(main);
   }
@@ -172,7 +187,7 @@
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
   const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
-  const REVEAL = ".hero .pill,.hero h1,.hero .lede,.hero .cta,.demo,.sec h2,.sec .eyebrow,.sec .lede,.cat,.dark h2,.dark .lede,.dark .eyebrow,.step,.limits>div,.finalcta h2,.finalcta p,.finalcta .cta,.card,.q";
+  const REVEAL = ".hero2 .tag,.hero2 h1,.hero2 .sub,.hero2 .cta,.viz,.waves,.fact,.sec h2,.sec .lede,.cat,.step,.limits>div,.finalcta h2,.finalcta p,.finalcta .cta,.card,.q";
   let armed = false, armTimer = 0;
   function scan() {
     if (!armed || !io) return;
