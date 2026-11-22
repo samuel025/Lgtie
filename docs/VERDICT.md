@@ -1,6 +1,6 @@
-# Reading a Tiebreak verdict from another contract
+# Reading a LGtie verdict from another contract
 
-Tiebreak never holds funds. If you want money to move on the result of a case, a separate contract (an escrow, a multisig, a payout module) can read the verdict and act on it.
+LGtie never holds funds. If you want money to move on the result of a case, a separate contract (an escrow, a multisig, a payout module) can read the verdict and act on it.
 
 ```solidity
 interface IVerdictSource {
@@ -26,7 +26,7 @@ function settle(uint256 caseId) external {
 
 `contracts/test/TiebreakV2.t.sol` contains a test-only `ExampleConsumer` that reads a verdict this way.
 
-## Why Tiebreak does not hold the money itself
+## Why LGtie does not hold the money itself
 
 A contract that holds funds is a much bigger target than one that only records decisions, and this one is unaudited. Keeping custody out means a bug here can produce a wrong verdict, but cannot drain anyone. If you build a consumer that holds funds, that contract is the one that needs an audit, a refund path, and its own timeout.
 

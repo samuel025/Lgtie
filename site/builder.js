@@ -21,7 +21,7 @@
   };
   const blank = () => ({name: "My checker", about: "", questions: [{text: "", hint: ""}], results: ["Yes", "No"], rules: [], def: {result: 0, why: ""}});
 
-  const PROMPT = `I want to turn a policy into a "Tiebreak" checker. Read my policy at the bottom and reply with ONLY the rules text (no commentary), in exactly this format:
+  const PROMPT = `I want to turn a policy into a "LGtie" checker. Read my policy at the bottom and reply with ONLY the rules text (no commentary), in exactly this format:
 
 name: Short name of the checker
 about: One line telling the customer what this checks

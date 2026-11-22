@@ -70,7 +70,7 @@
     const a = /(?:^|[/&])a=(\d+)/.exec(rest || ""); if (a) { const m = Number(a[1]); ans = TB.decodeAnswers(m, nQ); }
     main.innerHTML = `<h1>${esc(P.name)}</h1><p class="lede">${esc(P.about || "")}</p>${banner}
       <div class="prog"><i id="bar"></i></div><div class="small mute" id="count"></div>
-      <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>Tiebreak</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
+      <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>LGtie</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
     const qs = $("#qs");
     P.questions.forEach((q, i) => {
       const d = document.createElement("div"); d.className = "q"; d.innerHTML = `<div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn" role="group" aria-label="Answer to question ${i + 1}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div>`;
@@ -78,7 +78,7 @@
       qs.appendChild(d);
     });
     let seq = 0;
-    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({tiebreak: "height", h: Math.ceil(main.getBoundingClientRect().bottom + window.scrollY + 12)}, "*"); };
+    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({lgtie: "height", h: Math.ceil(main.getBoundingClientRect().bottom + window.scrollY + 12)}, "*"); };
     if (embed && window.ResizeObserver) new ResizeObserver(report).observe(document.body);
     function paint() {
       qs.querySelectorAll(".q").forEach((d, i) => d.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(ans[i] !== null && (b.dataset.v === "1") === ans[i]))));

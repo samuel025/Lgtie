@@ -1,4 +1,4 @@
-// Tiebreak rule engine: parse a plain-text policy, run it, compile it to a TapeOut NAND netlist, prove the two agree.
+// LGtie rule engine: parse a plain-text policy, run it, compile it to a TapeOut NAND netlist, prove the two agree.
 // Works in the browser (window.TB) and in Node (require). No dependencies.
 (function (root) {
   "use strict";

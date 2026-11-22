@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tiebreak: check a decision before it is made</title>
+<title>LGtie: check a decision before it is made</title>
 <meta name="description" content="Publish your policy as a checker anyone can trust. Customers see the result and the reason, and anyone can re-run it.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Cpath d='M8 17l5 5 11-12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <style>
@@ -59,12 +59,12 @@ footer{max-width:880px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
 [hidden]{display:none!important}
 </style></head>
 <body>
-<header><div class="bar"><a class="brand" href="#"><i></i>Tiebreak</a>
+<header><div class="bar"><a class="brand" href="#"><i></i>LGtie</a>
 <nav id="nav"><a href="#check/warranty" data-k="check">Check a claim</a><a href="#case" data-k="case">Settle a dispute</a><a href="#build" data-k="build">For businesses</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#about" data-k="about">How it works</a></nav></div></header>
 <main id="main"></main>
-<footer>Tiebreak is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</footer>
+<footer>LGtie is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</footer>
 <script>/* rules.js */
-// Tiebreak rule engine: parse a plain-text policy, run it, compile it to a TapeOut NAND netlist, prove the two agree.
+// LGtie rule engine: parse a plain-text policy, run it, compile it to a TapeOut NAND netlist, prove the two agree.
 // Works in the browser (window.TB) and in Node (require). No dependencies.
 (function (root) {
   "use strict";
@@ -350,7 +350,7 @@ window.TB_CONFIG = {
   };
   const blank = () => ({name: "My checker", about: "", questions: [{text: "", hint: ""}], results: ["Yes", "No"], rules: [], def: {result: 0, why: ""}});
 
-  const PROMPT = `I want to turn a policy into a "Tiebreak" checker. Read my policy at the bottom and reply with ONLY the rules text (no commentary), in exactly this format:
+  const PROMPT = `I want to turn a policy into a "LGtie" checker. Read my policy at the bottom and reply with ONLY the rules text (no commentary), in exactly this format:
 
 name: Short name of the checker
 about: One line telling the customer what this checks
@@ -727,7 +727,7 @@ MY POLICY:
     const a = /(?:^|[/&])a=(\d+)/.exec(rest || ""); if (a) { const m = Number(a[1]); ans = TB.decodeAnswers(m, nQ); }
     main.innerHTML = `<h1>${esc(P.name)}</h1><p class="lede">${esc(P.about || "")}</p>${banner}
       <div class="prog"><i id="bar"></i></div><div class="small mute" id="count"></div>
-      <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>Tiebreak</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
+      <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>LGtie</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
     const qs = $("#qs");
     P.questions.forEach((q, i) => {
       const d = document.createElement("div"); d.className = "q"; d.innerHTML = `<div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn" role="group" aria-label="Answer to question ${i + 1}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div>`;
@@ -735,7 +735,7 @@ MY POLICY:
       qs.appendChild(d);
     });
     let seq = 0;
-    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({tiebreak: "height", h: Math.ceil(main.getBoundingClientRect().bottom + window.scrollY + 12)}, "*"); };
+    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({lgtie: "height", h: Math.ceil(main.getBoundingClientRect().bottom + window.scrollY + 12)}, "*"); };
     if (embed && window.ResizeObserver) new ResizeObserver(report).observe(document.body);
     function paint() {
       qs.querySelectorAll(".q").forEach((d, i) => d.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(ans[i] !== null && (b.dataset.v === "1") === ans[i]))));

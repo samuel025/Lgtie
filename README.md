@@ -1,8 +1,8 @@
-# Tiebreak
+# LGtie
 
 A business publishes its policy as a checker. Customers answer plain yes/no questions and see the result and the reason. If a customer and the business answer a question differently, only that question goes to a neutral reviewer. The rules are stored on X Layer as a TapeOut circuit, so they can't be changed after a case starts, and anyone can re-run the same answers through the same circuit and get the same result, for free.
 
-Prototype for the X Layer TapeOut Accelerate hackathon. Product brief: https://claude.ai/artifact/3pvHd82LCXz7Fc5kSuJ184
+Prototype for the X Layer TapeOut Accelerate hackathon. The project was first called Tiebreak; it is now **LGtie**. The deployed contracts keep their original names (`RuleSetRegistry`, `TiebreakCase`, `TiebreakCaseV2`) because renaming them in the source would no longer match the bytecode on-chain. Product brief: https://claude.ai/artifact/3pvHd82LCXz7Fc5kSuJ184
 
 ## What is live (X Layer mainnet, chain 196)
 
@@ -20,7 +20,7 @@ Prototype for the X Layer TapeOut Accelerate hackathon. Product brief: https://c
 
 1. **Rules** are written as plain lines (see below). `site/rules.js` parses them, runs them directly, compiles them to a NAND netlist, and proves the circuit equals the rules on every answer combination.
 2. **Publishing** tapes the circuit out on the TapeOut processor (a 0.0013 OKB fee plus one NAND token per gate) and registers it in `RuleSetRegistry` with the SHA-256 of the rules text. Entries never change; a new version is a new entry.
-3. **A case** (`TiebreakCaseV2`): the filer and the decider each submit answers before a deadline. Equal answers finish the case at once. Different answers go to a reviewer **both sides have accepted** (the opener proposes one, the other side accepts or counter-proposes), whose answers count only for the disputed questions, also before a deadline. The processor's `eval` computes the result and anyone can call `replay(id)` to recompute it. A case nobody finishes in time can be closed by anyone and ends as **no decision**; nobody wins by default. Other contracts read the outcome with `verdict(id)` (see `docs/VERDICT.md`); Tiebreak itself never holds funds.
+3. **A case** (`TiebreakCaseV2`): the filer and the decider each submit answers before a deadline. Equal answers finish the case at once. Different answers go to a reviewer **both sides have accepted** (the opener proposes one, the other side accepts or counter-proposes), whose answers count only for the disputed questions, also before a deadline. The processor's `eval` computes the result and anyone can call `replay(id)` to recompute it. A case nobody finishes in time can be closed by anyone and ends as **no decision**; nobody wins by default. Other contracts read the outcome with `verdict(id)` (see `docs/VERDICT.md`); LGtie itself never holds funds.
 4. **The web page** needs no wallet to check a claim (it reads the processor over public RPC). Opening a case and answering as a party needs a wallet.
 
 ### Rules format
