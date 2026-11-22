@@ -45,6 +45,13 @@ input[type=text],input[type=number]{font:inherit;background:var(--card);color:va
 .err{color:var(--bad);margin:.2em 0}.ok{color:var(--acc)}.mute{color:var(--mute)}.small{font-size:14px}
 .note{border-left:4px solid var(--warn);background:var(--warn2);padding:8px 12px;border-radius:0 10px 10px 0;margin:12px 0;font-size:15px}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.stats span{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:4px 10px;font-size:14px}
+#editor input[type=text]{min-width:0}
+select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:100%;min-width:0}
+code{overflow-wrap:anywhere}
+.qrow{display:grid;grid-template-columns:auto minmax(0,2fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 0}
+.qrow input{width:100%}.qrow .acts{display:flex;gap:4px}
+.wide input{width:100%}.wide{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);gap:8px;align-items:center;margin:8px 0}.wide label{display:contents}
+@media(max-width:640px){.wide{grid-template-columns:minmax(0,1fr)}.qrow{grid-template-columns:auto minmax(0,1fr)}.qrow input:nth-of-type(2){grid-column:2}.qrow .acts{grid-column:2}}
 table th,table td{padding:5px 10px 5px 0;vertical-align:top}table th{white-space:nowrap}
 footer{max-width:880px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-size:14px}
 [hidden]{display:none!important}
@@ -54,5 +61,5 @@ footer{max-width:880px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
 <nav id="nav"><a href="#check/warranty" data-k="check">Check a claim</a><a href="#case" data-k="case">Settle a dispute</a><a href="#build" data-k="build">For businesses</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#about" data-k="about">How it works</a></nav></div></header>
 <main id="main"></main>
 <footer>Tiebreak is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</footer>
-<script src="rules.js"></script><script src="config.js"></script><script src="cases.js"></script><script src="app.js"></script>
+<script src="rules.js"></script><script src="config.js"></script><script src="builder.js"></script><script src="cases.js"></script><script src="app.js"></script>
 </body></html>

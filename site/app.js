@@ -82,44 +82,6 @@
     paint();
   }
 
-  async function build(rest) {
-    let text = TB.TEMPLATES.warranty;
-    main.innerHTML = `<h1>Publish your policy as a checker</h1>
-      <p class="lede">Write your rules in plain lines. Rules are checked from top to bottom, and the first one that matches decides. We turn the rules into a circuit and prove it gives the same answers as your text.</p>
-      <div class="row"><span class="mute small">Start from an example:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty claims</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty severity</button></div>
-      <textarea id="src" class="mono" spellcheck="false" aria-label="Your policy rules"></textarea>
-      <div id="out"></div>
-      <details><summary>How to write the rules</summary><pre>name: Name of your checker
-about: One line shown to the person answering
-question: Is it within the warranty period? | Evidence to ask for (optional)
-result: Not covered          (results are listed in order)
-result: Covered
-rule: Q1=no -> Not covered : The reason shown to the person
-rule: Q2=no & Q3=yes -> Not covered : Several conditions joined with &
-default: Covered : Shown when no rule matched</pre></details>`;
-    const src = $("#src"); src.value = text;
-    document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { src.value = TB.TEMPLATES[b.dataset.t]; render(); });
-    let t = 0; src.oninput = () => { clearTimeout(t); t = setTimeout(render, 250); };
-    async function render() {
-      const out = $("#out"), r = TB.parse(src.value);
-      if (r.errors.length) { out.innerHTML = `<div class="card"><b>Fix these first</b>${r.errors.map(e => `<div class="err">${e.line ? "Line " + e.line + ": " : ""}${esc(e.message)}</div>`).join("")}</div>`; return; }
-      const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
-      const link = location.href.split("#")[0] + "#check/c=" + b64e(canon), nandNeeded = C.gates.length;
-      out.innerHTML = `<div class="card"><h3>${esc(P.name)}</h3>
-        <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} circuit gates</span></div>
-        <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The circuit gives the same answer as your rules" : "✗ The circuit does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
-        <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
-        <div class="card"><h3>Publishing it on X Layer</h3>
-          <p class="small">Publishing records the circuit permanently, so the rules can't be changed afterwards. A change means publishing a new version. It needs <b>${nandNeeded} NAND tokens</b> (the faucet gives 40 once per wallet) and a 0.0013 OKB fee, which is a fraction of a cent to a few cents.</p>
-          <p class="small"><b>Definitions hash</b> (fingerprint of the rules text above, published with the circuit): <code>${h}</code></p>
-          <details><summary>Circuit netlist (${nQ} inputs, ${C.nOut} outputs)</summary><pre id="hexbox">${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
-          <p class="note">In this version, publishing is done with the scripts in the project's <code>scripts/</code> folder. One-click publishing from this page is not built yet.</p></div>`;
-      $("#cplink").onclick = e => copy(link, e.target); $("#cphex").onclick = e => copy(C.hex, e.target);
-      $("#dl").onclick = () => { const blob = new Blob([JSON.stringify({rules: canon, definitionsHashSha256: h, nQuestions: nQ, nResultBits: C.nOut, netlist: C.hex, gates: C.gates.length}, null, 2)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (P.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "rules") + ".json"; a.click(); };
-    }
-    render();
-  }
-
   function verify() {
     main.innerHTML = `<h1>Verify a published circuit</h1><p class="lede">Look up any circuit on the TapeOut processor and run it yourself. This asks X Layer directly, so you do not have to trust this page.</p>
       <div class="card"><div class="row"><label>Circuit number <input id="cid" type="number" min="1" style="width:120px"></label><label>Answers, one digit per question, question 1 first <input id="bits" type="text" placeholder="1111111" style="width:220px" autocomplete="off"></label><button class="btn" id="go" type="button">Run it</button></div><div id="vout"></div></div>
@@ -153,7 +115,7 @@ default: Covered : Shown when no rule matched</pre></details>`;
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
-    if (view === "build") return build();
+    if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();
     if (view === "about") return about();
     home();

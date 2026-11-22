@@ -47,9 +47,9 @@
     main.innerHTML = `<h1>Settle a disagreement</h1><p class="lede">Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer, and the published rules give the result.</p>
       <div class="card"><h3>Open a case</h3>
         <div class="row"><label>Rule set <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
-        <div class="row"><label>Decider (the business or repair centre) <input id="dec" type="text" placeholder="0x…" size="44" autocomplete="off"></label></div>
-        <div class="row"><label>Reviewer (a neutral person) <input id="rev" type="text" placeholder="0x…" size="44" autocomplete="off"></label></div>
-        <div class="row"><label>Evidence note, optional <input id="evd" type="text" placeholder="e.g. the repair centre report reference" size="44"></label></div>
+        <div class="wide"><label><span>Decider (the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="wide"><label><span>Reviewer (a neutral person)</span><input id="rev" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="wide"><label><span>Evidence note, optional</span><input id="evd" type="text" placeholder="e.g. the repair centre report reference"></label></div>
         <p class="small mute">Only a fingerprint of the evidence note goes on-chain. You are the filer. The reviewer must be a different person from both sides.</p>
         <div class="row"><button class="btn" id="open" type="button">Open case</button><span id="msg" class="small"></span></div></div>
       <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div></div>`;

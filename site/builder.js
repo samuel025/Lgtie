@@ -1,0 +1,163 @@
+// Visual rule builder: edit questions, results and rules in forms (or paste from a spreadsheet, or as text); everything is re-compiled
+// and re-verified in the browser. Static: no server calls.
+(function () {
+  "use strict";
+  const TB = window.TB, main = document.querySelector("#main"), $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const b64e = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
+  const sha256 = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+
+  // ----- state <-> text -----
+  const fromPolicy = P => ({name: P.name, about: P.about || "", questions: P.questions.map(q => ({text: q.text, hint: q.hint || ""})), results: [...P.results],
+    rules: P.rules.map(r => ({conds: r.conds.map(c => ({q: c.q, yes: c.yes})), result: r.result, why: r.why || ""})), def: {result: P.def.result, why: P.def.why || ""}});
+  const clean = s => String(s || "").replace(/\s*\|\s*/g, " / ").replace(/\s->\s/g, " to ").replace(/\s:\s/g, " - ").replace(/[\r\n]+/g, " ").trim();
+  const toText = S => {
+    const rn = i => clean(S.results[i] || ""), cond = c => `Q${c.q + 1}=${c.yes ? "yes" : "no"}`;
+    return [`name: ${clean(S.name)}`, S.about.trim() ? `about: ${clean(S.about)}` : null,
+      ...S.questions.map(q => `question: ${clean(q.text)}${q.hint.trim() ? " | " + clean(q.hint) : ""}`), ...S.results.map(r => `result: ${clean(r)}`),
+      ...S.rules.map(r => `rule: ${r.conds.map(cond).join(" & ")} -> ${rn(r.result)}${r.why.trim() ? " : " + clean(r.why) : ""}`),
+      `default: ${rn(S.def.result)}${S.def.why.trim() ? " : " + clean(S.def.why) : ""}`].filter(x => x !== null).join("\n") + "\n";
+  };
+  const blank = () => ({name: "My checker", about: "", questions: [{text: "", hint: ""}], results: ["Yes", "No"], rules: [], def: {result: 0, why: ""}});
+
+  const PROMPT = `I want to turn a policy into a "Tiebreak" checker. Read my policy at the bottom and reply with ONLY the rules text (no commentary), in exactly this format:
+
+name: Short name of the checker
+about: One line telling the customer what this checks
+question: A yes/no question, worded so that "yes" is the good answer | Evidence the customer or staff should show (optional)
+result: First possible result
+result: Second possible result
+rule: Q1=no -> Second possible result : Plain-words reason shown to the customer
+rule: Q2=no & Q3=yes -> Second possible result : Join several conditions with &
+default: First possible result : Reason shown when no rule matched
+
+How it works: rules are checked from top to bottom and the first one that matches decides. Q1 is the first question, Q2 the second, and so on. Use at most 12 questions. Only use conditions the policy actually states; if something is unclear, add a question for it rather than guessing. Put the most disqualifying rules first.
+
+MY POLICY:
+[paste your policy text here]`;
+
+  function build() {
+    let S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false;
+    main.innerHTML = `<h1>Publish your policy as a checker</h1>
+      <p class="lede">Describe your rules in forms or paste them from a spreadsheet. Rules are checked from top to bottom, and the first one that matches decides. We turn them into a circuit and prove it gives the same answers as your rules.</p>
+      <div class="row"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
+      <details class="card" id="ai"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
+        <p class="small">Copy this request, paste it into any AI assistant (with your policy at the bottom), then paste its reply below. Always read the result: assistants can make mistakes.</p>
+        <pre id="prompt">${esc(PROMPT)}</pre><div class="row"><button class="btn small ghost" id="cpprompt" type="button">Copy the request</button></div>
+        <textarea id="aiin" rows="6" class="mono" style="min-height:120px" placeholder="Paste the assistant's reply here" spellcheck="false"></textarea>
+        <div class="row"><button class="btn small" id="aiuse" type="button">Use this reply</button><span id="aimsg" class="small"></span></div></details>
+      <div class="row" role="tablist"><button class="btn small" id="tabv" type="button" aria-pressed="true">Forms</button><button class="btn small ghost" id="tabt" type="button" aria-pressed="false">Text</button></div>
+      <div id="editor"></div><div id="out"></div>`;
+    const ed = $("#editor");
+    const setMode = m => { mode = m; $("#tabv").classList.toggle("ghost", m !== "visual"); $("#tabt").classList.toggle("ghost", m !== "text"); $("#tabv").setAttribute("aria-pressed", m === "visual"); $("#tabt").setAttribute("aria-pressed", m === "text"); drawEditor(); };
+    $("#tabv").onclick = () => { if (mode === "text") { const r = TB.parse($("#src").value); if (r.errors.length) { $("#out").innerHTML = errBox(r.errors, "Fix the text before switching to forms"); return; } S = fromPolicy(r.policy); } setMode("visual"); };
+    $("#tabt").onclick = () => setMode("text");
+    $$("[data-t]").forEach(b => b.onclick = () => { S = b.dataset.t === "blank" ? blank() : fromPolicy(TB.parse(TB.TEMPLATES[b.dataset.t]).policy); setMode(mode); });
+    $("#cpprompt").onclick = e => copy(PROMPT, e.target);
+    $("#aiuse").onclick = () => { const r = TB.parse($("#aiin").value), m = $("#aimsg"); if (r.errors.length) { m.className = "small err"; m.textContent = r.errors.slice(0, 3).map(e => (e.line ? "Line " + e.line + ": " : "") + e.message).join(" ") + " Ask the assistant to fix it."; return; } S = fromPolicy(r.policy); m.className = "small ok"; m.textContent = "Loaded. Review every question and rule below."; setMode("visual"); };
+
+    const errBox = (errs, title) => `<div class="card"><b>${title || "Fix these first"}</b>${errs.map(e => `<div class="err">${e.line ? "Line " + e.line + ": " : ""}${esc(e.message)}</div>`).join("")}</div>`;
+    const schedule = () => { clearTimeout(timer); timer = setTimeout(renderOutput, 250); };
+    const qopts = sel => S.questions.map((q, i) => `<option value="${i}"${i === sel ? " selected" : ""}>${i + 1}. ${esc(q.text.slice(0, 48) || "(empty question)")}</option>`).join("");
+    const ropts = sel => S.results.map((r, i) => `<option value="${i}"${i === sel ? " selected" : ""}>${esc(r || "(unnamed result)")}</option>`).join("");
+    const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return false; [arr[i], arr[j]] = [arr[j], arr[i]]; return true; };
+
+    function drawEditor() {
+      if (mode === "text") {
+        ed.innerHTML = `<textarea id="src" class="mono" spellcheck="false" aria-label="Your policy rules"></textarea>
+          <details><summary>How to write the rules</summary><pre>${esc(PROMPT.split("How it works")[0].split("format:")[1].trim())}</pre></details>`;
+        const src = $("#src"); src.value = toText(S); src.oninput = () => schedule(); renderOutput(); return;
+      }
+      ed.innerHTML = `<div class="card"><h3>About this checker</h3>
+        <div class="wide"><label><span>Name</span><input id="f-name" type="text" value="${esc(S.name)}"></label></div>
+        <div class="wide"><label><span>One line for the customer</span><input id="f-about" type="text" value="${esc(S.about)}"></label></div></div>
+        <div class="card"><h3>Questions</h3><p class="small mute">Word each one so that "yes" is the good answer if you can. The evidence hint tells people what to show.</p>
+          ${S.questions.map((q, i) => `<div class="qrow" data-qi="${i}"><b>${i + 1}.</b><input type="text" data-f="qt" value="${esc(q.text)}" placeholder="Question" aria-label="Question ${i + 1}"><input type="text" data-f="qh" value="${esc(q.hint)}" placeholder="Evidence (optional)" aria-label="Evidence for question ${i + 1}"><span class="acts"><button class="btn small ghost" data-a="qup" type="button" aria-label="Move up">↑</button><button class="btn small ghost" data-a="qdn" type="button" aria-label="Move down">↓</button><button class="btn small ghost" data-a="qdel" type="button" aria-label="Remove">✕</button></span></div>`).join("")}
+          <div class="row"><button class="btn small ghost" data-a="qadd" type="button">+ Add a question</button></div></div>
+        <div class="card"><h3>Results</h3><p class="small mute">The possible outcomes, such as "Covered" or "Not covered".</p>
+          ${S.results.map((r, i) => `<div class="wide" data-ri="${i}" style="grid-template-columns:auto minmax(0,1fr) auto"><b>${i + 1}.</b><input type="text" data-f="rn" value="${esc(r)}" placeholder="Result name" aria-label="Result ${i + 1}"><button class="btn small ghost" data-a="rdel" type="button" aria-label="Remove">✕</button></div>`).join("")}
+          <div class="row"><button class="btn small ghost" data-a="radd" type="button">+ Add a result</button></div></div>
+        <div class="card"><h3>Rules</h3><p class="small mute">Checked from top to bottom. The first rule whose conditions all hold decides the result.</p>
+          ${S.rules.map((r, i) => `<div class="q" data-ui="${i}"><div class="row"><b>Rule ${i + 1}</b><button class="btn small ghost" data-a="rup" type="button" aria-label="Move rule up">↑</button><button class="btn small ghost" data-a="rdn" type="button" aria-label="Move rule down">↓</button><button class="btn small ghost" data-a="rdelrule" type="button" aria-label="Remove rule">✕</button></div>
+            ${r.conds.map((c, k) => `<div class="row" data-ck="${k}">${k ? "and" : "If"} <select data-f="cq" aria-label="Question">${qopts(c.q)}</select> is <select data-f="cy" aria-label="Answer"><option value="1"${c.yes ? " selected" : ""}>yes</option><option value="0"${c.yes ? "" : " selected"}>no</option></select><button class="btn small ghost" data-a="cdel" type="button" aria-label="Remove condition">✕</button></div>`).join("")}
+            <div class="row"><button class="btn small ghost" data-a="cadd" type="button">+ and another condition</button></div>
+            <div class="row">then the result is <select data-f="rr" aria-label="Result">${ropts(r.result)}</select></div>
+            <div class="wide"><label><span>because</span><input type="text" data-f="rw" value="${esc(r.why)}" placeholder="Reason shown to the customer"></label></div></div>`).join("")}
+          <div class="row"><button class="btn small ghost" data-a="ruleadd" type="button">+ Add a rule</button></div></div>
+        <div class="card"><h3>Otherwise</h3><div class="row">If no rule matched, the result is <select id="f-dr" aria-label="Default result">${ropts(S.def.result)}</select></div>
+          <div class="wide"><label><span>because</span><input id="f-dw" type="text" value="${esc(S.def.why)}" placeholder="Reason shown to the customer"></label></div></div>
+        <details class="card"${pasteOpen ? " open" : ""}><summary>Paste from a spreadsheet</summary>
+          <p class="small">Copy cells from Excel or Google Sheets and paste. <b>Questions:</b> two columns, question then evidence. <b>Rules:</b> three columns: conditions (for example <code>Q2=no</code> or <code>Q1=yes &amp; Q3=no</code>), result name, reason.</p>
+          <textarea id="pq" rows="4" class="mono" style="min-height:90px" placeholder="Question&#9;Evidence" spellcheck="false"></textarea><div class="row"><button class="btn small ghost" data-a="pasteq" type="button">Add these questions</button></div>
+          <textarea id="pr" rows="4" class="mono" style="min-height:90px" placeholder="Q1=no&#9;Not covered&#9;The reason" spellcheck="false"></textarea><div class="row"><button class="btn small ghost" data-a="paster" type="button">Add these rules</button><span id="pmsg" class="small"></span></div></details>`;
+      bind(); renderOutput();
+    }
+
+    function bind() {
+      const idx = (el, attr) => Number(el.closest("[" + attr + "]").getAttribute(attr));
+      $("#f-name").oninput = e => { S.name = e.target.value; schedule(); }; $("#f-about").oninput = e => { S.about = e.target.value; schedule(); };
+      $("#f-dr").onchange = e => { S.def.result = Number(e.target.value); schedule(); }; $("#f-dw").oninput = e => { S.def.why = e.target.value; schedule(); };
+      $$("[data-f]").forEach(el => {
+        const f = el.dataset.f, on = el.tagName === "SELECT" ? "onchange" : "oninput";
+        el[on] = () => {
+          if (f === "qt") S.questions[idx(el, "data-qi")].text = el.value; else if (f === "qh") S.questions[idx(el, "data-qi")].hint = el.value;
+          else if (f === "rn") S.results[idx(el, "data-ri")] = el.value;
+          else if (f === "cq") S.rules[idx(el, "data-ui")].conds[idx(el, "data-ck")].q = Number(el.value);
+          else if (f === "cy") S.rules[idx(el, "data-ui")].conds[idx(el, "data-ck")].yes = el.value === "1";
+          else if (f === "rr") S.rules[idx(el, "data-ui")].result = Number(el.value);
+          else if (f === "rw") S.rules[idx(el, "data-ui")].why = el.value;
+          schedule();
+        };
+      });
+      $$("[data-a]").forEach(b => b.onclick = () => act(b.dataset.a, b));
+    }
+
+    function act(a, b) {
+      const gi = attr => Number(b.closest("[" + attr + "]").getAttribute(attr));
+      if (a === "qadd") S.questions.push({text: "", hint: ""});
+      else if (a === "qdel") { const i = gi("data-qi"); S.questions.splice(i, 1); S.rules.forEach(r => { r.conds = r.conds.filter(c => c.q !== i).map(c => ({...c, q: c.q > i ? c.q - 1 : c.q})); }); S.rules = S.rules.filter(r => r.conds.length); }
+      else if (a === "qup" || a === "qdn") { const i = gi("data-qi"), j = i + (a === "qup" ? -1 : 1); if (j >= 0 && j < S.questions.length) { [S.questions[i], S.questions[j]] = [S.questions[j], S.questions[i]]; S.rules.forEach(r => r.conds.forEach(c => { if (c.q === i) c.q = j; else if (c.q === j) c.q = i; })); } }
+      else if (a === "radd") S.results.push("");
+      else if (a === "rdel") { const i = gi("data-ri"); if (S.results.length <= 2) return; S.results.splice(i, 1); const fix = x => x === i ? 0 : x > i ? x - 1 : x; S.rules.forEach(r => r.result = fix(r.result)); S.def.result = fix(S.def.result); }
+      else if (a === "ruleadd") S.rules.push({conds: [{q: 0, yes: false}], result: 0, why: ""});
+      else if (a === "rdelrule") S.rules.splice(gi("data-ui"), 1);
+      else if (a === "rup" || a === "rdn") move(S.rules, gi("data-ui"), a === "rup" ? -1 : 1);
+      else if (a === "cadd") S.rules[gi("data-ui")].conds.push({q: 0, yes: true});
+      else if (a === "cdel") { const r = S.rules[gi("data-ui")]; if (r.conds.length > 1) r.conds.splice(gi("data-ck"), 1); }
+      else if (a === "pasteq") { pasteOpen = true; const rows = $("#pq").value.split(/\r?\n/).map(l => l.split("\t")).filter(c => c[0] && c[0].trim()); rows.forEach(c => S.questions.push({text: c[0].trim(), hint: (c[1] || "").trim()})); $("#pmsg").textContent = ""; }
+      else if (a === "paster") { pasteOpen = true;
+        const rows = $("#pr").value.split(/\r?\n/).map(l => l.split("\t")).filter(c => c[0] && c[0].trim()), bad = [];
+        rows.forEach((c, n) => {
+          const conds = c[0].split("&").map(s => /^\s*Q(\d+)\s*=\s*(yes|no)\s*$/i.exec(s)); if (conds.some(x => !x) || conds.some(x => Number(x[1]) < 1 || Number(x[1]) > S.questions.length)) { bad.push(n + 1); return; }
+          let ri = S.results.findIndex(r => r.toLowerCase() === (c[1] || "").trim().toLowerCase()); if (ri < 0 && (c[1] || "").trim()) { S.results.push(c[1].trim()); ri = S.results.length - 1; }
+          if (ri < 0) { bad.push(n + 1); return; }
+          S.rules.push({conds: conds.map(x => ({q: Number(x[1]) - 1, yes: x[2].toLowerCase() === "yes"})), result: ri, why: (c[2] || "").trim()});
+        });
+        drawEditor(); if (bad.length) $("#pmsg").innerHTML = `<span class="err">Skipped row${bad.length > 1 ? "s" : ""} ${bad.join(", ")}: use conditions like Q1=no and an existing question number.</span>`; return;
+      }
+      drawEditor();
+    }
+
+    async function renderOutput() {
+      const out = $("#out"), text = mode === "text" && $("#src") ? $("#src").value : toText(S), r = TB.parse(text);
+      if (r.errors.length) { out.innerHTML = errBox(r.errors); return; }
+      const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
+      if (mode === "text") S = fromPolicy(P);
+      const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
+      out.innerHTML = `<div class="card"><h3>${esc(P.name)}</h3>
+        <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} circuit gates</span></div>
+        <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The circuit gives the same answer as your rules" : "✗ The circuit does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
+        <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
+        <div class="card"><h3>Publishing it on X Layer</h3>
+          <p class="small">Publishing records the circuit permanently, so the rules can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
+          <p class="small"><b>Definitions hash</b> (fingerprint of the rules text, published with the circuit): <code>${h}</code></p>
+          <details><summary>Circuit netlist (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
+          <p class="note">In this version, publishing is done with the scripts in the project's <code>scripts/</code> folder. One-click publishing from this page is next.</p></div>`;
+      $("#cplink").onclick = e => copy(link, e.target); $("#cphex").onclick = e => copy(C.hex, e.target);
+      $("#dl").onclick = () => { const blob = new Blob([JSON.stringify({rules: canon, definitionsHashSha256: h, nQuestions: nQ, nResultBits: C.nOut, netlist: C.hex, gates: C.gates.length}, null, 2)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (P.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "rules") + ".json"; a.click(); };
+    }
+    setMode("visual");
+  }
+  window.TB_BUILD = {build};
+})();
