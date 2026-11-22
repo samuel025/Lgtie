@@ -16,8 +16,8 @@ ok("flipping 'in warranty' to No gives Not covered with the reason", (await T("#
 ok("the output node lights for a covered result and the wires change", (await p.$$eval("#heroviz .g.out.on", e => e.length)) >= 0);
 // autoplay moves on by itself after the pause
 const before = await T("#heroviz .vres .big"); await w(9800 + 3800); ok("autoplay resumes and changes the scenario", (await T("#heroviz .vres .big")) !== "" , before);
-ok("counters count up to their values", await (async () => { await p.evaluate(() => window.scrollTo(0, 700)); await w(1800); return (await T(".fact:nth-child(1) b")).trim() === "39" && /128/.test(await T(".fact:nth-child(2) b")); })(), await T(".facts"));
-ok("project icons are on the category cards", (await p.$$(".cat .ic")).length === 5);
+ok("counters count up to their values", await (async () => { await p.evaluate(() => document.querySelector(".facts").scrollIntoView()); await w(1800); return (await T(".fact:nth-child(1) b")).trim() === "39" && /128/.test(await T(".fact:nth-child(2) b")); })(), await T(".facts"));
+ok("three feature rows, each with a grainy gradient panel", (await p.$$(".row2 .pnl .art")).length === 3);
 // checker page: the circuit lights only when every question is answered
 await p.goto(BASE + "#check/warranty"); await w(1200); await p.click(".circ-card summary"); await w(300);
 ok("the circuit is dark until all questions are answered", (await p.$$eval("#circviz .g.on", e => e.length)) === 0);

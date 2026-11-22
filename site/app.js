@@ -34,68 +34,93 @@
   }
 
   // ---------- views ----------
-  // Flowing signal lines: a quiet wave illustration made of thin paths (monochrome).
-  function waves() {
-    const paths = [[0.5, 20, 0], [0.45, 26, 60], [0.5, 32, 120], [0.55, 24, 30], [0.5, 38, 90], [0.6, 22, 150], [0.55, 30, 10], [0.62, 18, 100]].map(([yf, amp, ph], i) => {
-      const y0 = 30 + i * 21 + yf * 8, step = 100; let d = `M${-240 - ph} ${y0}Q${-190 - ph} ${y0 - amp} ${-140 - ph} ${y0}`;
-      for (let x = -40 - ph; x < 1500; x += step) d += `T${x} ${y0}`;
-      return `<path d="${d}" opacity="${(0.55 - i * 0.045).toFixed(2)}"/>`;
-    }).join("");
-    return `<div class="waves" aria-hidden="true"><svg viewBox="0 0 1200 210" preserveAspectRatio="none">${paths}</svg></div>`;
+  // Hero ribbon: a twisting blue-and-gold band under a film of grain (the one big flourish, as on the reference).
+  function ribbon() {
+    const band = (y0, amp, ph, k, id) => {
+      let top = "", bot = "";
+      for (let x = -40; x <= 1480; x += 20) {
+        const yc = y0 + amp * Math.sin(x / 190 + ph) + 26 * Math.sin(x / 83 + ph * 2), th = 26 + k * Math.abs(Math.sin(x / 240 + ph));
+        top += (x === -40 ? "M" : "L") + x + " " + (yc - th).toFixed(1); bot = "L" + x + " " + (yc + th).toFixed(1) + bot;
+      }
+      return `<path d="${top}${bot}Z" fill="url(#${id})"/>`;
+    };
+    return `<div class="ribbon" aria-hidden="true"><svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="rg1" x1="0" x2="1"><stop offset="0" stop-color="#f1b345"/><stop offset=".28" stop-color="#f6d58a"/><stop offset=".46" stop-color="#2f74f0"/><stop offset=".62" stop-color="#f1b345"/><stop offset=".82" stop-color="#f6d58a"/><stop offset="1" stop-color="#2f74f0"/></linearGradient>
+        <linearGradient id="rg2" x1="1" x2="0"><stop offset="0" stop-color="#f6d58a"/><stop offset=".4" stop-color="#5f93f4"/><stop offset=".7" stop-color="#f1b345"/><stop offset="1" stop-color="#f6d58a"/></linearGradient>
+        <filter id="rsoft" x="-5%" y="-30%" width="110%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+      <g filter="url(#rsoft)"><g class="l2" opacity=".75">${band(205, 70, 1.4, 34, "rg2")}</g><g class="l1">${band(200, 80, 0, 40, "rg1")}</g></g></svg></div>`;
   }
+  const art = (kind) => `<div class="art ${kind}"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>`;
   function home() {
-    const I = k => ({
-      check: '<rect x="6" y="4" width="20" height="24" rx="4"/><path d="M11 12l2 2 4-4M11 20l2 2 4-4M20 12h3M20 20h3"/>',
-      build: '<rect x="4" y="5" width="14" height="22" rx="3"/><path d="M8 11h6M8 15h6M8 19h4"/><path d="M19 16h2M21 12.5h2.5a3.5 3.5 0 010 7H21z"/>',
-      agree: '<circle cx="12" cy="16" r="7"/><circle cx="20" cy="16" r="7"/><path d="M13.5 16.5l2 2 3.5-4"/>',
-      verify: '<circle cx="14" cy="14" r="8"/><path d="M20 20l7 7M11 11h2.5a3 3 0 010 6H11z"/>',
-      review: '<path d="M16 5v21M9 26h14M5 10h22M5 10l-3 8h6zM27 10l-3 8h6z"/>'}[k]);
-    const ic = k => `<svg class="ic" viewBox="0 0 32 32" fill="none" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I(k)}</svg>`;
+    const feat = (flip, kind, tag, h, items, ui) => `<div class="row2${flip ? " flip" : ""}">
+      <div class="txt"><span class="tag">${tag}</span><h3>${h}</h3><div class="acc">${items.map((it, i) => `<details name="${tag}"${i === 0 ? " open" : ""}><summary>${it[0]}</summary><p>${it[1]}</p></details>`).join("")}</div></div>
+      <div class="panel pnl">${art(kind)}<div class="ui">${ui}</div></div></div>`;
     main.innerHTML = `
     <section class="hero2"><div class="wrap">
-      <span class="tag">Rules anyone can re-run</span>
       <h1>Know if you are covered before you file.</h1>
       <p class="sub">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
-      <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="link" href="#build">Publish your own policy</a></div>
+      <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="btn ghost" href="#build">Publish your policy</a></div>
+    </div>${ribbon()}</section>
+    <div class="runs wrap"><span class="lbl">Built with</span><span>X Layer</span><span>TapeOut circuits</span><span>Solidity</span><span>One static file</span></div>
+    <div class="wrap"><div class="stats3 facts">
+      <div class="stat fact"><b><span data-count="39">0</span></b><span>NAND gates in the live warranty circuit (#13)</span></div>
+      <div class="stat fact"><b><span data-count="128">0</span></b><span>of 128 answer combinations checked on mainnet</span></div>
+      <div class="quote fact">A rules engine with a dispute process, not a truth oracle. If someone lies, the result follows the lie, so a reviewer both sides accepted decides the disputed facts.<div class="by"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z"/><circle cx="19" cy="12" r="1.5"/></svg></span><span>How LGtie describes itself<br>Prototype, unaudited, holds no funds</span></div></div>
+    </div></div>
+    <div class="wrap"><section class="panel demo">
+      <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span><span class="orb o4"></span><span class="orb o5"></span><span class="orb o6"></span>
+      <span class="eyebrow">Live circuit</span><h2>See the rules work</h2><p class="lede">Tap any answer. These are the real gates of the warranty policy, lighting up as the result changes.</p>
       <div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div>
+    </section></div>
+    <section class="sec"><div class="wrap">
+      <div class="sechead"><h2>Dispute the facts, not the verdict.</h2><p class="lede">Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.</p></div>
+      ${feat(false, "sun", "Check a claim", "Know the answer before you file", [
+        ["Answers in plain yes or no", "Each question says what evidence to show. No account and no wallet are needed."],
+        ["A result and the exact reason", "The checker names the rule that decided it, so nothing is a black box."],
+        ["The same result for everyone", "A free read on X Layer re-runs the published rules and returns the same answer."]],
+        `<div class="bub">Was it bought from an authorised seller?</div><div class="bub me">No</div><div class="bub">Got it. That needs a person to look at it.</div><div class="bub res2"><div class="t">Needs review</div><small>It was not bought from an authorised seller, so a person has to look at it.</small></div>`)}
+      ${feat(true, "leaf", "Agree first", "Fix the terms before any dispute", [
+        ["The rules, locked in", "An agreement names the published rule set. Once both sides accept, it can't change."],
+        ["A reviewer both sides accept", "Disputed questions go to a neutral person each side has approved."],
+        ["Deadlines that settle themselves", "If nobody decides in time, the case ends as no decision. Nobody wins by default."]],
+        `<div class="mini"><div class="ln"><span class="k">Rule set</span><span>Warranty claims</span></div><div class="ln"><span class="k">Reviewer</span><span>Accepted by both</span></div><div class="ln"><span class="k">Time to decide</span><span>7 days</span></div><div class="ln"><span class="k">Status</span><span class="chip">Accepted</span></div></div>`)}
+      ${feat(false, "ember", "Verify", "Check it yourself, free", [
+        ["Re-run any published rule set", "Paste a circuit id and the answers. The chain returns the result."],
+        ["Reviewer records are public", "See who decided, how often, and who missed a deadline."],
+        ["No money moves", "The contracts record decisions only. A separate contract can read a verdict and pay out."]],
+        `<div class="mini"><div class="ln"><span class="k">Circuit</span><span>#13 on X Layer</span></div><div class="ln"><span class="k">Answers</span><span><code>1111101</code></span></div><div class="ln"><span class="k">Result</span><span>Covered</span></div><div class="ln"><span class="k">Cost</span><span class="chip">Free read</span></div></div>`)}
     </div></section>
-    ${waves()}
-    <section class="facts"><div class="wrap">
-      <div class="fact"><b><span data-count="39">0</span></b><span>NAND gates in the live warranty circuit, published as circuit #13</span></div>
-      <div class="fact"><b><span data-count="128">0</span><small>/128</small></b><span>answer combinations checked against the rules on X Layer mainnet</span></div>
-      <div class="fact"><b><span data-count="0">0</span></b><span>funds held by any LGtie contract</span></div>
+    <section class="sec"><div class="wrap">
+      <div class="sechead"><h2>Get started in minutes</h2></div>
+      <div class="steps3"><div class="lst">
+        <div class="s3"><span class="n">1.</span><p>Write your policy as questions and rules</p></div>
+        <div class="s3"><span class="n">2.</span><p>Prove the circuit matches, then publish it on X Layer</p></div>
+        <div class="s3"><span class="n">3.</span><p>Share the link or paste one snippet into your support page</p></div>
+        <div><a class="btn" href="#build">Build a checker <span class="arr">→</span></a></div>
+      </div>
+      <div class="snippet panel">${art("sky")}<div class="win"><pre><code>&lt;script src="embed.js"
+  data-checker="warranty"&gt;
+&lt;/script&gt;</code></pre><div class="ok2"><span class="chip">Live</span> Checker appears on your page</div></div></div></div>
     </div></section>
+    <div class="wrap"><section class="panel make">${art("sun")}<div><h2>Publish your own checker</h2><p class="lede">Paste your rules, check the circuit against them, and get a link customers can use.</p><div class="cta"><a class="btn" href="#build">Open the builder <span class="arr">→</span></a></div></div></section></div>
     <section class="sec"><div class="wrap">
-      <h2>Pick where you start.</h2>
-      <p class="lede">From a first check to a public record of how disputes ended.</p>
-      <div class="cats">
-        <a class="cat" href="#check/warranty">${ic("check")}<h3>Check a claim</h3><p>Answer yes or no, see the result and the exact reason. No account, no wallet.</p><span class="go">Open the checker <span class="arr">→</span></span></a>
-        <a class="cat" href="#build">${ic("build")}<h3>Publish your policy</h3><p>Paste your rules and get a checker you can put on your support page.</p><span class="go">Build a checker <span class="arr">→</span></span></a>
-        <a class="cat" href="#agree">${ic("agree")}<h3>Agree first</h3><p>Fix the rules, the reviewer and the time limits before any dispute starts.</p><span class="go">Make an agreement <span class="arr">→</span></span></a>
-        <a class="cat" href="#verify">${ic("verify")}<h3>Check it yourself</h3><p>Re-run a published rule set on X Layer and see the same answer.</p><span class="go">Verify a circuit <span class="arr">→</span></span></a>
-        <a class="cat" href="#reviewer">${ic("review")}<h3>See the record</h3><p>Who decided and who missed a deadline, read straight from the chain.</p><span class="go">Reviewer records <span class="arr">→</span></span></a>
-      </div></div></section>
-    <section class="sec"><div class="wrap">
-      <h2>Dispute the facts, not the verdict.</h2>
-      <p class="lede">Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.</p>
-      <div class="steps">
-        <div class="step"><span class="n">1</span><h3>Publish the rules</h3><p>The business writes its policy once. It is stored on X Layer and can't be changed.</p></div>
-        <div class="step"><span class="n">2</span><h3>Both sides answer</h3><p>The same yes or no questions, each with the evidence to show.</p></div>
-        <div class="step"><span class="n">3</span><h3>Only differences go to a reviewer</h3><p>A neutral person both sides accepted decides just the disputed questions.</p></div>
-        <div class="step"><span class="n">4</span><h3>The circuit gives the result</h3><p>The published rules turn the final answers into a result and a reason.</p></div>
-        <div class="step"><span class="n">5</span><h3>Anyone can re-run it</h3><p>One free read on X Layer returns the same result, with no account.</p></div>
-      </div></div></section>
-    <section class="sec"><div class="wrap">
-      <h2>What it does not do.</h2>
-      <div class="limits">
+      <div class="sechead"><h2>What it does not do.</h2></div>
+      <div class="trio">
         <div><h3>It can't tell if an answer is true</h3><p>If someone gives a false answer, the result follows it. A reviewer decides disputed facts, and a reviewer can be wrong.</p></div>
         <div><h3>It holds no money</h3><p>The contracts record decisions only. A separate contract can read a verdict and pay out.</p></div>
         <div><h3>It is a prototype</h3><p>The contracts are unaudited, and no customers or revenue exist yet.</p></div>
       </div></div></section>
-    <section class="finalcta"><div class="wrap">
-      <h2>Try it in a minute.</h2><p>Answer seven questions and watch the result get confirmed by a circuit on X Layer.</p>
-      <div class="cta"><a class="btn" href="#check/warranty">Open the warranty checker <span class="arr">→</span></a><a class="link" href="#about">How it works</a></div>
-    </div></section>`;
+    <section class="sec"><div class="wrap faq">
+      <h2 style="text-align:center">Frequently asked questions</h2>
+      <div class="acc">
+        <details><summary>Do I need a wallet to use a checker?</summary><p>No. Checking a claim needs no account and no wallet. Wallets are only for publishing and for cases.</p></details>
+        <details><summary>What does the circuit add over a normal website?</summary><p>The rules are published as data on X Layer, so nobody can quietly change them, and anyone can re-run them for free.</p></details>
+        <details><summary>Who decides a disputed answer?</summary><p>A reviewer both sides accepted in advance, with a deadline. If no decision comes in time, the case ends as no decision.</p></details>
+        <details><summary>Is it safe to rely on?</summary><p>It is a hackathon prototype. The contracts are unaudited and hold no funds. Treat results as a clear explanation of the rules, not legal advice.</p></details>
+      </div></div></section>
+    <div class="wrap"><section class="panel finish">${art("ember")}<div><h2>Try it in a minute.</h2><div class="cta"><a class="btn" href="#check/warranty">Open the warranty checker <span class="arr">→</span></a></div></div></section></div>`;
     window.TB_HERO.mountHero(main.querySelector("#heroviz")); window.TB_HERO.countUps(main);
   }
 
@@ -187,7 +212,7 @@
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
   const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
-  const REVEAL = ".hero2 .tag,.hero2 h1,.hero2 .sub,.hero2 .cta,.viz,.waves,.fact,.sec h2,.sec .lede,.cat,.step,.limits>div,.finalcta h2,.finalcta p,.finalcta .cta,.card,.q";
+  const REVEAL = ".hero2 h1,.hero2 .sub,.hero2 .cta,.ribbon,.stat,.quote,.demo,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
   let armed = false, armTimer = 0;
   function scan() {
     if (!armed || !io) return;
