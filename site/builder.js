@@ -38,7 +38,7 @@ MY POLICY:
 [paste your policy text here]`;
 
   function build() {
-    let S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false;
+    let S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
     main.innerHTML = `<h1>Publish your policy as a checker</h1>
       <p class="lede">Describe your rules in forms or paste them from a spreadsheet. Rules are checked from top to bottom, and the first one that matches decides. We turn them into a circuit and prove it gives the same answers as your rules.</p>
       <div class="row"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
@@ -139,7 +139,29 @@ MY POLICY:
       drawEditor();
     }
 
+    const ex = tx => `<a href="${window.TB_CONFIG.explorer}/tx/${tx}" target="_blank" rel="noopener">${tx.slice(0, 10)}…</a>`;
+    function pubBox(h, C) {
+      if (done && done.hash === h) return `<div class="note ok-note"><b>✓ Published on X Layer.</b> Circuit #${done.circuitId}, rule set #${done.ruleSetId}. ${Object.entries(done.txs).map(([k, v]) => k + " " + ex(v)).join(" · ")}<div class="row"><a class="btn" href="${done.link}">Open your published checker</a><button class="btn ghost" id="cppub" type="button">Copy the link to share</button></div><p class="small">Anyone who opens that link sees whether the rules match what you published, and the result is confirmed by the processor.</p></div>`;
+      const extra = C.gates.length > 40 ? ` This checker needs ${C.gates.length} NAND, more than the 40 free ones, so you'll also buy a few (about 0.00066 OKB).` : "";
+      return `<div class="row"><label>This replaces an earlier version? Rule set number <input id="prevId" type="number" min="1" style="width:90px" placeholder="optional"></label></div>
+        <p class="small">Your wallet will be asked to confirm up to four transactions: claim free NAND (once), buy more if short, record the circuit (0.0013 OKB), and register the rules. It spends your own OKB, and a published circuit can't be changed or removed.${extra}</p>
+        <div class="row"><button class="btn" id="pubgo" type="button">Publish on X Layer with my wallet</button></div>
+        <div id="pubmsg" class="small${lastErr ? " err" : " mute"}">${esc(lastErr)}</div>`;
+    }
+    function bindPub(P, canon, h, C) {
+      const cp = $("#cppub"); if (cp) cp.onclick = e => copy(done.link, e.target);
+      const go = $("#pubgo"); if (!go) return;
+      go.onclick = async () => {
+        const prev = Number($("#prevId").value) || 0; lastErr = ""; publishing = true; go.disabled = true; const msg = $("#pubmsg"); msg.className = "small mute"; msg.textContent = "Connecting your wallet…";
+        try {
+          const res = await window.TB_PUBLISH.run({policy: P, canon, hash: h, C, previousId: prev, say: t => { msg.textContent = t; }});
+          done = {hash: h, ...res, link: location.href.split("#")[0] + "#check/c=" + b64e(canon) + "/rs=" + res.ruleSetId};
+        } catch (e) { lastErr = (e && e.message) || String(e); if (/user rejected|denied/i.test(lastErr)) lastErr = "You cancelled in the wallet. Nothing more was sent."; }
+        publishing = false; renderOutput();
+      };
+    }
     async function renderOutput() {
+      if (publishing) return;
       const out = $("#out"), text = mode === "text" && $("#src") ? $("#src").value : toText(S), r = TB.parse(text);
       if (r.errors.length) { out.innerHTML = errBox(r.errors); return; }
       const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
@@ -153,7 +175,8 @@ MY POLICY:
           <p class="small">Publishing records the circuit permanently, so the rules can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
           <p class="small"><b>Definitions hash</b> (fingerprint of the rules text, published with the circuit): <code>${h}</code></p>
           <details><summary>Circuit netlist (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
-          <p class="note">In this version, publishing is done with the scripts in the project's <code>scripts/</code> folder. One-click publishing from this page is next.</p></div>`;
+          ${pubBox(h, C)}</div>`;
+      bindPub(P, canon, h, C);
       $("#cplink").onclick = e => copy(link, e.target); $("#cphex").onclick = e => copy(C.hex, e.target);
       $("#dl").onclick = () => { const blob = new Blob([JSON.stringify({rules: canon, definitionsHashSha256: h, nQuestions: nQ, nResultBits: C.nOut, netlist: C.hex, gates: C.gates.length}, null, 2)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (P.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "rules") + ".json"; a.click(); };
     }
