@@ -78,7 +78,7 @@
       qs.appendChild(d);
     });
     let seq = 0;
-    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({tiebreak: "height", h: document.documentElement.scrollHeight}, "*"); };
+    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({tiebreak: "height", h: Math.ceil(main.getBoundingClientRect().bottom + window.scrollY + 12)}, "*"); };
     if (embed && window.ResizeObserver) new ResizeObserver(report).observe(document.body);
     function paint() {
       qs.querySelectorAll(".q").forEach((d, i) => d.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(ans[i] !== null && (b.dataset.v === "1") === ans[i]))));
