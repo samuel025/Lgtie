@@ -60,7 +60,7 @@ footer{max-width:880px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><i></i>LGtie</a>
-<nav id="nav"><a href="#check/warranty" data-k="check">Check a claim</a><a href="#case" data-k="case">Settle a dispute</a><a href="#build" data-k="build">For businesses</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#about" data-k="about">How it works</a></nav></div></header>
+<nav id="nav"><a href="#check/warranty" data-k="check">Check a claim</a><a href="#agree" data-k="agree">Agreements</a><a href="#case" data-k="case">Settle a dispute</a><a href="#build" data-k="build">For businesses</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#about" data-k="about">How it works</a></nav></div></header>
 <main id="main"></main>
 <footer>LGtie is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</footer>
 <script>/* rules.js */
@@ -249,7 +249,9 @@ window.TB_CONFIG = {
   transistors: "0xd0faafc5b9149cae7bd9af64070fee33c46ed619",      // NAND token (ERC-1155 id 0)
   tapeoutFeeWei: "1300000000000000",                              // 0.0013 OKB per tape-out
   registry: "0x25E87D367316038a2d3B6A4fe3d58AA453D4c219",
-  caseContract: "0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3",    // TiebreakCaseV2: set by scripts/deploy-case-v2.sh
+  agreements: "0x0000000000000000000000000000000000000000",      // AgreementRegistry: set by scripts/deploy-v3.sh
+  caseContract: "0x0000000000000000000000000000000000000000",    // TiebreakCaseV3: set by scripts/deploy-v3.sh
+  caseContractV2: "0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3",  // second case contract (deadlines, reviewer consent). It has a flaw (the person who opens a case can answer for both sides), so the site no longer uses it
   caseContractV1: "0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987",  // the first, simpler case contract (no deadlines); still on-chain
   published: {warranty: {circuitId: 13, ruleSetId: 1}}
 };
@@ -515,41 +517,55 @@ MY POLICY:
 })();
 
 </script><script>/* cases.js */
-// On-chain case pages (TiebreakCaseV2): open a case, both sides accept a reviewer, answer, the reviewer decides only the disputed
-// questions, deadlines with a public "close this case", and a replay. Needs a wallet to send; reads are free.
+// On-chain pages for TiebreakCaseV3 and AgreementRegistry: agreements before disputes, cases with reviewer consent and deadlines,
+// evidence hashes (files are hashed in the browser and never uploaded), helpers, reviewer and business records. Reads are free;
+// sending needs a wallet. Static: no server.
 (function () {
   "use strict";
   const TB = window.TB, CFG = window.TB_CONFIG, $ = s => document.querySelector(s), main = document.querySelector("#main");
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const w = n => BigInt(n).toString(16).padStart(64, "0"), addrW = a => a.toLowerCase().replace("0x", "").padStart(64, "0");
-  const SEL = {open: "0x2da25165", approve: "0xf32ece36", propose: "0x19d368d1", submit: "0x99467e00", review: "0x9e1e0b54", expire: "0xbf81bf43", get: "0x9507d39a", replay: "0x275fabd4", count: "0x06661abd"};
-  const OPENED = "0x5217ef0a53023fa797728dd41edbde7d2e403604cdcf9fea69addf9b372c770e", ZERO = /^0x0+$/, ADDR = /^0x[0-9a-fA-F]{40}$/;
-  const short = a => a.slice(0, 6) + "…" + a.slice(-4), DAY = 86400;
+  const SEL = {open: "0x59190257", openAg: "0x04a6019c", setOp: "0x62cb8c71", approve: "0xf32ece36", propose: "0x19d368d1", submit: "0x99467e00", evidence: "0x2fe8957a", review: "0x9e1e0b54", expire: "0xbf81bf43", get: "0x9507d39a", replay: "0x275fabd4", count: "0x06661abd", evCount: "0x30713886", evAt: "0x6ce7ff99"};
+  const ASEL = {propose: "0x8f54bc26", accept: "0x19b05f49", cancel: "0x40e58ee5", get: "0x9507d39a", count: "0x06661abd"};
+  const OPENED = "0x0dc88bdd001519e93d0371eefdcd9fa5aaba317a4824e61b83cac74cc95297cb", AG_PROPOSED = "0x7b294b07f9d490eeca886656d5d650ad7120a560405c55f47a5de7b3280cb8f7";
+  const ZERO = /^0x0+$/, ADDR = /^0x[0-9a-fA-F]{40}$/, short = a => a.slice(0, 6) + "…" + a.slice(-4), DAY = 86400, WHOLE = 255;
   const STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const rpc = (method, params) => window.TB_WALLET.rpc(method, params);
-  const call = data => rpc("eth_call", [{to: CFG.caseContract, data}, "latest"]);
-  const sha256 = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+  const callAt = (to, data) => rpc("eth_call", [{to, data}, "latest"]);
+  const call = data => callAt(CFG.caseContract, data), acall = data => callAt(CFG.agreements, data);
+  const send = data => window.TB_WALLET.send(CFG.caseContract, data), asend = data => window.TB_WALLET.send(CFG.agreements, data);
+  const hashText = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+  const hashFile = async f => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", await f.arrayBuffer()))].map(b => b.toString(16).padStart(2, "0")).join("");
   const policyOf = ruleSetId => { const k = Object.keys(CFG.published).find(k => CFG.published[k].ruleSetId === Number(ruleSetId)); return k ? {key: k, policy: TB.parse(TB.TEMPLATES[k]).policy} : null; };
-  const deployed = () => !ZERO.test(CFG.caseContract);
+  const deployed = () => !ZERO.test(CFG.caseContract) && !ZERO.test(CFG.agreements);
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
-
-  function decodeCase(hex) {
-    const x = hex.replace("0x", ""), W = i => x.slice(i * 64, i * 64 + 64), A = i => "0x" + W(i).slice(24), N = i => BigInt("0x" + W(i));
-    return {ruleSetId: Number(N(0)), filer: A(1), decider: A(2), reviewer: A(3), operator: A(4), evidenceHash: "0x" + W(5), openedAt: Number(N(6)), answerBy: Number(N(7)), reviewWindow: Number(N(8)), reviewBy: Number(N(9)),
-      filerAnswers: N(10), deciderAnswers: N(11), filerIn: N(12) === 1n, deciderIn: N(13) === 1n, disputed: N(14), finalAnswers: N(15), result: Number(N(16)), filerOk: N(17) === 1n, deciderOk: N(18) === 1n, status: Number(N(19))};
-  }
-  const bitsToArr = (m, n) => Array.from({length: n}, (_, k) => ((BigInt(m) >> BigInt(k)) & 1n) === 1n);
+  const upgrading = title => { main.innerHTML = `<h1>${title}</h1><div class="note">The case and agreement contracts are being upgraded (a security fix, agreements and evidence). This page will work once the new contracts are deployed.</div>`; };
   const friendly = e => { const m = String((e && e.message) || e);
-    if (/reviewer not accepted/.test(m)) return "Both sides have to accept the reviewer first."; if (/deadline passed/.test(m)) return "The deadline has passed."; if (/not allowed/.test(m)) return "Your wallet isn't allowed to do that on this case.";
-    if (/user rejected|denied/i.test(m)) return "You cancelled in the wallet."; return m; };
-  const send = data => window.TB_WALLET.send(CFG.caseContract, data);
+    const map = [[/reviewer not accepted/, "Both sides have to accept the reviewer first."], [/deadline passed/, "The deadline has passed."], [/not allowed/, "Your wallet isn't allowed to do that on this case."], [/only the side itself/, "Only the side itself can name its helper."],
+      [/not a party/, "Only the two parties to the agreement can do that."], [/only the counterparty/, "Only the other party can accept this agreement."], [/agreement not in force/, "That agreement has not been accepted yet, or was withdrawn."], [/user rejected|denied/i, "You cancelled in the wallet."]];
+    for (const [re, t] of map) if (re.test(m)) return t; return m; };
+  const bitsToArr = (m, n) => Array.from({length: n}, (_, k) => ((BigInt(m) >> BigInt(k)) & 1n) === 1n);
+  const dec = hex => { const x = hex.replace("0x", ""); return {W: i => x.slice(i * 64, i * 64 + 64), A: i => "0x" + x.slice(i * 64 + 24, i * 64 + 64), N: i => BigInt("0x" + x.slice(i * 64, i * 64 + 64)), x}; };
+  const utf8 = hex => new TextDecoder().decode(Uint8Array.from(hex.match(/../g) || [], b => parseInt(b, 16)));
 
-  // ---------- pages ----------
+  function decodeCase(hex) { const {W, A, N} = dec(hex);
+    return {ruleSetId: Number(N(0)), filer: A(1), decider: A(2), reviewer: A(3), filerOp: A(4), deciderOp: A(5), evidenceHash: "0x" + W(6), agreementId: Number(N(7)), openedAt: Number(N(8)), answerBy: Number(N(9)), reviewWindow: Number(N(10)), reviewBy: Number(N(11)),
+      filerAnswers: N(12), deciderAnswers: N(13), filerIn: N(14) === 1n, deciderIn: N(15) === 1n, disputed: N(16), finalAnswers: N(17), result: Number(N(18)), filerOk: N(19) === 1n, deciderOk: N(20) === 1n, status: Number(N(21))}; }
+  function decodeAgreement(hex) { const {W, A, N} = dec(hex);
+    return {proposer: A(0), counterparty: A(1), ruleSetId: Number(N(2)), termsHash: "0x" + W(3), reviewer: A(4), answerWindow: Number(N(5)), reviewWindow: Number(N(6)), proposedAt: Number(N(7)), acceptedAt: Number(N(8)), cancelled: N(9) === 1n}; }
+  // A struct with one dynamic string: [0] = offset of the tuple, then the tuple head, then the string.
+  function decodeTupleString(hex, headWords, strWord) { const {x, W, A, N} = dec(hex), ts = Number(N(0)) / 32, off = Number(N(ts + strWord)), base = ts * 64 + off * 2, len = Number(BigInt("0x" + x.slice(base, base + 64)));
+    return {W: i => W(ts + i), A: i => A(ts + i), N: i => N(ts + i), str: utf8(x.slice(base + 64, base + 64 + len * 2))}; }
+  const decodeEvidence = hex => { const t = decodeTupleString(hex, 5, 4); return {by: t.A(0), question: Number(t.N(1)), at: Number(t.N(2)), hash: "0x" + t.W(3), note: t.str}; };
+  const decodeRuleSet = hex => { const t = decodeTupleString(hex, 9, 8); return {publisher: t.A(0), circuitId: Number(t.N(2)), nQ: Number(t.N(3)), nOut: Number(t.N(4)), hash: "0x" + t.W(5), previousId: Number(t.N(6)), publishedAt: Number(t.N(7)), name: t.str}; };
+
+  // ---------- cases: open ----------
   async function list() {
-    if (!deployed()) { main.innerHTML = `<h1>Settle a disagreement</h1><div class="note">The case contract is being upgraded (reviewer acceptance and deadlines). Cases will be available again once the new contract is deployed.</div>`; return; }
+    if (!deployed()) { upgrading("Settle a disagreement"); return; }
     const opts = (vals, def) => vals.map(([d, label]) => `<option value="${d}"${d === def ? " selected" : ""}>${label}</option>`).join(""), days = [[1, "1 day"], [3, "3 days"], [7, "7 days"], [14, "14 days"], [30, "30 days"]];
-    main.innerHTML = `<h1>Settle a disagreement</h1><p class="lede">Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer that both sides have accepted, and the published rules give the result. A case nobody finishes in time ends with no decision.</p>
-      <div class="card"><h3>Open a case</h3>
+    main.innerHTML = `<h1>Settle a disagreement</h1><p class="lede">Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer, and the published rules give the result. A case nobody finishes in time ends with no decision. Best of all, <a href="#agree">agree on the rules before there is a dispute</a>.</p>
+      <div class="card"><h3>Under an agreement</h3><p class="small">If you both accepted an agreement, open the case from the agreement page: the rules, the reviewer and the time limits are already fixed.</p><div class="row"><input id="agn" type="number" min="1" placeholder="Agreement number" style="width:180px"><button class="btn ghost" id="aggo" type="button">Open the agreement</button></div></div>
+      <div class="card"><h3>Without an agreement</h3>
         <div class="row"><label>Rule set <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
         <div class="wide"><label><span>Decider (the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
         <div class="wide"><label><span>Proposed reviewer (the decider must accept)</span><input id="rev" type="text" placeholder="0x…" autocomplete="off"></label></div>
@@ -557,51 +573,131 @@ MY POLICY:
         <div class="wide"><label><span>Evidence note, optional</span><input id="evd" type="text" placeholder="e.g. the repair centre report reference"></label></div>
         <p class="small mute">Only a fingerprint of the evidence note goes on-chain. You are the filer, and your wallet accepts the reviewer by opening the case. The reviewer must be a different person from both sides.</p>
         <div class="row"><button class="btn" id="open" type="button">Open case</button><span id="msg" class="small"></span></div></div>
-      <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div><p class="small"><a href="#reviewer">See every reviewer's record</a></p></div>`;
+      <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div><p class="small"><a href="#reviewer">Reviewer records</a> · <a href="#agree">Agreements</a></p></div>`;
     $("#lk").onclick = () => { const n = Number($("#cn").value); if (n) location.hash = "#case/" + n; };
+    $("#aggo").onclick = () => { const n = Number($("#agn").value); if (n) location.hash = "#agreement/" + n; };
     $("#open").onclick = async () => {
       const msg = $("#msg"), dec = $("#dec").value.trim(), rev = $("#rev").value.trim();
       if (!ADDR.test(dec) || !ADDR.test(rev)) { msg.innerHTML = `<span class="err">Enter the decider's and the reviewer's wallet addresses.</span>`; return; }
       try {
-        msg.textContent = "Confirm in your wallet…"; const account = await window.TB_WALLET.connect();
-        const ev = $("#evd").value.trim(), hash = ev ? await sha256(ev) : "0x" + "0".repeat(64);
-        const rc = await send(SEL.open + w($("#rs").value) + addrW(account) + addrW(dec) + addrW(rev) + hash.slice(2) + w(Number($("#aw").value) * DAY) + w(Number($("#rw").value) * DAY));
-        const lg = rc.logs.find(l => l.address.toLowerCase() === CFG.caseContract.toLowerCase() && l.topics[0] === OPENED);
-        location.hash = "#case/" + Number(BigInt(lg.topics[1]));
+        msg.textContent = "Confirm in your wallet…"; await window.TB_WALLET.connect();
+        const ev = $("#evd").value.trim(), hash = ev ? await hashText(ev) : "0x" + "0".repeat(64);
+        const rc = await send(SEL.open + w($("#rs").value) + addrW(dec) + addrW(rev) + hash.slice(2) + w(Number($("#aw").value) * DAY) + w(Number($("#rw").value) * DAY));
+        location.hash = "#case/" + Number(BigInt(rc.logs.find(l => l.address.toLowerCase() === CFG.caseContract.toLowerCase() && l.topics[0] === OPENED).topics[1]));
       } catch (e) { msg.innerHTML = `<span class="err">${esc(friendly(e))}</span>`; }
     };
     try { const n = Number(BigInt(await call(SEL.count))); $("#recent").textContent = n ? `${n} case${n === 1 ? "" : "s"} so far. Latest: ` : "No cases yet."; if (n) { const a = document.createElement("a"); a.href = "#case/" + n; a.textContent = "#" + n; $("#recent").appendChild(a); } } catch {}
   }
 
+  // ---------- agreements ----------
+  async function agreements() {
+    if (!deployed()) { upgrading("Agreements"); return; }
+    const days = [[1, "1 day"], [3, "3 days"], [7, "7 days"], [14, "14 days"], [30, "30 days"]], opts = def => days.map(([d, l]) => `<option value="${d}"${d === def ? " selected" : ""}>${l}</option>`).join("");
+    main.innerHTML = `<h1>Agree on the rules before there is a dispute</h1><p class="lede">Two parties accept one published rule set, one neutral reviewer and the time limits, together with a fingerprint of their written terms. Once accepted it can never be changed or withdrawn, so neither side can swap the rules or the reviewer halfway through. If a disagreement comes, either side opens a case under the agreement.</p>
+      <div class="card"><h3>Propose an agreement</h3>
+        <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
+        <div class="wide"><label><span>The other party</span><input id="cp" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="wide"><label><span>Neutral reviewer</span><input id="rv" type="text" placeholder="0x… (not you and not the other party)" autocomplete="off"></label></div>
+        <div class="row"><label>Time to answer after a dispute starts <select id="aw">${opts(7)}</select></label><label>Time for the reviewer <select id="rw">${opts(7)}</select></label></div>
+        <div class="wide"><label><span>Your written terms (optional)</span><textarea id="terms" rows="4" placeholder="Paste the agreement text. Only its fingerprint goes on-chain; keep the text yourselves."></textarea></label></div>
+        <p class="small mute">Your wallet proposes; the other party's wallet accepts. Nothing is held in escrow.</p>
+        <div class="row"><button class="btn" id="prop" type="button">Propose the agreement</button><span id="msg" class="small"></span></div></div>
+      <div class="card"><h3>Look up an agreement</h3><div class="row"><input id="agn" type="number" min="1" placeholder="Agreement number" style="width:180px"><button class="btn ghost" id="aggo" type="button">Open</button></div><div id="recent" class="small mute"></div></div>`;
+    $("#aggo").onclick = () => { const n = Number($("#agn").value); if (n) location.hash = "#agreement/" + n; };
+    $("#prop").onclick = async () => {
+      const msg = $("#msg"), cp = $("#cp").value.trim(), rv = $("#rv").value.trim();
+      if (!ADDR.test(cp) || !ADDR.test(rv)) { msg.innerHTML = `<span class="err">Enter the other party's and the reviewer's wallet addresses.</span>`; return; }
+      try {
+        msg.textContent = "Confirm in your wallet…"; await window.TB_WALLET.connect();
+        const terms = $("#terms").value.trim(), hash = terms ? await hashText(terms) : "0x" + "0".repeat(64);
+        const rc = await asend(ASEL.propose + addrW(cp) + w($("#rs").value) + hash.slice(2) + addrW(rv) + w(Number($("#aw").value) * DAY) + w(Number($("#rw").value) * DAY));
+        location.hash = "#agreement/" + Number(BigInt(rc.logs.find(l => l.address.toLowerCase() === CFG.agreements.toLowerCase() && l.topics[0] === AG_PROPOSED).topics[1]));
+      } catch (e) { msg.innerHTML = `<span class="err">${esc(friendly(e))}</span>`; }
+    };
+    try { const n = Number(BigInt(await acall(ASEL.count))); $("#recent").textContent = n ? `${n} agreement${n === 1 ? "" : "s"} so far. Latest: ` : "No agreements yet."; if (n) { const a = document.createElement("a"); a.href = "#agreement/" + n; a.textContent = "#" + n; $("#recent").appendChild(a); } } catch {}
+  }
+
+  async function agreement(id) {
+    if (!deployed()) { upgrading("Agreement"); return; }
+    main.innerHTML = `<h1>Agreement #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
+    let a; try { a = decodeAgreement(await acall(ASEL.get + w(id))); } catch { main.innerHTML = `<h1>Agreement #${esc(id)}</h1><p class="err">That agreement doesn't exist, or X Layer could not be reached.</p><p><a href="#agree">Back</a></p>`; return; }
+    const K = policyOf(a.ruleSetId), me = window.TB_WALLET.account(), is = x => !!(me && x.toLowerCase() === me), isProp = is(a.proposer), isCp = is(a.counterparty);
+    const inForce = a.acceptedAt !== 0 && !a.cancelled, state = a.cancelled ? "Withdrawn" : inForce ? "In force since " + when(a.acceptedAt) : "Proposed, waiting for the other party";
+    main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : a.cancelled ? " warn" : ""}">${esc(state)}</span></p>
+      <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody>
+        <tr><td>Proposed by</td><td><code>${a.proposer}</code>${isProp ? " (you)" : ""}</td></tr><tr><td>Other party</td><td><code>${a.counterparty}</code>${isCp ? " (you)" : ""}</td></tr>
+        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rule set #${a.ruleSetId})</td></tr>
+        <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance</td></tr>
+        <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
+        <tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
+      <div class="card"><h3>Check the written terms</h3><p class="small">Paste the terms text to see whether it is exactly what was agreed.</p><textarea id="tt" rows="3" placeholder="Paste the agreement text"></textarea><div class="row"><span id="tm" class="small"></span></div></div>
+      <div id="acts"></div>`;
+    let t = 0; $("#tt").oninput = () => { clearTimeout(t); t = setTimeout(async () => { const v = $("#tt").value.trim(), m = $("#tm"); if (!v) { m.textContent = ""; return; } const h = await hashText(v); if (h === a.termsHash) { m.className = "small ok"; m.textContent = "✓ This text matches the agreed terms."; } else { m.className = "small err"; m.textContent = "This text does not match the agreed terms."; } }, 250); };
+    const acts = $("#acts"), say = (h) => { acts.innerHTML = h; };
+    if (!me) { say(`<div class="row"><button class="btn" id="cw" type="button">Connect wallet</button><span class="small mute">to accept, withdraw or open a case</span></div>`); $("#cw").onclick = async () => { try { await window.TB_WALLET.connect(); agreement(id); } catch (e) { $("#cw").insertAdjacentHTML("afterend", `<span class="err small"> ${esc(friendly(e))}</span>`); } }; return; }
+    const buttons = [];
+    if (!inForce && !a.cancelled && isCp) buttons.push(`<button class="btn" id="acc" type="button">Accept this agreement</button>`);
+    if (!inForce && !a.cancelled && isProp) buttons.push(`<button class="btn ghost" id="wd" type="button">Withdraw the proposal</button>`);
+    if (inForce && (isProp || isCp)) buttons.push(`<button class="btn" id="odp" type="button">Open a dispute under this agreement</button>`);
+    say(`<div class="card"><div class="row">${buttons.join("") || `<span class="mute">Nothing for your wallet to do on this agreement.</span>`}<span id="am" class="small err"></span></div>${inForce ? `<p class="small mute">An accepted agreement can't be changed or withdrawn. To change anything, make a new agreement.</p>` : ""}</div>`);
+    const run = async (fn, then) => { try { await fn(); then(); } catch (e) { $("#am").textContent = friendly(e); } };
+    if ($("#acc")) $("#acc").onclick = () => run(() => asend(ASEL.accept + w(id)), () => agreement(id));
+    if ($("#wd")) $("#wd").onclick = () => run(() => asend(ASEL.cancel + w(id)), () => agreement(id));
+    if ($("#odp")) $("#odp").onclick = () => run(async () => { const rc = await send(SEL.openAg + w(id) + "0".repeat(64)); location.hash = "#case/" + Number(BigInt(rc.logs.find(l => l.address.toLowerCase() === CFG.caseContract.toLowerCase() && l.topics[0] === OPENED).topics[1])); }, () => {});
+  }
+
+  // ---------- case page ----------
   async function view(id) {
-    if (!deployed()) { list(); return; }
+    if (!deployed()) { upgrading("Case #" + id); return; }
     main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
-    let c, now; try { c = decodeCase(await call(SEL.get + w(id))); now = Number(BigInt((await rpc("eth_getBlockByNumber", ["latest", false])).timestamp)); } catch (e) { main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="err">That case doesn't exist, or X Layer could not be reached.</p><p><a href="#case">Back</a></p>`; return; }
+    let c, now, ev = []; try {
+      c = decodeCase(await call(SEL.get + w(id))); now = Number(BigInt((await rpc("eth_getBlockByNumber", ["latest", false])).timestamp));
+      const n = Number(BigInt(await call(SEL.evCount + w(id)))); ev = await Promise.all(Array.from({length: n}, (_, i) => call(SEL.evAt + w(id) + w(i)).then(decodeEvidence)));
+    } catch (e) { main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="err">That case doesn't exist, or X Layer could not be reached.</p><p><a href="#case">Back</a></p>`; return; }
     const K = policyOf(c.ruleSetId); if (!K) { main.innerHTML = `<h1>Case #${esc(id)}</h1><p>This case uses rule set ${c.ruleSetId}, which this page does not know how to display.</p>`; return; }
-    const P = K.policy, nQ = P.questions.length, me = window.TB_WALLET.account(), is = a => !!(me && a.toLowerCase() === me);
-    const isFiler = is(c.filer), isDecider = is(c.decider), isReviewer = is(c.reviewer), isOp = is(c.operator);
+    const P = K.policy, nQ = P.questions.length, me = window.TB_WALLET.account(), is = a => !!(me && a !== "0x0000000000000000000000000000000000000000" && a.toLowerCase() === me);
+    const isFiler = is(c.filer), isDecider = is(c.decider), isReviewer = is(c.reviewer), asFiler = isFiler || is(c.filerOp), asDecider = isDecider || is(c.deciderOp), isParty = asFiler || asDecider;
     const fa = bitsToArr(c.filerAnswers, nQ), da = bitsToArr(c.deciderAnswers, nQ), dis = bitsToArr(c.disputed, nQ), fin = bitsToArr(c.finalAnswers, nQ), yn = v => v ? "Yes" : "No";
     const live = c.status === 0 || c.status === 1, deadline = c.status === 0 ? c.answerBy : c.status === 1 ? c.reviewBy : 0, late = live && now > deadline, agreed = c.filerOk && c.deciderOk;
     const rows = P.questions.map((q, i) => { const both = c.filerIn && c.deciderIn; let tag = ""; if (both) tag = dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`;
-      return `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${tag}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`; }).join("");
-    const ok = v => v ? "accepted ✓" : "not yet";
+      const n = ev.filter(e => e.question === i).length; return `<tr><td>${i + 1}. ${esc(q.text)}${n ? ` <span class="badge">${n} evidence</span>` : ""}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${tag}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`; }).join("");
+    const ok = v => v ? "accepted ✓" : "not yet", helper = a => /^0x0+$/.test(a) ? "none" : short(a);
+    const qlabel = q => q === WHOLE ? "The whole case" : (q + 1) + ". " + (P.questions[q] ? P.questions[q].text.slice(0, 60) : "?");
     main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1>
-      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Filer ${short(c.filer)} · Decider ${short(c.decider)}${me ? " · You are " + short(me) : ""}</span></p>
+      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Filer ${short(c.filer)} · Decider ${short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + short(me) : ""}</span></p>
       ${live ? `<p class="small ${late ? "err" : "mute"}">${c.status === 0 ? "Answers due by " : "The reviewer has until "}${when(deadline)}${late ? ". That time has passed." : "."}</p>` : ""}
       <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Filer</th><th>Decider</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): filer ${ok(c.filerOk)}, decider ${ok(c.deciderOk)}. ${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
-      <div id="act"></div><div id="final"></div>`;
-    // reviewer controls
+      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): filer ${ok(c.filerOk)}, decider ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
+      <div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded here. The files stay with the people who share them. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.</p>
+        ${ev.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left"><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr><td>${esc(qlabel(e.question))}</td><td>${short(e.by)}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No evidence recorded yet.</p>`}
+        <div id="evform"></div></div>
+      <div id="helpers"></div><div id="act"></div><div id="final"></div>`;
+    // ----- reviewer controls (cases without an agreement, or any case where a side wants to propose another reviewer)
     if (live && !late) {
-      const rv = $("#rv"), mine = [[isFiler || isOp, true, c.filerOk], [isDecider || isOp, false, c.deciderOk]].filter(x => x[0]);
-      if (!me) rv.innerHTML = `<button class="btn small" id="cw" type="button">Connect wallet</button> <span class="small mute">to accept or change the reviewer, answer, or review</span>`;
-      else if (mine.length) {
-        const needs = mine.find(x => !x[2]);
-        rv.innerHTML = `${needs ? `<div class="row"><button class="btn small" id="acc" type="button">Accept this reviewer</button></div>` : ""}<div class="row"><input id="newrev" type="text" placeholder="Propose a different reviewer: 0x…" style="width:min(380px,100%)" autocomplete="off"><button class="btn small ghost" id="prop" type="button">Propose</button><span id="rmsg" class="small err"></span></div>`;
-        const asF = (needs || mine[0])[1];
-        if (needs) $("#acc").onclick = async () => { try { await send(SEL.approve + w(id) + w(needs[1] ? 1 : 0)); view(id); } catch (e) { $("#rmsg").textContent = friendly(e); } };
-        $("#prop").onclick = async () => { const a = $("#newrev").value.trim(); if (!ADDR.test(a)) { $("#rmsg").textContent = "Enter a wallet address."; return; } try { await send(SEL.propose + w(id) + w(asF ? 1 : 0) + addrW(a)); view(id); } catch (e) { $("#rmsg").textContent = friendly(e); } };
-      } else rv.innerHTML = `<span class="small mute">Only the filer and the decider can change the reviewer.</span>`;
+      const rv = $("#rv");
+      if (!me) rv.innerHTML = `<button class="btn small" id="cw" type="button">Connect wallet</button> <span class="small mute">to answer, add evidence, or review</span>`;
+      else if (isParty) {
+        const needF = asFiler && !c.filerOk, needD = asDecider && !c.deciderOk, needs = needF ? true : needD ? false : null;
+        rv.innerHTML = `${needs !== null ? `<div class="row"><button class="btn small" id="acc" type="button">Accept this reviewer</button></div>` : ""}${c.agreementId ? "" : `<div class="row"><input id="newrev" type="text" placeholder="Propose a different reviewer: 0x…" style="width:min(380px,100%)" autocomplete="off"><button class="btn small ghost" id="prop" type="button">Propose</button></div>`}<span id="rmsg" class="small err"></span>`;
+        const forF = asFiler && (!asDecider || needF);
+        if (needs !== null) $("#acc").onclick = async () => { try { await send(SEL.approve + w(id) + w(needs ? 1 : 0)); view(id); } catch (e) { $("#rmsg").textContent = friendly(e); } };
+        if ($("#prop")) $("#prop").onclick = async () => { const a = $("#newrev").value.trim(); if (!ADDR.test(a)) { $("#rmsg").textContent = "Enter a wallet address."; return; } try { await send(SEL.propose + w(id) + w(forF ? 1 : 0) + addrW(a)); view(id); } catch (e) { $("#rmsg").textContent = friendly(e); } };
+      } else rv.innerHTML = `<span class="small mute">Only the two sides can change the reviewer.</span>`;
+    }
+    // ----- evidence form: sides, their helpers and the reviewer, until the deadline
+    if (live && !late && me && (isParty || isReviewer)) {
+      $("#evform").innerHTML = `<h4>Add evidence</h4><div class="row"><label>About <select id="evq"><option value="${WHOLE}">The whole case</option>${P.questions.map((q, i) => `<option value="${i}">${i + 1}. ${esc(q.text.slice(0, 50))}</option>`).join("")}</select></label></div>
+        <div class="row"><input id="evf" type="file"><span id="evh" class="small mute"></span></div><div class="wide"><label><span>Note</span><input id="evn" type="text" maxlength="60" placeholder="Short label, such as a file name. Don't put personal details here."></label></div>
+        <div class="row"><button class="btn small" id="evgo" type="button" disabled>Record the fingerprint on X Layer</button><span id="evm" class="small err"></span></div>`;
+      let hash = null; $("#evf").onchange = async () => { const f = $("#evf").files[0]; if (!f) return; hash = await hashFile(f); $("#evh").textContent = "Fingerprint " + hash.slice(0, 14) + "… (the file never leaves your browser)"; if (!$("#evn").value) $("#evn").value = f.name.slice(0, 60); $("#evgo").disabled = false; };
+      $("#evgo").onclick = async () => { const bytes = new TextEncoder().encode($("#evn").value.slice(0, 60)), nh = [...bytes].map(b => b.toString(16).padStart(2, "0")).join(""); try { await send(SEL.evidence + w(id) + w($("#evq").value) + hash.slice(2) + w(128) + w(bytes.length) + nh.padEnd(Math.ceil(bytes.length / 32) * 64, "0")); view(id); } catch (e) { $("#evm").textContent = friendly(e); } };
+    }
+    // ----- helpers (optional): a side can let ONE other wallet act only for that side
+    if (live && !late && me && (isFiler || isDecider)) {
+      const forFiler = isFiler, cur = forFiler ? c.filerOp : c.deciderOp;
+      $("#helpers").innerHTML = `<div class="card"><h4>Helper (optional)</h4><p class="small mute">You can let one other wallet, such as a staff member, act for you only. It can never act for the other side. Current helper: ${helper(cur)}.</p><div class="row"><input id="hop" type="text" placeholder="Helper wallet 0x…" style="width:min(380px,100%)" autocomplete="off"><button class="btn small ghost" id="hset" type="button">Set</button>${/^0x0+$/.test(cur) ? "" : `<button class="btn small ghost" id="hclr" type="button">Remove</button>`}<span id="hmsg" class="small err"></span></div></div>`;
+      $("#hset").onclick = async () => { const a = $("#hop").value.trim(); if (!ADDR.test(a)) { $("#hmsg").textContent = "Enter a wallet address."; return; } try { await send(SEL.setOp + w(id) + w(forFiler ? 1 : 0) + addrW(a)); view(id); } catch (e) { $("#hmsg").textContent = friendly(e); } };
+      if ($("#hclr")) $("#hclr").onclick = async () => { try { await send(SEL.setOp + w(id) + w(forFiler ? 1 : 0) + "0".repeat(64)); view(id); } catch (e) { $("#hmsg").textContent = friendly(e); } };
     }
     const cw = $("#cw"); if (cw) cw.onclick = async () => { try { await window.TB_WALLET.connect(); view(id); } catch (e) { cw.insertAdjacentHTML("afterend", `<span class="err small"> ${esc(friendly(e))}</span>`); } };
     $("#act").innerHTML = actions();
@@ -610,12 +706,12 @@ MY POLICY:
       if (late) return `<div class="note">The deadline has passed. Anyone can close this case. It will end with no decision, and nobody wins by default.<div class="row"><button class="btn" id="closeit" type="button">Close this case</button><span id="cmsg" class="small err"></span></div></div>`;
       const parts = [];
       if (c.status === 0) {
-        if ((isFiler || isOp) && !c.filerIn) parts.push(form("filer", "Your answers as the filer"));
-        if ((isDecider || isOp) && !c.deciderIn) parts.push(form("decider", "Your answers as the decider"));
+        if (asFiler && !c.filerIn) parts.push(form("filer", "Your answers as the filer"));
+        if (asDecider && !c.deciderIn) parts.push(form("decider", "Your answers as the decider"));
         if (!parts.length && me) parts.push(`<p class="mute">Nothing for your wallet to do on this case right now.</p>`);
       } else if (c.status === 1) {
-        if ((isReviewer || isOp) && agreed) parts.push(form("review", "Your decision on the disputed questions only", dis));
-        else if ((isReviewer || isOp) && !agreed) parts.push(`<p class="mute">Both sides have to accept you as the reviewer before you can decide.</p>`);
+        if (isReviewer && agreed) parts.push(form("review", "Your decision on the disputed questions only", dis));
+        else if (isReviewer && !agreed) parts.push(`<p class="mute">Both sides have to accept you as the reviewer before you can decide.</p>`);
         else if (me) parts.push(`<p class="mute">Waiting for the reviewer to answer the disputed questions.</p>`);
       }
       return parts.join("");
@@ -636,42 +732,32 @@ MY POLICY:
       };
     });
     const ci = $("#closeit"); if (ci) ci.onclick = async () => { try { if (!me) await window.TB_WALLET.connect(); await send(SEL.expire + w(id)); view(id); } catch (e) { $("#cmsg").textContent = friendly(e); } };
-    if (c.status === 3) {
-      $("#final").innerHTML = `<div class="res" role="status" style="border-color:var(--warn);background:var(--warn2)"><div class="big">No decision</div><div class="why">${c.filerIn && c.deciderIn ? "The reviewer did not decide in time." : "The answers were not all in on time."} Nobody wins by default. The two sides can open a new case.</div></div>`;
-    }
+    if (c.status === 3) $("#final").innerHTML = `<div class="res" role="status" style="border-color:var(--warn);background:var(--warn2)"><div class="big">No decision</div><div class="why">${c.filerIn && c.deciderIn ? "The reviewer did not decide in time." : "The answers were not all in on time."} Nobody wins by default. The two sides can open a new case.</div></div>`;
     if (c.status === 2) {
       const r = TB.run(P, fin);
       $("#final").innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(r.why)}</div><div class="row"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><button class="btn small ghost" id="cl" type="button">Copy link</button></div>
         <p class="small">Final answers: ${P.questions.map((q, i) => (i + 1) + "=" + (fin[i] ? "yes" : "no")).join(", ")}. Rule set ${c.ruleSetId}, circuit #${CFG.published[K.key].circuitId}. ${c.disputed ? "The reviewer decided " + bitsToArr(c.disputed, nQ).filter(Boolean).length + " disputed question(s); everything else was agreed." : "Both sides agreed on every question."}</p>
         <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p></div>`;
       $("#cl").onclick = async e => { try { await navigator.clipboard.writeText(location.href); e.target.textContent = "Copied"; } catch { prompt("Copy:", location.href); } };
-      call(SEL.replay + w(id)).then(h => { const x = h.replace("0x", ""), re = Number(BigInt("0x" + x.slice(0, 64))), st = Number(BigInt("0x" + x.slice(64, 128))), same = BigInt("0x" + x.slice(128, 192)) === 1n, b = $("#rp");
+      call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
         if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
         .catch(() => { const b = $("#rp"); b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; });
     }
   }
 
-  // ---------- reviewer record (read-only, from the chain) ----------
-  // Scans the most recent cases and tallies what each reviewer address did. It shows activity, not correctness: nothing on-chain can say whether a decision was right.
+  // ---------- records read from the chain (activity, not correctness) ----------
   async function scanCases(limit) {
     const n = Number(BigInt(await call(SEL.count))), out = [], lo = Math.max(1, n - limit + 1);
-    for (let i = n; i >= lo; i -= 10) {
-      const ids = []; for (let k = i; k > i - 10 && k >= lo; k--) ids.push(k);
-      const got = await Promise.all(ids.map(id => call(SEL.get + w(id)).then(h => ({id, ...decodeCase(h)}), () => null)));
-      got.forEach(c => c && out.push(c));
-    }
+    for (let i = n; i >= lo; i -= 10) { const ids = []; for (let k = i; k > i - 10 && k >= lo; k--) ids.push(k);
+      (await Promise.all(ids.map(id => call(SEL.get + w(id)).then(h => ({id, ...decodeCase(h)}), () => null)))).forEach(c => c && out.push(c)); }
     return {total: n, cases: out, truncated: n > limit};
   }
-  function classify(c) { // what this case means for its reviewer
-    if (c.status === 2) return c.disputed !== 0n ? "decided" : "notNeeded";
-    if (c.status === 3) return (c.filerIn && c.deciderIn) ? ((c.filerOk && c.deciderOk) ? "ghosted" : "neverAccepted") : "beforeReview";
-    return "pending";
-  }
+  function classify(c) { if (c.status === 2) return c.disputed !== 0n ? "decided" : "notNeeded"; if (c.status === 3) return (c.filerIn && c.deciderIn) ? ((c.filerOk && c.deciderOk) ? "ghosted" : "neverAccepted") : "beforeReview"; return "pending"; }
   const LABEL = {decided: "Decided the disputed questions", ghosted: "Accepted, but did not decide in time", neverAccepted: "Not accepted by both sides before time ran out", pending: "Still open", notNeeded: "Not needed (both sides agreed)", beforeReview: "Case expired before it reached the reviewer"};
   const tally = cs => { const t = {decided: 0, ghosted: 0, neverAccepted: 0, pending: 0, notNeeded: 0, beforeReview: 0}; cs.forEach(c => t[classify(c)]++); return t; };
 
   async function reviewers() {
-    if (!deployed()) { list(); return; }
+    if (!deployed()) { upgrading("Reviewers"); return; }
     main.innerHTML = `<h1>Reviewers</h1><p class="mute">Reading cases from X Layer…</p>`;
     let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewers</h1><p class="err">X Layer could not be reached.</p>`; return; }
     const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
@@ -680,9 +766,8 @@ MY POLICY:
       <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>Missed deadline</th><th>Never accepted</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
       <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
   }
-
   async function reviewer(addr) {
-    if (!deployed()) { list(); return; }
+    if (!deployed()) { upgrading("Reviewer record"); return; }
     if (!ADDR.test(addr)) { main.innerHTML = `<h1>Reviewer record</h1><p class="err">That is not a wallet address. <a href="#reviewer">See all reviewers</a>.</p>`; return; }
     main.innerHTML = `<h1>Reviewer ${short(addr)}</h1><p class="mute">Reading cases from X Layer…</p>`;
     let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewer ${short(addr)}</h1><p class="err">X Layer could not be reached.</p>`; return; }
@@ -695,7 +780,30 @@ MY POLICY:
       <p class="small mute">${sc.truncated ? `Based on the latest 200 of ${sc.total} cases.` : `Based on all ${sc.total} case${sc.total === 1 ? "" : "s"}.`}</p>`;
   }
 
-  window.TB_CASES = {list, view, reviewers, reviewer};
+  // A business's public record: the rule sets it published (and whether it replaced any) and how its cases went.
+  async function business(addr) {
+    if (!deployed()) { upgrading("Business record"); return; }
+    if (!ADDR.test(addr)) { main.innerHTML = `<h1>Business record</h1><p class="err">That is not a wallet address.</p>`; return; }
+    main.innerHTML = `<h1>Record of ${short(addr)}</h1><p class="mute">Reading from X Layer…</p>`;
+    let sc, sets = []; try {
+      sc = await scanCases(200);
+      const n = Number(BigInt(await callAt(CFG.registry, ASEL.count))); const ids = Array.from({length: Math.min(n, 100)}, (_, i) => n - i);
+      sets = (await Promise.all(ids.map(id => callAt(CFG.registry, ASEL.get + w(id)).then(h => ({id, ...decodeRuleSet(h)}), () => null)))).filter(Boolean);
+    } catch { main.innerHTML = `<h1>Record of ${short(addr)}</h1><p class="err">X Layer could not be reached.</p>`; return; }
+    const a = addr.toLowerCase(), mineSets = sets.filter(s => s.publisher.toLowerCase() === a).sort((x, y) => y.id - x.id);
+    const asDecider = sc.cases.filter(c => c.decider.toLowerCase() === a), asFiler = sc.cases.filter(c => c.filer.toLowerCase() === a), all = [...new Set([...asDecider, ...asFiler])].sort((x, y) => y.id - x.id);
+    const done = asDecider.filter(c => c.status === 2), disputed = done.filter(c => c.disputed !== 0n), expired = asDecider.filter(c => c.status === 3);
+    const mix = {}; done.forEach(c => { const P = (policyOf(c.ruleSetId) || {}).policy, k = P ? P.results[c.result] : "result " + c.result; mix[k] = (mix[k] || 0) + 1; });
+    const versions = mineSets.filter(s => s.previousId !== 0).length;
+    main.innerHTML = `<h1>Record of ${short(addr)}</h1><p class="small mute"><code>${addr}</code></p>
+      <div class="stats"><span>${mineSets.length} rule set${mineSets.length === 1 ? "" : "s"} published</span><span>${versions} replaced an earlier version</span><span>${asDecider.length} case${asDecider.length === 1 ? "" : "s"} as decider</span><span>${disputed.length} of ${done.length} decided needed a reviewer</span><span>${expired.length} ended with no decision</span></div>
+      <div class="card"><h3>Rules this address published</h3>${mineSets.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Rule set</th><th>Published</th><th>Circuit</th><th>Replaces</th></tr></thead><tbody>${mineSets.map(s => `<tr><td>#${s.id} ${esc(s.name)}</td><td>${when(s.publishedAt)}</td><td>#${s.circuitId}</td><td>${s.previousId ? "#" + s.previousId : "first version"}</td></tr>`).join("")}</tbody></table>` : `<p class="mute">This address has not published a rule set.</p>`}<p class="small mute">Each published rule set is permanent. If a business changes its rules it has to publish a new version, and that shows here.</p></div>
+      <div class="card"><h3>Cases</h3>${all.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Case</th><th>Role</th><th>Status</th><th>Result</th></tr></thead><tbody>${all.map(c => { const P = (policyOf(c.ruleSetId) || {}).policy; return `<tr><td><a href="#case/${c.id}">#${c.id}</a></td><td>${c.decider.toLowerCase() === a ? "decider" : "filer"}</td><td>${STATUS[c.status]}</td><td>${c.status === 2 && P ? esc(P.results[c.result]) : ""}</td></tr>`; }).join("")}</tbody></table>` : `<p class="mute">No cases involving this address yet.</p>`}
+        ${Object.keys(mix).length ? `<p class="small">Results of decided cases as decider: ${Object.entries(mix).map(([k, v]) => esc(k) + " " + v).join(", ")}.</p>` : ""}</div>
+      <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
+  }
+
+  window.TB_CASES = {list, view, reviewers, reviewer, agreements, agreement, business};
 })();
 
 </script><script>/* app.js */
@@ -841,6 +949,9 @@ MY POLICY:
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
     if (view === "embed") return check(key || "warranty", rest.join("/"), true);
+    if (view === "agree") return window.TB_CASES.agreements();
+    if (view === "agreement") return key ? window.TB_CASES.agreement(key) : window.TB_CASES.agreements();
+    if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();

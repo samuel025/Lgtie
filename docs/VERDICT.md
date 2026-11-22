@@ -30,6 +30,10 @@ function settle(uint256 caseId) external {
 
 A contract that holds funds is a much bigger target than one that only records decisions, and this one is unaudited. Keeping custody out means a bug here can produce a wrong verdict, but cannot drain anyone. If you build a consumer that holds funds, that contract is the one that needs an audit, a refund path, and its own timeout.
 
+## Which contract
+
+Use `TiebreakCaseV3` once it is deployed (`site/config.js` shows the current address). `TiebreakCaseV2` has the same `verdict` function but a flaw that let a case's opener answer for both sides, so don't build on it; see the README.
+
 ## Deployed addresses
 
 `TiebreakCaseV2` is on X Layer mainnet at `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3` (also in `site/config.js` as `caseContract`). The first case contract (`caseContractV1`, `0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987`) has no reviewer acceptance, no deadlines and no `verdict` function.
