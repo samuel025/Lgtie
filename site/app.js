@@ -49,9 +49,15 @@
     <div class="card"><h3>Bug bounty severity</h3><p class="mute">How serious is a reported vulnerability?</p><a class="btn small" href="#check/bounty">Open</a></div></div>`;
   }
 
-  async function check(key, rest) {
+  // Snippets for putting a checker on another website (static: a script tag that adds an iframe, or a plain iframe).
+  function embedBox(key, rsm, P) {
+    const dir = location.href.split("#")[0].replace(/[^/]*$/, ""), spec = key + (rsm ? "/rs=" + rsm[1] : ""), script = `<div></div>\n<script src="${dir}embed.js" data-checker="${spec}" async></script>`, frame = `<iframe src="${dir}index.html#embed/${spec}" title="${P.name}" style="width:100%;height:640px;border:0"></iframe>`;
+    return `<details class="card" id="embedbox"><summary>Put this checker on your own website</summary><p class="small">Paste this where you want the checker to appear. It resizes itself and needs nothing else.</p><pre id="snip1">${esc(script)}</pre><div class="row"><button class="btn small ghost" id="cps1" type="button">Copy</button></div>
+      <p class="small">Or use a plain frame:</p><pre id="snip2">${esc(frame)}</pre><div class="row"><button class="btn small ghost" id="cps2" type="button">Copy</button></div></details>`;
+  }
+  async function check(key, rest, embed) {
     const L = loadPolicy(key); if (!L) { main.innerHTML = `<h1>We could not open that checker</h1><p>The link may be incomplete. <a href="#check/warranty">Open the warranty example</a>.</p>`; return; }
-    const P = L.policy, C = TB.compile(P), nQ = P.questions.length, rsm = /(?:^|[/&])rs=(\d+)/.exec(rest || ""), pre = "#check/" + key + "/" + (rsm ? "rs=" + rsm[1] + "&" : "");
+    const P = L.policy, C = TB.compile(P), nQ = P.questions.length, rsm = /(?:^|[/&])rs=(\d+)/.exec(rest || ""), tail = (rsm ? "rs=" + rsm[1] + "&" : ""), pre = "#" + (embed ? "embed" : "check") + "/" + key + "/" + tail, fullPre = "#check/" + key + "/" + tail;
     let published = CFG.published[key], banner = "";
     if (!published && rsm && L.custom) {
       try {
@@ -64,7 +70,7 @@
     const a = /(?:^|[/&])a=(\d+)/.exec(rest || ""); if (a) { const m = Number(a[1]); ans = TB.decodeAnswers(m, nQ); }
     main.innerHTML = `<h1>${esc(P.name)}</h1><p class="lede">${esc(P.about || "")}</p>${banner}
       <div class="prog"><i id="bar"></i></div><div class="small mute" id="count"></div>
-      <div id="qs"></div><div id="resbox"></div>`;
+      <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>Tiebreak</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
     const qs = $("#qs");
     P.questions.forEach((q, i) => {
       const d = document.createElement("div"); d.className = "q"; d.innerHTML = `<div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn" role="group" aria-label="Answer to question ${i + 1}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div>`;
@@ -72,12 +78,15 @@
       qs.appendChild(d);
     });
     let seq = 0;
+    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({tiebreak: "height", h: document.documentElement.scrollHeight}, "*"); };
+    if (embed && window.ResizeObserver) new ResizeObserver(report).observe(document.body);
     function paint() {
       qs.querySelectorAll(".q").forEach((d, i) => d.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(ans[i] !== null && (b.dataset.v === "1") === ans[i]))));
+      setTimeout(report, 0);
       const done = ans.filter(x => x !== null).length; $("#bar").style.width = (100 * done / nQ) + "%"; $("#count").textContent = `${done} of ${nQ} answered`;
       const box = $("#resbox");
       if (done < nQ) { box.innerHTML = ""; return; }
-      const r = TB.run(P, ans), m = TB.encodeAnswers(ans), link = location.href.split("#")[0] + pre + "a=" + m, mine = ++seq;
+      const r = TB.run(P, ans), m = TB.encodeAnswers(ans), link = location.href.split("#")[0] + fullPre + "a=" + m, mine = ++seq;
       const hexIn = inputBytes(m, nQ), rule = r.ruleIndex >= 0 ? "Rule " + (r.ruleIndex + 1) + ": " + P.rules[r.ruleIndex].conds.map(c => `question ${c.q + 1} = ${c.yes ? "yes" : "no"}`).join(" and ") : "No rule matched, so the default applies";
       box.innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[r.result])}</div><div class="why">${esc(r.why || "")}</div>
         <div class="row"><span class="badge" id="vbadge">Checking…</span><button class="btn small ghost" id="cp" type="button">Copy link to this result</button><button class="btn small ghost" id="rs" type="button">Start over</button></div>
@@ -93,7 +102,8 @@
       evalOnChain(published.circuitId, m, nQ, C.nOut).then(got => { if (mine !== seq) return; if (got === r.result) { vb.className = "badge ok"; vb.textContent = "✓ Confirmed by the TapeOut processor on X Layer"; } else { vb.className = "badge warn"; vb.textContent = "The chain gave a different result. Do not rely on this page."; } })
         .catch(() => { if (mine !== seq) return; vb.className = "badge warn"; vb.textContent = "Could not reach X Layer; showing the browser result"; });
     }
-    paint();
+    paint(); report();
+    const c1 = $("#cps1"); if (c1) { c1.onclick = e => copy($("#snip1").textContent, e.target); $("#cps2").onclick = e => copy($("#snip2").textContent, e.target); }
   }
 
   function verify() {
@@ -124,10 +134,12 @@
   // ---------- router ----------
   function route() {
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
+    document.body.classList.toggle("embed", view === "embed");
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));
     window.scrollTo(0, 0);
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
+    if (view === "embed") return check(key || "warranty", rest.join("/"), true);
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();
