@@ -32,6 +32,7 @@ ok("proposing an agreement opens its page", await until(async () => /^#agreement
 const hAg = await p.evaluate(() => location.hash), agId = hAg.split("/")[1];
 await until(async () => /Proposed, waiting for the other party/.test(await T("main")));
 ok("a new agreement waits for the other party and shows its terms fingerprint", /Proposed, waiting/.test(await T("main")) && /0x[0-9a-f]{64}/.test(await T("main")), (await T("main")).slice(0, 300));
+ok("the proposer gets a ready-to-send invitation with the link and the other party\'s address", /#agreement\/\d+/.test(await p.$eval("#invtxt", e => e.value).catch(() => "")) && /0x[0-9a-fA-F]{40}/.test(await p.$eval("#invtxt", e => e.value).catch(() => "")) && !!(await p.$("#invcp")), await p.$eval("#invtxt", e => e.value).catch(() => ""));
 await p.type("#tt", TERMS); await until(async () => /matches the agreed terms/.test(await T("#tm")));
 ok("the exact terms text is recognised", /✓ This text matches/.test(await T("#tm")), await T("#tm"));
 await p.$eval("#tt", e => { e.value = e.value + " (changed)"; e.dispatchEvent(new Event("input", {bubbles: true})); }); await until(async () => /does not match/.test(await T("#tm")));
@@ -56,6 +57,13 @@ await p.type("#evn", "lgtie-evidence.bin");
 await p.click("#evgo");
 ok("the evidence fingerprint is recorded against question 5", await until(async () => (await T("main")).includes(want.slice(0, 10)) && /lgtie-evidence\.bin/.test(await T("main"))), (await T("main")).slice(0, 500));
 ok("the question row shows an evidence badge", /1 evidence/.test(await T("tbody")));
+// ---- C2. check a file you were sent against the recorded fingerprint (hashed in the browser)
+await (await p.$("#dzf")).uploadFile(file); await until(async () => /Same file as recorded/.test(await T("#dzr")));
+ok("dropping the same file says it matches the recorded fingerprint", /Same file as recorded/.test(await T("#dzr")) && /not that it is genuine/.test(await T("#dzr")), await T("#dzr"));
+ok("the matching evidence row is highlighted", (await p.$$eval("tr.evrow.match", e => e.length)) === 1);
+const other = "/tmp/lgtie-other.bin"; fs.writeFileSync(other, "a different file"); await (await p.$("#dzf")).uploadFile(other); await until(async () => /No match/.test(await T("#dzr")));
+ok("dropping a different file says there is no match and highlights nothing", /No match/.test(await T("#dzr")) && (await p.$$eval("tr.evrow.match", e => e.length)) === 0, await T("#dzr"));
+ok("the case page offers an invitation to the other side", !!(await p.$("[data-invite]")) && /#case\/\d+/.test(await p.$eval("#invtxt", e => e.value).catch(() => "")), await p.$eval("#invtxt", e => e.value).catch(() => ""));
 await as(OTHER, hC); await connect(); ok("a stranger cannot add evidence", !(await p.$("#evf")));
 // ---- D. dispute and a reviewer who needs no acceptance step
 await as(BUYER, hC); await connect(); await p.waitForSelector('[data-form="filer"]'); await answerAll("filer");
