@@ -34,23 +34,11 @@
   }
 
   // ---------- views ----------
-  // Hero ribbon: a twisting blue-and-gold band under a film of grain (the one big flourish, as on the reference).
-  function ribbon() {
-    const band = (y0, amp, ph, k, id) => {
-      let top = "", bot = "";
-      for (let x = -40; x <= 1480; x += 20) {
-        const yc = y0 + amp * Math.sin(x / 190 + ph) + 26 * Math.sin(x / 83 + ph * 2), th = 26 + k * Math.abs(Math.sin(x / 240 + ph));
-        top += (x === -40 ? "M" : "L") + x + " " + (yc - th).toFixed(1); bot = "L" + x + " " + (yc + th).toFixed(1) + bot;
-      }
-      return `<path d="${top}${bot}Z" fill="url(#${id})"/>`;
-    };
-    return `<div class="ribbon" aria-hidden="true"><svg viewBox="0 0 1440 400" preserveAspectRatio="xMidYMid slice">
-      <defs>
-        <linearGradient id="rg1" x1="0" x2="1"><stop offset="0" stop-color="#f1b345"/><stop offset=".28" stop-color="#f6d58a"/><stop offset=".46" stop-color="#2f74f0"/><stop offset=".62" stop-color="#f1b345"/><stop offset=".82" stop-color="#f6d58a"/><stop offset="1" stop-color="#2f74f0"/></linearGradient>
-        <linearGradient id="rg2" x1="1" x2="0"><stop offset="0" stop-color="#f6d58a"/><stop offset=".4" stop-color="#5f93f4"/><stop offset=".7" stop-color="#f1b345"/><stop offset="1" stop-color="#f6d58a"/></linearGradient>
-        <filter id="rsoft" x="-5%" y="-30%" width="110%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
-      </defs>
-      <g filter="url(#rsoft)"><g class="l2" opacity=".75">${band(205, 70, 1.4, 34, "rg2")}</g><g class="l1">${band(200, 80, 0, 40, "rg1")}</g></g></svg></div>`;
+  // The tie: two threads (two sides) run in from the edges and knot into one line (one result). Drawn once, in ink and vermilion.
+  function tie() {
+    return `<svg class="tie" viewBox="0 0 1280 800" preserveAspectRatio="none" aria-hidden="true">
+      <path class="t1" d="M-20 150C380 120 560 140 660 470"/>
+      <path class="t2" d="M-20 790C380 830 560 800 660 490"/></svg>`;
   }
   const art = (kind) => `<div class="art ${kind}"><i class="b1"></i><i class="b2"></i><i class="b3"></i><i class="b4"></i></div>`;
   function home() {
@@ -58,30 +46,30 @@
       <div class="txt"><span class="tag">${tag}</span><h3>${h}</h3><div class="acc">${items.map((it, i) => `<details name="${tag}"${i === 0 ? " open" : ""}><summary>${it[0]}</summary><p>${it[1]}</p></details>`).join("")}</div></div>
       <div class="panel pnl">${art(kind)}<div class="ui">${ui}</div></div></div>`;
     main.innerHTML = `
-    <section class="hero2"><div class="wrap">
-      <h1>Know if you are covered before you file.</h1>
-      <p class="sub">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
-      <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="btn ghost" href="#build">Publish your policy</a></div>
-    </div>${ribbon()}</section>
+    <section class="hero3"><div class="wrap hgrid">${tie()}
+      <div class="hcopy">
+        <span class="tag"><i class="dot"></i>Two sides, one set of questions</span>
+        <h1>Know if you are covered before you file.</h1>
+        <p class="sub">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
+        <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="btn ghost" href="#build">Publish your policy</a></div>
+        <p class="small mute fine">No account. No wallet. Nothing is held for anyone.</p>
+      </div>
+      <div class="panel stage">${art("ember")}<div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div></div>
+    </div></section>
     <div class="runs wrap"><span class="lbl">Built with</span><span>X Layer</span><span>TapeOut circuits</span><span>Solidity</span><span>One static file</span></div>
     <div class="wrap"><div class="stats3 facts">
       <div class="stat fact"><b><span data-count="39">0</span></b><span>NAND gates in the live warranty circuit (#13)</span></div>
       <div class="stat fact"><b><span data-count="128">0</span></b><span>of 128 answer combinations checked on mainnet</span></div>
       <div class="quote fact">A rules engine with a dispute process, not a truth oracle. If someone lies, the result follows the lie, so a reviewer both sides accepted decides the disputed facts.<div class="by"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z"/><circle cx="19" cy="12" r="1.5"/></svg></span><span>How LGtie describes itself<br>Prototype, unaudited, holds no funds</span></div></div>
     </div></div>
-    <div class="wrap"><section class="panel demo">
-      <span class="orb o1"></span><span class="orb o2"></span><span class="orb o3"></span><span class="orb o4"></span><span class="orb o5"></span><span class="orb o6"></span>
-      <span class="eyebrow">Live circuit</span><h2>See the rules work</h2><p class="lede">Tap any answer. These are the real gates of the warranty policy, lighting up as the result changes.</p>
-      <div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div>
-    </section></div>
     <section class="sec"><div class="wrap">
       <div class="sechead"><h2>Dispute the facts, not the verdict.</h2><p class="lede">Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.</p></div>
-      ${feat(false, "sun", "Check a claim", "Know the answer before you file", [
+      ${feat(false, "sand", "Check a claim", "Know the answer before you file", [
         ["Answers in plain yes or no", "Each question says what evidence to show. No account and no wallet are needed."],
         ["A result and the exact reason", "The checker names the rule that decided it, so nothing is a black box."],
         ["The same result for everyone", "A free read on X Layer re-runs the published rules and returns the same answer."]],
         `<div class="bub">Was it bought from an authorised seller?</div><div class="bub me">No</div><div class="bub">Got it. That needs a person to look at it.</div><div class="bub res2"><div class="t">Needs review</div><small>It was not bought from an authorised seller, so a person has to look at it.</small></div>`)}
-      ${feat(true, "leaf", "Agree first", "Fix the terms before any dispute", [
+      ${feat(true, "ink", "Agree first", "Fix the terms before any dispute", [
         ["The rules, locked in", "An agreement names the published rule set. Once both sides accept, it can't change."],
         ["A reviewer both sides accept", "Disputed questions go to a neutral person each side has approved."],
         ["Deadlines that settle themselves", "If nobody decides in time, the case ends as no decision. Nobody wins by default."]],
@@ -100,7 +88,7 @@
         <div class="s3"><span class="n">3.</span><p>Share the link or paste one snippet into your support page</p></div>
         <div><a class="btn" href="#build">Build a checker <span class="arr">→</span></a></div>
       </div>
-      <div class="snippet panel">${art("sky")}<div class="win"><pre><code>&lt;script src="embed.js"
+      <div class="snippet panel">${art("sand")}<div class="win"><pre><code>&lt;script src="embed.js"
   data-checker="warranty"&gt;
 &lt;/script&gt;</code></pre><div class="ok2"><span class="chip">Live</span> Checker appears on your page</div></div></div></div>
     </div></section>
@@ -212,7 +200,7 @@
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
   const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
-  const REVEAL = ".hero2 h1,.hero2 .sub,.hero2 .cta,.ribbon,.stat,.quote,.demo,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
+  const REVEAL = ".hcopy>*,.stage,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
   let armed = false, armTimer = 0;
   function scan() {
     if (!armed || !io) return;
