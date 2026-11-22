@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tiebreak: check a decision before it is made</title>
+<meta name="description" content="Publish your policy as a checker anyone can trust. Customers see the result and the reason, and anyone can re-run it.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Cpath d='M8 17l5 5 11-12' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#f7f7f4;--card:#fff;--ink:#16211f;--mute:#5d6b68;--line:#dfe4e1;--acc:#0f766e;--acc2:#e6f4f1;--warn:#b45309;--warn2:#fdf1e1;--bad:#b42318;--code:#f0f2f0}
+@media(prefers-color-scheme:dark){:root{--bg:#101615;--card:#18201f;--ink:#e8efed;--mute:#9db0ac;--line:#2a3735;--acc:#37b3a5;--acc2:#16302d;--warn:#f0b35f;--warn2:#2e2415;--bad:#ff8a80;--code:#0c1211}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--acc)}
+header{border-bottom:1px solid var(--line);background:var(--card)}
+.bar{max-width:880px;margin:0 auto;padding:12px 16px;display:flex;gap:6px 18px;align-items:center;flex-wrap:wrap}
+.brand{font-weight:700;font-size:19px;color:var(--ink);text-decoration:none;display:flex;gap:8px;align-items:center}
+.brand i{width:22px;height:22px;border-radius:6px;background:var(--acc);display:inline-block}
+nav{display:flex;gap:4px 14px;flex-wrap:wrap}nav a{color:var(--mute);text-decoration:none;padding:4px 0;border-bottom:2px solid transparent}
+nav a.on{color:var(--ink);border-color:var(--acc)}
+main{max-width:880px;margin:0 auto;padding:22px 16px 60px}
+h1{font-size:clamp(26px,5vw,38px);line-height:1.15;margin:.2em 0 .35em;letter-spacing:-.01em}
+h2{font-size:21px;margin:1.4em 0 .4em}h3{font-size:17px;margin:1em 0 .3em}
+.lede{font-size:18px;color:var(--mute);max-width:640px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin:18px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h3{margin-top:0}
+.btn{display:inline-block;font:inherit;font-weight:600;border:1px solid var(--acc);background:var(--acc);color:#fff;border-radius:10px;padding:9px 16px;cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--acc)}.btn.small{padding:5px 11px;font-size:14px}
+.btn:focus-visible,button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.q{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0}
+.q .t{font-weight:600}.q .h{font-size:14px;color:var(--mute);margin:2px 0 8px}
+.yn{display:flex;gap:8px}.yn button{flex:1;max-width:120px;font:inherit;border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:9px;padding:8px;cursor:pointer}
+.yn button[aria-pressed=true]{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+.prog{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin:8px 0 2px}.prog i{display:block;height:100%;background:var(--acc);transition:width .2s}
+.res{border:2px solid var(--acc);background:var(--acc2);border-radius:14px;padding:16px 18px;margin:18px 0;position:sticky;bottom:10px}
+.res .big{font-size:24px;font-weight:700;line-height:1.2}.res .why{margin:.3em 0 .6em}
+.badge{display:inline-block;font-size:13px;border-radius:999px;padding:2px 10px;background:var(--card);border:1px solid var(--line);color:var(--mute)}
+.badge.ok{color:var(--acc);border-color:var(--acc)}.badge.warn{color:var(--warn);border-color:var(--warn);background:var(--warn2)}
+details{margin:.6em 0}summary{cursor:pointer;font-weight:600}
+pre,code,textarea.mono{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace}
+pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow:auto;white-space:pre-wrap;word-break:break-all;margin:.4em 0}
+textarea{width:100%;font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px}
+textarea.mono{min-height:340px;resize:vertical}
+input[type=text],input[type=number]{font:inherit;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:8px 10px;max-width:100%}
+.row{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;margin:8px 0}
+.err{color:var(--bad);margin:.2em 0}.ok{color:var(--acc)}.mute{color:var(--mute)}.small{font-size:14px}
+.note.ok-note{border-left-color:var(--acc);background:var(--acc2)}
+.note{border-left:4px solid var(--warn);background:var(--warn2);padding:8px 12px;border-radius:0 10px 10px 0;margin:12px 0;font-size:15px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}.stats span{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:4px 10px;font-size:14px}
+#editor input[type=text]{min-width:0}
+select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:100%;min-width:0}
+code{overflow-wrap:anywhere}
+.qrow{display:grid;grid-template-columns:auto minmax(0,2fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin:8px 0}
+.qrow input{width:100%}.qrow .acts{display:flex;gap:4px}
+.wide input{width:100%}.wide{display:grid;grid-template-columns:minmax(0,max-content) minmax(0,1fr);gap:8px;align-items:center;margin:8px 0}.wide label{display:contents}
+@media(max-width:640px){.wide{grid-template-columns:minmax(0,1fr)}.qrow{grid-template-columns:auto minmax(0,1fr)}.qrow input:nth-of-type(2){grid-column:2}.qrow .acts{grid-column:2}}
+table th,table td{padding:5px 10px 5px 0;vertical-align:top}table th{white-space:nowrap}
+body.embed{background:transparent}body.embed header,body.embed footer{display:none}body.embed main{padding:8px 10px 14px}body.embed h1{font-size:22px;margin:.1em 0 .2em}body.embed .lede{font-size:16px;margin:.2em 0}body.embed .res{position:static}.embedfoot{margin-top:10px}
+footer{max-width:880px;margin:0 auto;padding:0 16px 40px;color:var(--mute);font-size:14px}
+[hidden]{display:none!important}
+</style></head>
+<body>
+<header><div class="bar"><a class="brand" href="#"><i></i>Tiebreak</a>
+<nav id="nav"><a href="#check/warranty" data-k="check">Check a claim</a><a href="#case" data-k="case">Settle a dispute</a><a href="#build" data-k="build">For businesses</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#about" data-k="about">How it works</a></nav></div></header>
+<main id="main"></main>
+<footer>Tiebreak is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</footer>
+<script>/* rules.js */
+// Tiebreak rule engine: parse a plain-text policy, run it, compile it to a TapeOut NAND netlist, prove the two agree.
+// Works in the browser (window.TB) and in Node (require). No dependencies.
+(function (root) {
+  "use strict";
+  // ---------- policy text format ----------
+  // name: Warranty claims
+  // about: one line shown to the person answering
+  // question: Is it within the warranty period? | Purchase date on the receipt
+  // result: Not covered                      (results are numbered in the order written: 0, 1, 2 ...)
+  // rule: Q2=no -> Not covered : Explanation shown when this rule decides      (rules are checked top to bottom; first match wins)
+  // default: Covered : Explanation shown when no rule matched
+  function parse(text) {
+    const P = {name: "", about: "", questions: [], results: [], rules: [], def: null}, errors = [];
+    const err = (n, m) => errors.push({line: n, message: m});
+    String(text || "").split(/\r?\n/).forEach((raw, i) => {
+      const n = i + 1, line = raw.trim(); if (!line || line.startsWith("#")) return;
+      const m = /^(name|about|question|result|rule|default)\s*:\s*(.*)$/i.exec(line);
+      if (!m) { err(n, "Start the line with name:, about:, question:, result:, rule: or default:"); return; }
+      const key = m[1].toLowerCase(), val = m[2].trim();
+      if (key === "name") P.name = val; else if (key === "about") P.about = val;
+      else if (key === "question") { const [q, hint] = val.split("|").map(s => s.trim()); if (!q) err(n, "A question needs some text."); else P.questions.push({id: "Q" + (P.questions.length + 1), text: q, hint: hint || ""}); }
+      else if (key === "result") { if (!val) err(n, "A result needs a name."); else P.results.push(val); }
+      else if (key === "default") { const [r, why] = val.split(/\s:\s/).map(s => s.trim()); P.def = {resultName: r, why: why || "", line: n}; }
+      else { // rule
+        const arrow = val.split(/\s*->\s*/); if (arrow.length !== 2) { err(n, "A rule looks like: Q1=no & Q2=yes -> Result name : explanation"); return; }
+        const [rname, why] = arrow[1].split(/\s:\s/).map(s => s.trim());
+        const conds = arrow[0].split("&").map(s => s.trim()).filter(Boolean).map(c => { const cm = /^Q(\d+)\s*=\s*(yes|no)$/i.exec(c); return cm ? {q: Number(cm[1]) - 1, yes: cm[2].toLowerCase() === "yes", raw: c} : {bad: c}; });
+        if (!conds.length) { err(n, "A rule needs at least one condition, such as Q1=no."); return; }
+        conds.filter(c => c.bad).forEach(c => err(n, `"${c.bad}" is not a condition. Use Q1=yes or Q1=no.`));
+        P.rules.push({conds, resultName: rname, why: why || "", line: n});
+      }
+    });
+    if (!P.name) errors.push({line: 0, message: "Add a name: line."});
+    if (!P.questions.length) errors.push({line: 0, message: "Add at least one question: line."});
+    if (P.questions.length > 64) errors.push({line: 0, message: "At most 64 questions."});
+    if (P.results.length < 2) errors.push({line: 0, message: "Add at least two result: lines."});
+    if (P.results.length > 256) errors.push({line: 0, message: "At most 256 results."});
+    if (!P.def) errors.push({line: 0, message: "Add a default: line (the result when no rule matches)."});
+    const idx = nm => P.results.findIndex(r => r.toLowerCase() === String(nm || "").toLowerCase());
+    P.rules.forEach(r => { r.result = idx(r.resultName); if (r.result < 0) err(r.line, `"${r.resultName}" is not one of the result: lines.`); r.conds.forEach(c => { if (!c.bad && (c.q < 0 || c.q >= P.questions.length)) err(r.line, `${c.raw} refers to a question that does not exist.`); }); });
+    if (P.def) { P.def.result = idx(P.def.resultName); if (P.def.result < 0) err(P.def.line, `"${P.def.resultName}" is not one of the result: lines.`); }
+    return errors.length ? {errors} : {policy: P, errors: []};
+  }
+
+  // ---------- run a policy directly (the reference the circuit is checked against) ----------
+  // answers: array of booleans, one per question. -> {result, why, ruleIndex} (ruleIndex -1 = default)
+  function run(P, answers) {
+    for (let i = 0; i < P.rules.length; i++) { const r = P.rules[i]; if (r.conds.every(c => !!answers[c.q] === c.yes)) return {result: r.result, why: r.why, ruleIndex: i}; }
+    return {result: P.def.result, why: P.def.why, ruleIndex: -1};
+  }
+  const resultBits = P => Math.max(1, Math.ceil(Math.log2(P.results.length)));
+
+  // ---------- NAND netlist builder (refs: 0/1 reserved, inputs from 2, gates after; 7 bytes per gate) ----------
+  class Net {
+    constructor(nIn) { this.nIn = nIn; this.gates = []; this.memo = new Map(); this.inputs = Array.from({length: nIn}, (_, i) => 2 + i); }
+    nand(a, b) { const k = a < b ? a + "," + b : b + "," + a; if (this.memo.has(k)) return this.memo.get(k); this.gates.push({a, b}); const r = 2 + this.nIn + this.gates.length - 1; this.memo.set(k, r); return r; }
+    not(a) { return this.nand(a, a); }
+    and(a, b) { return this.not(this.nand(a, b)); }
+    or(a, b) { return this.nand(this.not(a), this.not(b)); }
+    finalCopy(x) { this.gates.push({a: x, b: x}); return 2 + this.nIn + this.gates.length - 1; } // an output owns its gate: NOT(x) with x = NOT(wanted)
+  }
+  const hexOf = gates => "0x" + gates.map(g => "00" + g.a.toString(16).padStart(6, "0") + g.b.toString(16).padStart(6, "0")).join("");
+  function evalGates(gates, nIn, nOut, m) { // m = integer, input k = bit k
+    const v = {0: 0, 1: 1}; for (let k = 0; k < nIn; k++) v[2 + k] = Math.floor(m / 2 ** k) % 2;
+    gates.forEach((g, i) => { v[2 + nIn + i] = 1 - (v[g.a] & v[g.b]); });
+    let out = 0; for (let o = 0; o < nOut; o++) out += v[2 + nIn + gates.length - nOut + o] * 2 ** o; return out;
+  }
+
+  // ---------- compile: first-match rules -> NAND circuit ----------
+  function compile(P) {
+    const nQ = P.questions.length, nOut = resultBits(P), n = new Net(nQ);
+    const lit = (q, yes) => yes ? n.inputs[q] : n.not(n.inputs[q]);
+    const x0 = n.inputs[0]; let zeroSig = null; const zero = () => zeroSig === null ? (zeroSig = n.and(x0, n.not(x0))) : zeroSig, one = () => n.not(zero()); // only built when a bit is constant
+    const fires = []; let notYet = null; // notYet = no earlier rule matched
+    P.rules.forEach(r => {
+      let cond = lit(r.conds[0].q, r.conds[0].yes); for (const c of r.conds.slice(1)) cond = n.and(cond, lit(c.q, c.yes));
+      fires.push({res: r.result, sig: notYet === null ? cond : n.and(cond, notYet)});
+      notYet = notYet === null ? n.not(cond) : n.and(notYet, n.not(cond));
+    });
+    fires.push({res: P.def.result, sig: notYet === null ? one() : notYet});
+    const bitSig = [];
+    for (let b = 0; b < nOut; b++) {
+      const terms = fires.filter(f => (f.res >> b) & 1).map(f => f.sig);
+      bitSig.push(terms.length ? terms.reduce((acc, t) => n.or(acc, t)) : zero());
+    }
+    const inv = bitSig.map(s => n.not(s)); // computed before the output gates so they stay last
+    inv.forEach(s => n.finalCopy(s));
+    const gates = prune(n.gates, nQ, nOut);
+    return {gates, hex: hexOf(gates), nIn: nQ, nOut};
+  }
+
+  // Drop gates that feed no output (outputs are the last nOut gates) and renumber. Behaviour is unchanged.
+  function prune(gates, nIn, nOut) {
+    const base = 2 + nIn, live = new Set(), stack = [];
+    for (let i = gates.length - nOut; i < gates.length; i++) { live.add(i); stack.push(i); }
+    while (stack.length) { const g = gates[stack.pop()]; for (const r of [g.a, g.b]) { const k = r - base; if (k >= 0 && !live.has(k)) { live.add(k); stack.push(k); } } }
+    const keep = [...live].sort((a, b) => a - b), idx = new Map(keep.map((k, i) => [k, i])), re = r => { const k = r - base; return k < 0 ? r : base + idx.get(k); };
+    return keep.map(k => ({a: re(gates[k].a), b: re(gates[k].b)}));
+  }
+
+  // Prove the circuit equals the policy on every answer combination (or a seeded sample when there are many questions).
+  function verify(P, C) {
+    const nQ = P.questions.length, total = 2 ** Math.min(nQ, 40), exhaustive = nQ <= 14, N = exhaustive ? 2 ** nQ : 4096;
+    let seed = 12345; const rnd = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+    for (let i = 0; i < N; i++) {
+      const m = exhaustive ? i : Math.floor(rnd() * 2 ** Math.min(nQ, 48));
+      const answers = Array.from({length: nQ}, (_, k) => Math.floor(m / 2 ** k) % 2 === 1);
+      const want = run(P, answers).result, got = evalGates(C.gates, nQ, C.nOut, m);
+      if (want !== got) return {ok: false, checked: i + 1, exhaustive, m, want, got};
+    }
+    return {ok: true, checked: N, exhaustive, total};
+  }
+
+  const encodeAnswers = answers => answers.reduce((acc, a, k) => acc + (a ? 2 ** k : 0), 0); // question k = bit k (TapeOut input order)
+  const decodeAnswers = (m, nQ) => Array.from({length: nQ}, (_, k) => Math.floor(m / 2 ** k) % 2 === 1);
+
+  // Canonical text of a policy (what gets hashed and published as the "definitions document").
+  function canonical(P) {
+    return [`name: ${P.name}`, P.about ? `about: ${P.about}` : null, ...P.questions.map(q => `question: ${q.text}${q.hint ? " | " + q.hint : ""}`), ...P.results.map(r => `result: ${r}`),
+      ...P.rules.map(r => `rule: ${r.conds.map(c => `Q${c.q + 1}=${c.yes ? "yes" : "no"}`).join(" & ")} -> ${r.resultName}${r.why ? " : " + r.why : ""}`), `default: ${P.def.resultName}${P.def.why ? " : " + P.def.why : ""}`].filter(Boolean).join("\n") + "\n";
+  }
+
+  // ---------- built-in templates ----------
+  const TEMPLATES = {
+    warranty: `name: Warranty claims
+about: Find out whether a repair would be covered before you file a claim.
+question: Is the product registered, or can you show proof of purchase? | Registration number or receipt
+question: Is it still within the warranty period? | Purchase date
+question: Was it bought from an authorised seller? | Seller name on the receipt
+question: Is this type of damage or fault one the warranty covers? | Fault description and photos
+question: Is there no excluded cause, such as water damage, a drop or an unauthorised repair? | Repair centre inspection note
+question: Is the product within its usage limit? | Usage reading or hours
+question: Is the repair you need one the warranty covers? | Repair centre quote
+result: Not covered
+result: Needs review
+result: Partly covered (parts, not labour)
+result: Covered
+rule: Q1=no -> Not covered : The product is not registered and no proof of purchase was shown.
+rule: Q2=no -> Not covered : The warranty period has ended.
+rule: Q4=no -> Not covered : This type of damage or fault is not covered by the warranty.
+rule: Q5=no -> Not covered : An excluded cause was found (for example water damage, a drop or an unauthorised repair).
+rule: Q7=no -> Not covered : This type of repair is not covered by the warranty.
+rule: Q3=no -> Needs review : It was not bought from an authorised seller, so a person has to look at it.
+rule: Q6=no -> Partly covered (parts, not labour) : The usage limit was exceeded, so parts are covered but labour is not.
+default: Covered : Every condition of the warranty is met.
+`,
+    bounty: `name: Bug bounty severity
+about: Agree how serious a reported vulnerability is by answering plain questions instead of arguing about the label.
+question: Can an attacker start it without any special role or permission? | Reproduction steps from an unprivileged account
+question: Can it cause an unauthorised loss of funds or assets? | Proof of concept or transaction trace
+question: Does it affect more than one user or pool? | Proof of concept showing a second victim
+question: Does it work without any victim having to sign or click anything? | Demonstration with no victim step
+question: Can the attacker repeat it with the same effect? | A second run on the same fork
+question: Is the damage permanent, so the project cannot reverse it? | Analysis of recovery options
+question: Could a reviewer reproduce it on a fork or testnet? | Reviewer's reproduction log
+question: Is the affected asset on the programme's published scope list? | Link to the scope entry
+result: Rejected
+result: Low
+result: Medium
+result: High
+result: Critical
+rule: Q8=no -> Rejected : The affected asset is not in the programme's scope.
+rule: Q7=no -> Rejected : The issue could not be reproduced.
+rule: Q1=yes & Q2=yes & Q4=yes & Q6=yes -> Critical : Anyone can steal funds permanently without any victim action.
+rule: Q2=yes & Q6=yes -> High : Funds can be lost permanently, but the attack needs a special role or a victim action.
+rule: Q2=yes -> Medium : Funds can be lost, but the loss can be reversed.
+rule: Q6=yes -> Medium : Permanent damage without a loss of funds.
+default: Low : It is reproducible and in scope, but there is no loss of funds and no permanent damage.
+`
+  };
+
+  const API = {parse, run, compile, verify, resultBits, encodeAnswers, decodeAnswers, canonical, hexOf, evalGates, TEMPLATES, Net};
+  if (typeof module !== "undefined" && module.exports) module.exports = API; else root.TB = API;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script><script>/* config.js */
+// Addresses on X Layer (chain 196). registry / caseContract stay zero until they are deployed; `published` maps a template key
+// to the circuit it was published as, e.g. warranty: {circuitId: 13}. With no circuit id the page computes in the browser and says so.
+window.TB_CONFIG = {
+  chainId: 196, rpc: "https://rpc.xlayer.tech", explorer: "https://www.oklink.com/xlayer",
+  processor: "0x9e2849c04a513fe64db07521cbe52d078d905c0e",
+  faucet: "0xBC58802002307fD80048e93A6475335eC65a4f39",          // free NAND, once per wallet
+  transistors: "0xd0faafc5b9149cae7bd9af64070fee33c46ed619",      // NAND token (ERC-1155 id 0)
+  tapeoutFeeWei: "1300000000000000",                              // 0.0013 OKB per tape-out
+  registry: "0x25E87D367316038a2d3B6A4fe3d58AA453D4c219",
+  caseContract: "0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3",    // TiebreakCaseV2: set by scripts/deploy-case-v2.sh
+  caseContractV1: "0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987",  // the first, simpler case contract (no deadlines); still on-chain
+  published: {warranty: {circuitId: 13, ruleSetId: 1}}
+};
+
+</script><script>/* wallet.js */
+// Minimal browser-wallet helper (no server): connect, switch to X Layer, send a transaction, wait for the receipt. Reads use the public RPC.
+(function () {
+  "use strict";
+  const CFG = window.TB_CONFIG; let account = null;
+  const eth = () => window.ethereum;
+  const rpc = async (method, params) => { const r = await (await fetch(CFG.rpc, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params})})).json(); if (r.error) throw new Error(r.error.message || "RPC error"); return r.result; };
+  async function connect() {
+    if (!eth()) throw new Error("No wallet found. Install a wallet such as OKX Wallet, then reload this page.");
+    account = (await eth().request({method: "eth_requestAccounts"}))[0].toLowerCase();
+    if (parseInt(await eth().request({method: "eth_chainId"}), 16) !== CFG.chainId) {
+      try { await eth().request({method: "wallet_switchEthereumChain", params: [{chainId: "0x" + CFG.chainId.toString(16)}]}); }
+      catch (e) { if (e && e.code === 4902) await eth().request({method: "wallet_addEthereumChain", params: [{chainId: "0x" + CFG.chainId.toString(16), chainName: "X Layer", nativeCurrency: {name: "OKB", symbol: "OKB", decimals: 18}, rpcUrls: [CFG.rpc], blockExplorerUrls: [CFG.explorer]}]}); else throw e; }
+    }
+    return account;
+  }
+  async function send(to, data, valueWei) {
+    if (!account) await connect();
+    const tx = {from: account, to, data}; if (valueWei && BigInt(valueWei) > 0n) tx.value = "0x" + BigInt(valueWei).toString(16);
+    const hash = await eth().request({method: "eth_sendTransaction", params: [tx]});
+    for (let i = 0; i < 120; i++) { const rc = await rpc("eth_getTransactionReceipt", [hash]); if (rc) { if (rc.status !== "0x1") throw new Error("The transaction failed on-chain: " + hash); return rc; } await new Promise(r => setTimeout(r, 1000)); }
+    throw new Error("Timed out waiting for a transaction. It may still go through: " + hash);
+  }
+  window.TB_WALLET = {connect, send, rpc, account: () => account};
+})();
+
+</script><script>/* publish.js */
+// One-click publish with the visitor's own wallet: claim or mint NAND if short, tape the circuit out, register it. Static; no server.
+(function () {
+  "use strict";
+  const CFG = window.TB_CONFIG, W = () => window.TB_WALLET;
+  const w = n => BigInt(n).toString(16).padStart(64, "0"), addrW = a => a.toLowerCase().replace("0x", "").padStart(64, "0");
+  const SEL = {claim: "0x4e71d92d", claimed: "0xc884ef83", balanceOf: "0x00fdd58e", protocolFee: "0xb0e21e8a", mint: "0x1b2ef1ca", tapeout: "0x7bd3ac1d", publish: "0xa2f94292"};
+  const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", PUBLISHED = null;
+  const call = (to, data) => W().rpc("eth_call", [{to, data}, "latest"]);
+  const okb = wei => (Number(wei) / 1e18).toFixed(6).replace(/0+$/, "").replace(/\.$/, ".0");
+
+  // Everything the wallet will be asked, computed before anything is sent.
+  async function plan(C, account) {
+    const have = BigInt(await call(CFG.transistors, SEL.balanceOf + addrW(account) + w(0))), need = BigInt(C.gates.length);
+    const claimed = BigInt(await call(CFG.faucet, SEL.claimed + addrW(account))) !== 0n;
+    const canClaim = !claimed && have < need; // the faucet gives 40 once per wallet
+    const afterClaim = have + (canClaim ? 40n : 0n), mintNeeded = afterClaim < need ? need - afterClaim : 0n;
+    const mintFee = mintNeeded > 0n ? BigInt(await call(CFG.transistors, SEL.protocolFee)) : 0n;
+    const bal = BigInt(await W().rpc("eth_getBalance", [account, "latest"])), fees = BigInt(CFG.tapeoutFeeWei) + mintFee;
+    return {have, need, canClaim, mintNeeded, mintFee, fees, bal, enough: bal >= fees};
+  }
+
+  // say(text) reports progress. Returns {circuitId, ruleSetId, txs}.
+  async function run({policy, canon, hash, C, previousId, say}) {
+    const nameBytes = new TextEncoder().encode(policy.name); if (nameBytes.length > 80 || !nameBytes.length) throw new Error("The checker name must be 1 to 80 characters.");
+    const account = await W().connect(), p = await plan(C, account), txs = {};
+    if (!p.enough) throw new Error(`Your wallet has ${okb(p.bal)} OKB but about ${okb(p.fees)} OKB is needed for the fees (plus a little gas).`);
+    if (p.canClaim) { say("Step 1: claiming your free NAND tokens. Confirm in your wallet…"); txs.claim = (await W().send(CFG.faucet, SEL.claim)).transactionHash; }
+    const have2 = BigInt(await call(CFG.transistors, SEL.balanceOf + addrW(account) + w(0))), short = BigInt(C.gates.length) > have2 ? BigInt(C.gates.length) - have2 : 0n;
+    if (short > 0n) { const fee = BigInt(await call(CFG.transistors, SEL.protocolFee)); say(`Step 2: buying ${short} more NAND for ${okb(fee)} OKB. Confirm in your wallet…`); txs.mint = (await W().send(CFG.transistors, SEL.mint + w(0) + w(short), fee)).transactionHash; }
+    say(`Step 3: recording your circuit permanently (fee ${okb(CFG.tapeoutFeeWei)} OKB). Confirm in your wallet…`);
+    const data = C.hex.replace("0x", ""), len = data.length / 2;
+    const rc = await W().send(CFG.processor, SEL.tapeout + w(96) + w(C.nIn) + w(C.nOut) + w(len) + data.padEnd(Math.ceil(len / 32) * 64, "0"), CFG.tapeoutFeeWei); txs.tapeout = rc.transactionHash;
+    const lg = rc.logs.find(l => l.address.toLowerCase() === CFG.processor.toLowerCase() && l.topics[0] === TRANSFER && l.topics.length === 4);
+    if (!lg) throw new Error("Your circuit was recorded, but its number could not be read. Find it in this transaction on the explorer: " + CFG.explorer + "/tx/" + txs.tapeout);
+    const circuitId = Number(BigInt(lg.topics[3]));
+    say(`Step 4: registering the rules as a public rule set (circuit #${circuitId}). Confirm in your wallet…`);
+    const nb = Array.from(nameBytes, b => b.toString(16).padStart(2, "0")).join("");
+    const rr = await W().send(CFG.registry, SEL.publish + addrW(CFG.processor) + w(circuitId) + w(C.nIn) + w(C.nOut) + hash.slice(2) + w(previousId || 0) + w(224) + w(nameBytes.length) + nb.padEnd(Math.ceil(nameBytes.length / 32) * 64, "0")); txs.register = rr.transactionHash;
+    const rl = rr.logs.find(l => l.address.toLowerCase() === CFG.registry.toLowerCase() && l.topics.length >= 2);
+    const ruleSetId = rl ? Number(BigInt(rl.topics[1])) : null;
+    return {circuitId, ruleSetId, txs};
+  }
+  window.TB_PUBLISH = {plan, run, okb};
+})();
+
+</script><script>/* builder.js */
+// Visual rule builder: edit questions, results and rules in forms (or paste from a spreadsheet, or as text); everything is re-compiled
+// and re-verified in the browser. Static: no server calls.
+(function () {
+  "use strict";
+  const TB = window.TB, main = document.querySelector("#main"), $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const b64e = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
+  const sha256 = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+
+  // ----- state <-> text -----
+  const fromPolicy = P => ({name: P.name, about: P.about || "", questions: P.questions.map(q => ({text: q.text, hint: q.hint || ""})), results: [...P.results],
+    rules: P.rules.map(r => ({conds: r.conds.map(c => ({q: c.q, yes: c.yes})), result: r.result, why: r.why || ""})), def: {result: P.def.result, why: P.def.why || ""}});
+  const clean = s => String(s || "").replace(/\s*\|\s*/g, " / ").replace(/\s->\s/g, " to ").replace(/\s:\s/g, " - ").replace(/[\r\n]+/g, " ").trim();
+  const toText = S => {
+    const rn = i => clean(S.results[i] || ""), cond = c => `Q${c.q + 1}=${c.yes ? "yes" : "no"}`;
+    return [`name: ${clean(S.name)}`, S.about.trim() ? `about: ${clean(S.about)}` : null,
+      ...S.questions.map(q => `question: ${clean(q.text)}${q.hint.trim() ? " | " + clean(q.hint) : ""}`), ...S.results.map(r => `result: ${clean(r)}`),
+      ...S.rules.map(r => `rule: ${r.conds.map(cond).join(" & ")} -> ${rn(r.result)}${r.why.trim() ? " : " + clean(r.why) : ""}`),
+      `default: ${rn(S.def.result)}${S.def.why.trim() ? " : " + clean(S.def.why) : ""}`].filter(x => x !== null).join("\n") + "\n";
+  };
+  const blank = () => ({name: "My checker", about: "", questions: [{text: "", hint: ""}], results: ["Yes", "No"], rules: [], def: {result: 0, why: ""}});
+
+  const PROMPT = `I want to turn a policy into a "Tiebreak" checker. Read my policy at the bottom and reply with ONLY the rules text (no commentary), in exactly this format:
+
+name: Short name of the checker
+about: One line telling the customer what this checks
+question: A yes/no question, worded so that "yes" is the good answer | Evidence the customer or staff should show (optional)
+result: First possible result
+result: Second possible result
+rule: Q1=no -> Second possible result : Plain-words reason shown to the customer
+rule: Q2=no & Q3=yes -> Second possible result : Join several conditions with &
+default: First possible result : Reason shown when no rule matched
+
+How it works: rules are checked from top to bottom and the first one that matches decides. Q1 is the first question, Q2 the second, and so on. Use at most 12 questions. Only use conditions the policy actually states; if something is unclear, add a question for it rather than guessing. Put the most disqualifying rules first.
+
+MY POLICY:
+[paste your policy text here]`;
+
+  function build() {
+    let S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
+    main.innerHTML = `<h1>Publish your policy as a checker</h1>
+      <p class="lede">Describe your rules in forms or paste them from a spreadsheet. Rules are checked from top to bottom, and the first one that matches decides. We turn them into a circuit and prove it gives the same answers as your rules.</p>
+      <div class="row"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
+      <details class="card" id="ai"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
+        <p class="small">Copy this request, paste it into any AI assistant (with your policy at the bottom), then paste its reply below. Always read the result: assistants can make mistakes.</p>
+        <pre id="prompt">${esc(PROMPT)}</pre><div class="row"><button class="btn small ghost" id="cpprompt" type="button">Copy the request</button></div>
+        <textarea id="aiin" rows="6" class="mono" style="min-height:120px" placeholder="Paste the assistant's reply here" spellcheck="false"></textarea>
+        <div class="row"><button class="btn small" id="aiuse" type="button">Use this reply</button><span id="aimsg" class="small"></span></div></details>
+      <div class="row" role="tablist"><button class="btn small" id="tabv" type="button" aria-pressed="true">Forms</button><button class="btn small ghost" id="tabt" type="button" aria-pressed="false">Text</button></div>
+      <div id="editor"></div><div id="out"></div>`;
+    const ed = $("#editor");
+    const setMode = m => { mode = m; $("#tabv").classList.toggle("ghost", m !== "visual"); $("#tabt").classList.toggle("ghost", m !== "text"); $("#tabv").setAttribute("aria-pressed", m === "visual"); $("#tabt").setAttribute("aria-pressed", m === "text"); drawEditor(); };
+    $("#tabv").onclick = () => { if (mode === "text") { const r = TB.parse($("#src").value); if (r.errors.length) { $("#out").innerHTML = errBox(r.errors, "Fix the text before switching to forms"); return; } S = fromPolicy(r.policy); } setMode("visual"); };
+    $("#tabt").onclick = () => setMode("text");
+    $$("[data-t]").forEach(b => b.onclick = () => { S = b.dataset.t === "blank" ? blank() : fromPolicy(TB.parse(TB.TEMPLATES[b.dataset.t]).policy); setMode(mode); });
+    $("#cpprompt").onclick = e => copy(PROMPT, e.target);
+    $("#aiuse").onclick = () => { const r = TB.parse($("#aiin").value), m = $("#aimsg"); if (r.errors.length) { m.className = "small err"; m.textContent = r.errors.slice(0, 3).map(e => (e.line ? "Line " + e.line + ": " : "") + e.message).join(" ") + " Ask the assistant to fix it."; return; } S = fromPolicy(r.policy); m.className = "small ok"; m.textContent = "Loaded. Review every question and rule below."; setMode("visual"); };
+
+    const errBox = (errs, title) => `<div class="card"><b>${title || "Fix these first"}</b>${errs.map(e => `<div class="err">${e.line ? "Line " + e.line + ": " : ""}${esc(e.message)}</div>`).join("")}</div>`;
+    const schedule = () => { clearTimeout(timer); timer = setTimeout(renderOutput, 250); };
+    const qopts = sel => S.questions.map((q, i) => `<option value="${i}"${i === sel ? " selected" : ""}>${i + 1}. ${esc(q.text.slice(0, 48) || "(empty question)")}</option>`).join("");
+    const ropts = sel => S.results.map((r, i) => `<option value="${i}"${i === sel ? " selected" : ""}>${esc(r || "(unnamed result)")}</option>`).join("");
+    const move = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return false; [arr[i], arr[j]] = [arr[j], arr[i]]; return true; };
+
+    function drawEditor() {
+      if (mode === "text") {
+        ed.innerHTML = `<textarea id="src" class="mono" spellcheck="false" aria-label="Your policy rules"></textarea>
+          <details><summary>How to write the rules</summary><pre>${esc(PROMPT.split("How it works")[0].split("format:")[1].trim())}</pre></details>`;
+        const src = $("#src"); src.value = toText(S); src.oninput = () => schedule(); renderOutput(); return;
+      }
+      ed.innerHTML = `<div class="card"><h3>About this checker</h3>
+        <div class="wide"><label><span>Name</span><input id="f-name" type="text" value="${esc(S.name)}"></label></div>
+        <div class="wide"><label><span>One line for the customer</span><input id="f-about" type="text" value="${esc(S.about)}"></label></div></div>
+        <div class="card"><h3>Questions</h3><p class="small mute">Word each one so that "yes" is the good answer if you can. The evidence hint tells people what to show.</p>
+          ${S.questions.map((q, i) => `<div class="qrow" data-qi="${i}"><b>${i + 1}.</b><input type="text" data-f="qt" value="${esc(q.text)}" placeholder="Question" aria-label="Question ${i + 1}"><input type="text" data-f="qh" value="${esc(q.hint)}" placeholder="Evidence (optional)" aria-label="Evidence for question ${i + 1}"><span class="acts"><button class="btn small ghost" data-a="qup" type="button" aria-label="Move up">↑</button><button class="btn small ghost" data-a="qdn" type="button" aria-label="Move down">↓</button><button class="btn small ghost" data-a="qdel" type="button" aria-label="Remove">✕</button></span></div>`).join("")}
+          <div class="row"><button class="btn small ghost" data-a="qadd" type="button">+ Add a question</button></div></div>
+        <div class="card"><h3>Results</h3><p class="small mute">The possible outcomes, such as "Covered" or "Not covered".</p>
+          ${S.results.map((r, i) => `<div class="wide" data-ri="${i}" style="grid-template-columns:auto minmax(0,1fr) auto"><b>${i + 1}.</b><input type="text" data-f="rn" value="${esc(r)}" placeholder="Result name" aria-label="Result ${i + 1}"><button class="btn small ghost" data-a="rdel" type="button" aria-label="Remove">✕</button></div>`).join("")}
+          <div class="row"><button class="btn small ghost" data-a="radd" type="button">+ Add a result</button></div></div>
+        <div class="card"><h3>Rules</h3><p class="small mute">Checked from top to bottom. The first rule whose conditions all hold decides the result.</p>
+          ${S.rules.map((r, i) => `<div class="q" data-ui="${i}"><div class="row"><b>Rule ${i + 1}</b><button class="btn small ghost" data-a="rup" type="button" aria-label="Move rule up">↑</button><button class="btn small ghost" data-a="rdn" type="button" aria-label="Move rule down">↓</button><button class="btn small ghost" data-a="rdelrule" type="button" aria-label="Remove rule">✕</button></div>
+            ${r.conds.map((c, k) => `<div class="row" data-ck="${k}">${k ? "and" : "If"} <select data-f="cq" aria-label="Question">${qopts(c.q)}</select> is <select data-f="cy" aria-label="Answer"><option value="1"${c.yes ? " selected" : ""}>yes</option><option value="0"${c.yes ? "" : " selected"}>no</option></select><button class="btn small ghost" data-a="cdel" type="button" aria-label="Remove condition">✕</button></div>`).join("")}
+            <div class="row"><button class="btn small ghost" data-a="cadd" type="button">+ and another condition</button></div>
+            <div class="row">then the result is <select data-f="rr" aria-label="Result">${ropts(r.result)}</select></div>
+            <div class="wide"><label><span>because</span><input type="text" data-f="rw" value="${esc(r.why)}" placeholder="Reason shown to the customer"></label></div></div>`).join("")}
+          <div class="row"><button class="btn small ghost" data-a="ruleadd" type="button">+ Add a rule</button></div></div>
+        <div class="card"><h3>Otherwise</h3><div class="row">If no rule matched, the result is <select id="f-dr" aria-label="Default result">${ropts(S.def.result)}</select></div>
+          <div class="wide"><label><span>because</span><input id="f-dw" type="text" value="${esc(S.def.why)}" placeholder="Reason shown to the customer"></label></div></div>
+        <details class="card"${pasteOpen ? " open" : ""}><summary>Paste from a spreadsheet</summary>
+          <p class="small">Copy cells from Excel or Google Sheets and paste. <b>Questions:</b> two columns, question then evidence. <b>Rules:</b> three columns: conditions (for example <code>Q2=no</code> or <code>Q1=yes &amp; Q3=no</code>), result name, reason.</p>
+          <textarea id="pq" rows="4" class="mono" style="min-height:90px" placeholder="Question&#9;Evidence" spellcheck="false"></textarea><div class="row"><button class="btn small ghost" data-a="pasteq" type="button">Add these questions</button></div>
+          <textarea id="pr" rows="4" class="mono" style="min-height:90px" placeholder="Q1=no&#9;Not covered&#9;The reason" spellcheck="false"></textarea><div class="row"><button class="btn small ghost" data-a="paster" type="button">Add these rules</button><span id="pmsg" class="small"></span></div></details>`;
+      bind(); renderOutput();
+    }
+
+    function bind() {
+      const idx = (el, attr) => Number(el.closest("[" + attr + "]").getAttribute(attr));
+      $("#f-name").oninput = e => { S.name = e.target.value; schedule(); }; $("#f-about").oninput = e => { S.about = e.target.value; schedule(); };
+      $("#f-dr").onchange = e => { S.def.result = Number(e.target.value); schedule(); }; $("#f-dw").oninput = e => { S.def.why = e.target.value; schedule(); };
+      $$("[data-f]").forEach(el => {
+        const f = el.dataset.f, on = el.tagName === "SELECT" ? "onchange" : "oninput";
+        el[on] = () => {
+          if (f === "qt") S.questions[idx(el, "data-qi")].text = el.value; else if (f === "qh") S.questions[idx(el, "data-qi")].hint = el.value;
+          else if (f === "rn") S.results[idx(el, "data-ri")] = el.value;
+          else if (f === "cq") S.rules[idx(el, "data-ui")].conds[idx(el, "data-ck")].q = Number(el.value);
+          else if (f === "cy") S.rules[idx(el, "data-ui")].conds[idx(el, "data-ck")].yes = el.value === "1";
+          else if (f === "rr") S.rules[idx(el, "data-ui")].result = Number(el.value);
+          else if (f === "rw") S.rules[idx(el, "data-ui")].why = el.value;
+          schedule();
+        };
+      });
+      $$("[data-a]").forEach(b => b.onclick = () => act(b.dataset.a, b));
+    }
+
+    function act(a, b) {
+      const gi = attr => Number(b.closest("[" + attr + "]").getAttribute(attr));
+      if (a === "qadd") S.questions.push({text: "", hint: ""});
+      else if (a === "qdel") { const i = gi("data-qi"); S.questions.splice(i, 1); S.rules.forEach(r => { r.conds = r.conds.filter(c => c.q !== i).map(c => ({...c, q: c.q > i ? c.q - 1 : c.q})); }); S.rules = S.rules.filter(r => r.conds.length); }
+      else if (a === "qup" || a === "qdn") { const i = gi("data-qi"), j = i + (a === "qup" ? -1 : 1); if (j >= 0 && j < S.questions.length) { [S.questions[i], S.questions[j]] = [S.questions[j], S.questions[i]]; S.rules.forEach(r => r.conds.forEach(c => { if (c.q === i) c.q = j; else if (c.q === j) c.q = i; })); } }
+      else if (a === "radd") S.results.push("");
+      else if (a === "rdel") { const i = gi("data-ri"); if (S.results.length <= 2) return; S.results.splice(i, 1); const fix = x => x === i ? 0 : x > i ? x - 1 : x; S.rules.forEach(r => r.result = fix(r.result)); S.def.result = fix(S.def.result); }
+      else if (a === "ruleadd") S.rules.push({conds: [{q: 0, yes: false}], result: 0, why: ""});
+      else if (a === "rdelrule") S.rules.splice(gi("data-ui"), 1);
+      else if (a === "rup" || a === "rdn") move(S.rules, gi("data-ui"), a === "rup" ? -1 : 1);
+      else if (a === "cadd") S.rules[gi("data-ui")].conds.push({q: 0, yes: true});
+      else if (a === "cdel") { const r = S.rules[gi("data-ui")]; if (r.conds.length > 1) r.conds.splice(gi("data-ck"), 1); }
+      else if (a === "pasteq") { pasteOpen = true; const rows = $("#pq").value.split(/\r?\n/).map(l => l.split("\t")).filter(c => c[0] && c[0].trim()); rows.forEach(c => S.questions.push({text: c[0].trim(), hint: (c[1] || "").trim()})); $("#pmsg").textContent = ""; }
+      else if (a === "paster") { pasteOpen = true;
+        const rows = $("#pr").value.split(/\r?\n/).map(l => l.split("\t")).filter(c => c[0] && c[0].trim()), bad = [];
+        rows.forEach((c, n) => {
+          const conds = c[0].split("&").map(s => /^\s*Q(\d+)\s*=\s*(yes|no)\s*$/i.exec(s)); if (conds.some(x => !x) || conds.some(x => Number(x[1]) < 1 || Number(x[1]) > S.questions.length)) { bad.push(n + 1); return; }
+          let ri = S.results.findIndex(r => r.toLowerCase() === (c[1] || "").trim().toLowerCase()); if (ri < 0 && (c[1] || "").trim()) { S.results.push(c[1].trim()); ri = S.results.length - 1; }
+          if (ri < 0) { bad.push(n + 1); return; }
+          S.rules.push({conds: conds.map(x => ({q: Number(x[1]) - 1, yes: x[2].toLowerCase() === "yes"})), result: ri, why: (c[2] || "").trim()});
+        });
+        drawEditor(); if (bad.length) $("#pmsg").innerHTML = `<span class="err">Skipped row${bad.length > 1 ? "s" : ""} ${bad.join(", ")}: use conditions like Q1=no and an existing question number.</span>`; return;
+      }
+      drawEditor();
+    }
+
+    const ex = tx => `<a href="${window.TB_CONFIG.explorer}/tx/${tx}" target="_blank" rel="noopener">${tx.slice(0, 10)}…</a>`;
+    function pubBox(h, C) {
+      if (done && done.hash === h) return `<div class="note ok-note"><b>✓ Published on X Layer.</b> Circuit #${done.circuitId}, rule set #${done.ruleSetId}. ${Object.entries(done.txs).map(([k, v]) => k + " " + ex(v)).join(" · ")}<div class="row"><a class="btn" href="${done.link}">Open your published checker</a><button class="btn ghost" id="cppub" type="button">Copy the link to share</button></div><p class="small">Anyone who opens that link sees whether the rules match what you published, and the result is confirmed by the processor.</p></div>`;
+      const extra = C.gates.length > 40 ? ` This checker needs ${C.gates.length} NAND, more than the 40 free ones, so you'll also buy a few (about 0.00066 OKB).` : "";
+      return `<div class="row"><label>This replaces an earlier version? Rule set number <input id="prevId" type="number" min="1" style="width:90px" placeholder="optional"></label></div>
+        <p class="small">Your wallet will be asked to confirm up to four transactions: claim free NAND (once), buy more if short, record the circuit (0.0013 OKB), and register the rules. It spends your own OKB, and a published circuit can't be changed or removed.${extra}</p>
+        <div class="row"><button class="btn" id="pubgo" type="button">Publish on X Layer with my wallet</button></div>
+        <div id="pubmsg" class="small${lastErr ? " err" : " mute"}">${esc(lastErr)}</div>`;
+    }
+    function bindPub(P, canon, h, C) {
+      const cp = $("#cppub"); if (cp) cp.onclick = e => copy(done.link, e.target);
+      const go = $("#pubgo"); if (!go) return;
+      go.onclick = async () => {
+        const prev = Number($("#prevId").value) || 0; lastErr = ""; publishing = true; go.disabled = true; const msg = $("#pubmsg"); msg.className = "small mute"; msg.textContent = "Connecting your wallet…";
+        try {
+          const res = await window.TB_PUBLISH.run({policy: P, canon, hash: h, C, previousId: prev, say: t => { msg.textContent = t; }});
+          done = {hash: h, ...res, link: location.href.split("#")[0] + "#check/c=" + b64e(canon) + "/rs=" + res.ruleSetId};
+        } catch (e) { lastErr = (e && e.message) || String(e); if (/user rejected|denied/i.test(lastErr)) lastErr = "You cancelled in the wallet. Nothing more was sent."; }
+        publishing = false; renderOutput();
+      };
+    }
+    async function renderOutput() {
+      if (publishing) return;
+      const out = $("#out"), text = mode === "text" && $("#src") ? $("#src").value : toText(S), r = TB.parse(text);
+      if (r.errors.length) { out.innerHTML = errBox(r.errors); return; }
+      const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
+      if (mode === "text") S = fromPolicy(P);
+      const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
+      out.innerHTML = `<div class="card"><h3>${esc(P.name)}</h3>
+        <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} circuit gates</span></div>
+        <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The circuit gives the same answer as your rules" : "✗ The circuit does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
+        <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
+        <div class="card"><h3>Publishing it on X Layer</h3>
+          <p class="small">Publishing records the circuit permanently, so the rules can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
+          <p class="small"><b>Definitions hash</b> (fingerprint of the rules text, published with the circuit): <code>${h}</code></p>
+          <details><summary>Circuit netlist (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
+          ${pubBox(h, C)}</div>`;
+      bindPub(P, canon, h, C);
+      $("#cplink").onclick = e => copy(link, e.target); $("#cphex").onclick = e => copy(C.hex, e.target);
+      $("#dl").onclick = () => { const blob = new Blob([JSON.stringify({rules: canon, definitionsHashSha256: h, nQuestions: nQ, nResultBits: C.nOut, netlist: C.hex, gates: C.gates.length}, null, 2)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (P.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "rules") + ".json"; a.click(); };
+    }
+    setMode("visual");
+  }
+  window.TB_BUILD = {build};
+})();
+
+</script><script>/* cases.js */
+// On-chain case pages (TiebreakCaseV2): open a case, both sides accept a reviewer, answer, the reviewer decides only the disputed
+// questions, deadlines with a public "close this case", and a replay. Needs a wallet to send; reads are free.
+(function () {
+  "use strict";
+  const TB = window.TB, CFG = window.TB_CONFIG, $ = s => document.querySelector(s), main = document.querySelector("#main");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const w = n => BigInt(n).toString(16).padStart(64, "0"), addrW = a => a.toLowerCase().replace("0x", "").padStart(64, "0");
+  const SEL = {open: "0x2da25165", approve: "0xf32ece36", propose: "0x19d368d1", submit: "0x99467e00", review: "0x9e1e0b54", expire: "0xbf81bf43", get: "0x9507d39a", replay: "0x275fabd4", count: "0x06661abd"};
+  const OPENED = "0x5217ef0a53023fa797728dd41edbde7d2e403604cdcf9fea69addf9b372c770e", ZERO = /^0x0+$/, ADDR = /^0x[0-9a-fA-F]{40}$/;
+  const short = a => a.slice(0, 6) + "…" + a.slice(-4), DAY = 86400;
+  const STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
+  const rpc = (method, params) => window.TB_WALLET.rpc(method, params);
+  const call = data => rpc("eth_call", [{to: CFG.caseContract, data}, "latest"]);
+  const sha256 = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+  const policyOf = ruleSetId => { const k = Object.keys(CFG.published).find(k => CFG.published[k].ruleSetId === Number(ruleSetId)); return k ? {key: k, policy: TB.parse(TB.TEMPLATES[k]).policy} : null; };
+  const deployed = () => !ZERO.test(CFG.caseContract);
+  const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
+
+  function decodeCase(hex) {
+    const x = hex.replace("0x", ""), W = i => x.slice(i * 64, i * 64 + 64), A = i => "0x" + W(i).slice(24), N = i => BigInt("0x" + W(i));
+    return {ruleSetId: Number(N(0)), filer: A(1), decider: A(2), reviewer: A(3), operator: A(4), evidenceHash: "0x" + W(5), openedAt: Number(N(6)), answerBy: Number(N(7)), reviewWindow: Number(N(8)), reviewBy: Number(N(9)),
+      filerAnswers: N(10), deciderAnswers: N(11), filerIn: N(12) === 1n, deciderIn: N(13) === 1n, disputed: N(14), finalAnswers: N(15), result: Number(N(16)), filerOk: N(17) === 1n, deciderOk: N(18) === 1n, status: Number(N(19))};
+  }
+  const bitsToArr = (m, n) => Array.from({length: n}, (_, k) => ((BigInt(m) >> BigInt(k)) & 1n) === 1n);
+  const friendly = e => { const m = String((e && e.message) || e);
+    if (/reviewer not accepted/.test(m)) return "Both sides have to accept the reviewer first."; if (/deadline passed/.test(m)) return "The deadline has passed."; if (/not allowed/.test(m)) return "Your wallet isn't allowed to do that on this case.";
+    if (/user rejected|denied/i.test(m)) return "You cancelled in the wallet."; return m; };
+  const send = data => window.TB_WALLET.send(CFG.caseContract, data);
+
+  // ---------- pages ----------
+  async function list() {
+    if (!deployed()) { main.innerHTML = `<h1>Settle a disagreement</h1><div class="note">The case contract is being upgraded (reviewer acceptance and deadlines). Cases will be available again once the new contract is deployed.</div>`; return; }
+    const opts = (vals, def) => vals.map(([d, label]) => `<option value="${d}"${d === def ? " selected" : ""}>${label}</option>`).join(""), days = [[1, "1 day"], [3, "3 days"], [7, "7 days"], [14, "14 days"], [30, "30 days"]];
+    main.innerHTML = `<h1>Settle a disagreement</h1><p class="lede">Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer that both sides have accepted, and the published rules give the result. A case nobody finishes in time ends with no decision.</p>
+      <div class="card"><h3>Open a case</h3>
+        <div class="row"><label>Rule set <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
+        <div class="wide"><label><span>Decider (the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="wide"><label><span>Proposed reviewer (the decider must accept)</span><input id="rev" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="row"><label>Time to answer <select id="aw">${opts(days, 7)}</select></label><label>Time for the reviewer <select id="rw">${opts(days, 7)}</select></label></div>
+        <div class="wide"><label><span>Evidence note, optional</span><input id="evd" type="text" placeholder="e.g. the repair centre report reference"></label></div>
+        <p class="small mute">Only a fingerprint of the evidence note goes on-chain. You are the filer, and your wallet accepts the reviewer by opening the case. The reviewer must be a different person from both sides.</p>
+        <div class="row"><button class="btn" id="open" type="button">Open case</button><span id="msg" class="small"></span></div></div>
+      <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div></div>`;
+    $("#lk").onclick = () => { const n = Number($("#cn").value); if (n) location.hash = "#case/" + n; };
+    $("#open").onclick = async () => {
+      const msg = $("#msg"), dec = $("#dec").value.trim(), rev = $("#rev").value.trim();
+      if (!ADDR.test(dec) || !ADDR.test(rev)) { msg.innerHTML = `<span class="err">Enter the decider's and the reviewer's wallet addresses.</span>`; return; }
+      try {
+        msg.textContent = "Confirm in your wallet…"; const account = await window.TB_WALLET.connect();
+        const ev = $("#evd").value.trim(), hash = ev ? await sha256(ev) : "0x" + "0".repeat(64);
+        const rc = await send(SEL.open + w($("#rs").value) + addrW(account) + addrW(dec) + addrW(rev) + hash.slice(2) + w(Number($("#aw").value) * DAY) + w(Number($("#rw").value) * DAY));
+        const lg = rc.logs.find(l => l.address.toLowerCase() === CFG.caseContract.toLowerCase() && l.topics[0] === OPENED);
+        location.hash = "#case/" + Number(BigInt(lg.topics[1]));
+      } catch (e) { msg.innerHTML = `<span class="err">${esc(friendly(e))}</span>`; }
+    };
+    try { const n = Number(BigInt(await call(SEL.count))); $("#recent").textContent = n ? `${n} case${n === 1 ? "" : "s"} so far. Latest: ` : "No cases yet."; if (n) { const a = document.createElement("a"); a.href = "#case/" + n; a.textContent = "#" + n; $("#recent").appendChild(a); } } catch {}
+  }
+
+  async function view(id) {
+    if (!deployed()) { list(); return; }
+    main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
+    let c, now; try { c = decodeCase(await call(SEL.get + w(id))); now = Number(BigInt((await rpc("eth_getBlockByNumber", ["latest", false])).timestamp)); } catch (e) { main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="err">That case doesn't exist, or X Layer could not be reached.</p><p><a href="#case">Back</a></p>`; return; }
+    const K = policyOf(c.ruleSetId); if (!K) { main.innerHTML = `<h1>Case #${esc(id)}</h1><p>This case uses rule set ${c.ruleSetId}, which this page does not know how to display.</p>`; return; }
+    const P = K.policy, nQ = P.questions.length, me = window.TB_WALLET.account(), is = a => !!(me && a.toLowerCase() === me);
+    const isFiler = is(c.filer), isDecider = is(c.decider), isReviewer = is(c.reviewer), isOp = is(c.operator);
+    const fa = bitsToArr(c.filerAnswers, nQ), da = bitsToArr(c.deciderAnswers, nQ), dis = bitsToArr(c.disputed, nQ), fin = bitsToArr(c.finalAnswers, nQ), yn = v => v ? "Yes" : "No";
+    const live = c.status === 0 || c.status === 1, deadline = c.status === 0 ? c.answerBy : c.status === 1 ? c.reviewBy : 0, late = live && now > deadline, agreed = c.filerOk && c.deciderOk;
+    const rows = P.questions.map((q, i) => { const both = c.filerIn && c.deciderIn; let tag = ""; if (both) tag = dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`;
+      return `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${tag}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`; }).join("");
+    const ok = v => v ? "accepted ✓" : "not yet";
+    main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1>
+      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Filer ${short(c.filer)} · Decider ${short(c.decider)}${me ? " · You are " + short(me) : ""}</span></p>
+      ${live ? `<p class="small ${late ? "err" : "mute"}">${c.status === 0 ? "Answers due by " : "The reviewer has until "}${when(deadline)}${late ? ". That time has passed." : "."}</p>` : ""}
+      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Filer</th><th>Decider</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="card"><h3>Reviewer</h3><p class="small">${short(c.reviewer)}: filer ${ok(c.filerOk)}, decider ${ok(c.deciderOk)}. ${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
+      <div id="act"></div><div id="final"></div>`;
+    // reviewer controls
+    if (live && !late) {
+      const rv = $("#rv"), mine = [[isFiler || isOp, true, c.filerOk], [isDecider || isOp, false, c.deciderOk]].filter(x => x[0]);
+      if (!me) rv.innerHTML = `<button class="btn small" id="cw" type="button">Connect wallet</button> <span class="small mute">to accept or change the reviewer, answer, or review</span>`;
+      else if (mine.length) {
+        const needs = mine.find(x => !x[2]);
+        rv.innerHTML = `${needs ? `<div class="row"><button class="btn small" id="acc" type="button">Accept this reviewer</button></div>` : ""}<div class="row"><input id="newrev" type="text" placeholder="Propose a different reviewer: 0x…" style="width:min(380px,100%)" autocomplete="off"><button class="btn small ghost" id="prop" type="button">Propose</button><span id="rmsg" class="small err"></span></div>`;
+        const asF = (needs || mine[0])[1];
+        if (needs) $("#acc").onclick = async () => { try { await send(SEL.approve + w(id) + w(needs[1] ? 1 : 0)); view(id); } catch (e) { $("#rmsg").textContent = friendly(e); } };
+        $("#prop").onclick = async () => { const a = $("#newrev").value.trim(); if (!ADDR.test(a)) { $("#rmsg").textContent = "Enter a wallet address."; return; } try { await send(SEL.propose + w(id) + w(asF ? 1 : 0) + addrW(a)); view(id); } catch (e) { $("#rmsg").textContent = friendly(e); } };
+      } else rv.innerHTML = `<span class="small mute">Only the filer and the decider can change the reviewer.</span>`;
+    }
+    const cw = $("#cw"); if (cw) cw.onclick = async () => { try { await window.TB_WALLET.connect(); view(id); } catch (e) { cw.insertAdjacentHTML("afterend", `<span class="err small"> ${esc(friendly(e))}</span>`); } };
+    $("#act").innerHTML = actions();
+    function actions() {
+      if (!live) return "";
+      if (late) return `<div class="note">The deadline has passed. Anyone can close this case. It will end with no decision, and nobody wins by default.<div class="row"><button class="btn" id="closeit" type="button">Close this case</button><span id="cmsg" class="small err"></span></div></div>`;
+      const parts = [];
+      if (c.status === 0) {
+        if ((isFiler || isOp) && !c.filerIn) parts.push(form("filer", "Your answers as the filer"));
+        if ((isDecider || isOp) && !c.deciderIn) parts.push(form("decider", "Your answers as the decider"));
+        if (!parts.length && me) parts.push(`<p class="mute">Nothing for your wallet to do on this case right now.</p>`);
+      } else if (c.status === 1) {
+        if ((isReviewer || isOp) && agreed) parts.push(form("review", "Your decision on the disputed questions only", dis));
+        else if ((isReviewer || isOp) && !agreed) parts.push(`<p class="mute">Both sides have to accept you as the reviewer before you can decide.</p>`);
+        else if (me) parts.push(`<p class="mute">Waiting for the reviewer to answer the disputed questions.</p>`);
+      }
+      return parts.join("");
+    }
+    function form(kind, title, only) {
+      const items = P.questions.map((q, i) => (only && !only[i]) ? "" : `<div class="q"><div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn" data-i="${i}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>`).join("");
+      return `<div class="card" data-form="${kind}"><h3>${title}</h3>${items}<div class="row"><button class="btn" data-send="${kind}" type="button">Send to X Layer</button><span class="small err" data-msg></span></div></div>`;
+    }
+    document.querySelectorAll("[data-form]").forEach(f => {
+      const vals = {}; f.querySelectorAll(".yn").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => { vals[g.dataset.i] = b.dataset.v === "1"; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === vals[g.dataset.i]))); }));
+      f.querySelector("[data-send]").onclick = async () => {
+        const kind = f.dataset.form, need = [...f.querySelectorAll(".yn")].map(g => Number(g.dataset.i)), msg = f.querySelector("[data-msg]");
+        if (need.some(i => vals[i] === undefined)) { msg.textContent = "Answer every question shown."; return; }
+        const bits = need.reduce((acc, i) => acc + (vals[i] ? 1n << BigInt(i) : 0n), 0n);
+        try { msg.textContent = "Confirm in your wallet…"; msg.className = "small mute";
+          await send(kind === "review" ? SEL.review + w(id) + w(bits) : SEL.submit + w(id) + w(kind === "filer" ? 1 : 0) + w(bits)); view(id);
+        } catch (e) { msg.className = "small err"; msg.textContent = friendly(e); }
+      };
+    });
+    const ci = $("#closeit"); if (ci) ci.onclick = async () => { try { if (!me) await window.TB_WALLET.connect(); await send(SEL.expire + w(id)); view(id); } catch (e) { $("#cmsg").textContent = friendly(e); } };
+    if (c.status === 3) {
+      $("#final").innerHTML = `<div class="res" role="status" style="border-color:var(--warn);background:var(--warn2)"><div class="big">No decision</div><div class="why">${c.filerIn && c.deciderIn ? "The reviewer did not decide in time." : "The answers were not all in on time."} Nobody wins by default. The two sides can open a new case.</div></div>`;
+    }
+    if (c.status === 2) {
+      const r = TB.run(P, fin);
+      $("#final").innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(r.why)}</div><div class="row"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><button class="btn small ghost" id="cl" type="button">Copy link</button></div>
+        <p class="small">Final answers: ${P.questions.map((q, i) => (i + 1) + "=" + (fin[i] ? "yes" : "no")).join(", ")}. Rule set ${c.ruleSetId}, circuit #${CFG.published[K.key].circuitId}. ${c.disputed ? "The reviewer decided " + bitsToArr(c.disputed, nQ).filter(Boolean).length + " disputed question(s); everything else was agreed." : "Both sides agreed on every question."}</p>
+        <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p></div>`;
+      $("#cl").onclick = async e => { try { await navigator.clipboard.writeText(location.href); e.target.textContent = "Copied"; } catch { prompt("Copy:", location.href); } };
+      call(SEL.replay + w(id)).then(h => { const x = h.replace("0x", ""), re = Number(BigInt("0x" + x.slice(0, 64))), st = Number(BigInt("0x" + x.slice(64, 128))), same = BigInt("0x" + x.slice(128, 192)) === 1n, b = $("#rp");
+        if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
+        .catch(() => { const b = $("#rp"); b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; });
+    }
+  }
+
+  window.TB_CASES = {list, view};
+})();
+
+</script><script>/* app.js */
+(function () {
+  "use strict";
+  const TB = window.TB, CFG = window.TB_CONFIG, $ = s => document.querySelector(s), main = $("#main");
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const b64e = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
+  const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
+  const sha256 = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(b => b.toString(16).padStart(2, "0")).join("");
+
+  // ---------- chain reads (free; no wallet) ----------
+  const w = n => BigInt(n).toString(16).padStart(64, "0");
+  const rpc = async (method, params) => { const r = await (await fetch(CFG.rpc, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({jsonrpc: "2.0", id: 1, method, params})})).json(); if (r.error) throw new Error(r.error.message || "RPC error"); return r.result; };
+  const inputBytes = (m, nQ) => { let h = ""; for (let j = 0; j < Math.ceil(nQ / 8); j++) h += (Math.floor(m / 2 ** (8 * j)) % 256).toString(16).padStart(2, "0"); return h; };
+  async function evalOnChain(circuitId, m, nQ, nOut) {
+    const bytes = inputBytes(m, nQ), len = bytes.length / 2;
+    const out = (await rpc("eth_call", [{to: CFG.processor, data: "0x934d06ea" + w(circuitId) + w(64) + w(len) + bytes.padEnd(Math.ceil(len / 32) * 64, "0")}, "latest"])).replace("0x", "");
+    const off = Number(BigInt("0x" + out.slice(0, 64))) * 2, n = Number(BigInt("0x" + out.slice(off, off + 64))), data = out.slice(off + 64, off + 64 + n * 2);
+    return (parseInt(data.slice(0, 2) || "0", 16)) & (2 ** nOut - 1);
+  }
+  const circuitInfo = async id => { const h = (await rpc("eth_call", [{to: CFG.processor, data: "0x084d60f1" + w(id)}, "latest"])).replace("0x", ""); return {nIn: Number(BigInt("0x" + h.slice(0, 64))), nOut: Number(BigInt("0x" + h.slice(64, 128)))}; };
+  const circuitOwner = async id => "0x" + (await rpc("eth_call", [{to: CFG.processor, data: "0x6352211e" + w(id)}, "latest"])).slice(-40);
+
+  // Reads one RuleSetRegistry entry (the dynamic name string is skipped): -> {publisher, processor, circuitId, nQ, nOut, hash, previousId, publishedAt}
+  async function fetchRuleSet(id) {
+    if (/^0x0+$/.test(CFG.registry)) return null;
+    const x = (await rpc("eth_call", [{to: CFG.registry, data: "0x9507d39a" + w(id)}, "latest"])).replace("0x", ""), W = i => x.slice(i * 64, i * 64 + 64);
+    return {publisher: "0x" + W(1).slice(24), processor: "0x" + W(2).slice(24), circuitId: Number(BigInt("0x" + W(3))), nQ: Number(BigInt("0x" + W(4))), nOut: Number(BigInt("0x" + W(5))), hash: "0x" + W(6), previousId: Number(BigInt("0x" + W(7))), publishedAt: Number(BigInt("0x" + W(8)))};
+  }
+  // ---------- policies ----------
+  function loadPolicy(key) {
+    if (TB.TEMPLATES[key]) { const r = TB.parse(TB.TEMPLATES[key]); return {key, policy: r.policy, text: TB.TEMPLATES[key]}; }
+    if (key.startsWith("c=")) { try { const text = b64d(key.slice(2)), r = TB.parse(text); if (!r.errors.length) return {key, policy: r.policy, text, custom: true}; } catch {} }
+    return null;
+  }
+
+  // ---------- views ----------
+  function home() {
+    main.innerHTML = `
+    <h1>Know if you are covered before you file.</h1>
+    <p class="lede">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
+    <div class="row"><a class="btn" href="#check/warranty">Try the warranty check</a><a class="btn ghost" href="#build">Publish your own policy</a></div>
+    <div class="grid">
+      <div class="card"><h3>For customers</h3><p>No account and no wallet. Answer yes or no, get a clear result and the exact reason, and share the link.</p></div>
+      <div class="card"><h3>For businesses</h3><p>Paste your policy as simple rules. We turn it into a checker you can put on your support page, so there is less arguing about what the rules say.</p></div>
+      <div class="card"><h3>For anyone in doubt</h3><p>A "check it yourself" button re-runs the published rules. The rules can't be changed after the fact.</p></div>
+    </div>
+    <h2>Try another example</h2>
+    <div class="grid"><div class="card"><h3>Warranty claims</h3><p class="mute">Is a repair covered?</p><a class="btn small" href="#check/warranty">Open</a></div>
+    <div class="card"><h3>Bug bounty severity</h3><p class="mute">How serious is a reported vulnerability?</p><a class="btn small" href="#check/bounty">Open</a></div></div>`;
+  }
+
+  // Snippets for putting a checker on another website (static: a script tag that adds an iframe, or a plain iframe).
+  function embedBox(key, rsm, P) {
+    const dir = location.href.split("#")[0].replace(/[^/]*$/, ""), spec = key + (rsm ? "/rs=" + rsm[1] : ""), script = `<div></div>\n<script src="${dir}embed.js" data-checker="${spec}" async><\/script>`, frame = `<iframe src="${dir}index.html#embed/${spec}" title="${P.name}" style="width:100%;height:640px;border:0"></iframe>`;
+    return `<details class="card" id="embedbox"><summary>Put this checker on your own website</summary><p class="small">Paste this where you want the checker to appear. It resizes itself and needs nothing else.</p><pre id="snip1">${esc(script)}</pre><div class="row"><button class="btn small ghost" id="cps1" type="button">Copy</button></div>
+      <p class="small">Or use a plain frame:</p><pre id="snip2">${esc(frame)}</pre><div class="row"><button class="btn small ghost" id="cps2" type="button">Copy</button></div></details>`;
+  }
+  async function check(key, rest, embed) {
+    const L = loadPolicy(key); if (!L) { main.innerHTML = `<h1>We could not open that checker</h1><p>The link may be incomplete. <a href="#check/warranty">Open the warranty example</a>.</p>`; return; }
+    const P = L.policy, C = TB.compile(P), nQ = P.questions.length, rsm = /(?:^|[/&])rs=(\d+)/.exec(rest || ""), tail = (rsm ? "rs=" + rsm[1] + "&" : ""), pre = "#" + (embed ? "embed" : "check") + "/" + key + "/" + tail, fullPre = "#check/" + key + "/" + tail;
+    let published = CFG.published[key], banner = "";
+    if (!published && rsm && L.custom) {
+      try {
+        const rec = await fetchRuleSet(Number(rsm[1])), h = await sha256(TB.canonical(P));
+        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rule set #${rsm[1]} published on X Layer (circuit #${rec.circuitId}).</div>`; }
+        else banner = `<div class="note">These rules do <b>not</b> match rule set #${rsm[1]} on X Layer, so the result below is only a preview. Ask the business for the original link.</div>`;
+      } catch { banner = `<div class="note">Could not reach X Layer to confirm that these rules were published, so the result below is only a preview.</div>`; }
+    }
+    let ans = Array(nQ).fill(null);
+    const a = /(?:^|[/&])a=(\d+)/.exec(rest || ""); if (a) { const m = Number(a[1]); ans = TB.decodeAnswers(m, nQ); }
+    main.innerHTML = `<h1>${esc(P.name)}</h1><p class="lede">${esc(P.about || "")}</p>${banner}
+      <div class="prog"><i id="bar"></i></div><div class="small mute" id="count"></div>
+      <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>Tiebreak</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
+    const qs = $("#qs");
+    P.questions.forEach((q, i) => {
+      const d = document.createElement("div"); d.className = "q"; d.innerHTML = `<div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn" role="group" aria-label="Answer to question ${i + 1}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div>`;
+      d.querySelectorAll("button").forEach(b => b.onclick = () => { ans[i] = b.dataset.v === "1"; paint(); });
+      qs.appendChild(d);
+    });
+    let seq = 0;
+    const report = () => { if (embed && window.parent !== window) window.parent.postMessage({tiebreak: "height", h: Math.ceil(main.getBoundingClientRect().bottom + window.scrollY + 12)}, "*"); };
+    if (embed && window.ResizeObserver) new ResizeObserver(report).observe(document.body);
+    function paint() {
+      qs.querySelectorAll(".q").forEach((d, i) => d.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(ans[i] !== null && (b.dataset.v === "1") === ans[i]))));
+      setTimeout(report, 0);
+      const done = ans.filter(x => x !== null).length; $("#bar").style.width = (100 * done / nQ) + "%"; $("#count").textContent = `${done} of ${nQ} answered`;
+      const box = $("#resbox");
+      if (done < nQ) { box.innerHTML = ""; return; }
+      const r = TB.run(P, ans), m = TB.encodeAnswers(ans), link = location.href.split("#")[0] + fullPre + "a=" + m, mine = ++seq;
+      const hexIn = inputBytes(m, nQ), rule = r.ruleIndex >= 0 ? "Rule " + (r.ruleIndex + 1) + ": " + P.rules[r.ruleIndex].conds.map(c => `question ${c.q + 1} = ${c.yes ? "yes" : "no"}`).join(" and ") : "No rule matched, so the default applies";
+      box.innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[r.result])}</div><div class="why">${esc(r.why || "")}</div>
+        <div class="row"><span class="badge" id="vbadge">Checking…</span><button class="btn small ghost" id="cp" type="button">Copy link to this result</button><button class="btn small ghost" id="rs" type="button">Start over</button></div>
+        <details><summary>Check this result yourself</summary>
+          <p class="small">${esc(rule)}. The same answers go into the published rules, and anyone can run them.</p>
+          ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
+            : `<p class="small">This checker has not been published on X Layer yet, so the result above is computed in your browser from the same rules. Once published, the page asks the TapeOut processor and shows a confirmation.</p>`}
+          <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre></details></div>`;
+      $("#cp").onclick = e => copy(link, e.target); $("#rs").onclick = () => { ans = Array(nQ).fill(null); history.replaceState(null, "", pre.replace(/[/&]$/, "")); paint(); window.scrollTo({top: 0, behavior: "smooth"}); };
+      history.replaceState(null, "", pre + "a=" + m);
+      const vb = $("#vbadge");
+      if (!published) { vb.className = "badge warn"; vb.textContent = "Preview: computed in your browser"; return; }
+      evalOnChain(published.circuitId, m, nQ, C.nOut).then(got => { if (mine !== seq) return; if (got === r.result) { vb.className = "badge ok"; vb.textContent = "✓ Confirmed by the TapeOut processor on X Layer"; } else { vb.className = "badge warn"; vb.textContent = "The chain gave a different result. Do not rely on this page."; } })
+        .catch(() => { if (mine !== seq) return; vb.className = "badge warn"; vb.textContent = "Could not reach X Layer; showing the browser result"; });
+    }
+    paint(); report();
+    const c1 = $("#cps1"); if (c1) { c1.onclick = e => copy($("#snip1").textContent, e.target); $("#cps2").onclick = e => copy($("#snip2").textContent, e.target); }
+  }
+
+  function verify() {
+    main.innerHTML = `<h1>Verify a published circuit</h1><p class="lede">Look up any circuit on the TapeOut processor and run it yourself. This asks X Layer directly, so you do not have to trust this page.</p>
+      <div class="card"><div class="row"><label>Circuit number <input id="cid" type="number" min="1" style="width:120px"></label><label>Answers, one digit per question, question 1 first <input id="bits" type="text" placeholder="1111111" style="width:220px" autocomplete="off"></label><button class="btn" id="go" type="button">Run it</button></div><div id="vout"></div></div>
+      <p class="small mute">Processor: <code>${CFG.processor}</code></p>`;
+    $("#go").onclick = async () => {
+      const id = Number($("#cid").value), bits = $("#bits").value.trim(), out = $("#vout"); if (!id || !/^[01]+$/.test(bits)) { out.innerHTML = `<p class="err">Enter a circuit number and answers made of 0 and 1.</p>`; return; }
+      out.innerHTML = `<p class="mute">Asking X Layer…</p>`;
+      try {
+        const info = await circuitInfo(id), owner = await circuitOwner(id);
+        if (bits.length !== info.nIn) { out.innerHTML = `<p class="err">Circuit #${id} has ${info.nIn} inputs, but you gave ${bits.length} answers.</p>`; return; }
+        const m = [...bits].reduce((acc, ch, k) => acc + (ch === "1" ? 2 ** k : 0), 0), res = await evalOnChain(id, m, info.nIn, info.nOut);
+        out.innerHTML = `<p><b>Result number: ${res}</b> (circuit #${id} has ${info.nIn} inputs and ${info.nOut} outputs; owner <code>${owner}</code>)</p><p class="small">Open the checker that matches this circuit to see what result number ${res} means.</p>`;
+      } catch (e) { out.innerHTML = `<p class="err">Could not read that circuit: ${esc(e.message)}</p>`; }
+    };
+  }
+
+  function about() {
+    main.innerHTML = `<h1>How it works</h1>
+    <div class="card"><h3>In plain words</h3><ol><li>A business writes its policy as simple rules: yes/no questions and a list of results.</li><li>The rules become a small circuit stored on X Layer through TapeOut. Once stored it can't be changed, so the business can't quietly change the rules after a claim.</li><li>A customer answers the questions and sees the result and the reason.</li><li>If the customer and the business answer a question differently, only that question goes to a neutral reviewer.</li><li>Anyone can run the same answers through the same circuit and get the same result, for free.</li></ol></div>
+    <h2>What it does not do</h2>
+    <div class="note">It does not check that the answers are true. If someone gives a false answer, the result will follow the false answer. The reviewer decides disputed facts, and a reviewer can be wrong. The circuit shows the rules were applied consistently, nothing more.</div>
+    <div class="note">A person is not a wallet. Where an operator submits answers for someone without a wallet, that is recorded, and you are trusting the operator to pass them on unchanged.</div>
+    <h2>Status</h2><p>Prototype built for the X Layer TapeOut Accelerate hackathon. The contracts are unaudited and hold no funds. This page currently computes checkers in your browser and confirms against the chain once a checker has been published.</p>`;
+  }
+
+  // ---------- router ----------
+  function route() {
+    const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
+    document.body.classList.toggle("embed", view === "embed");
+    document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));
+    window.scrollTo(0, 0);
+    if (!view) return home();
+    if (view === "check") return check(key || "warranty", rest.join("/"));
+    if (view === "embed") return check(key || "warranty", rest.join("/"), true);
+    if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
+    if (view === "build") return window.TB_BUILD.build();
+    if (view === "verify") return verify();
+    if (view === "about") return about();
+    home();
+  }
+  window.addEventListener("hashchange", route);
+  route();
+})();
+
+</script>
+</body></html>
