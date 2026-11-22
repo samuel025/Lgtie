@@ -40,7 +40,7 @@ Two examples are built in: `warranty` and `bounty` (bug-bounty severity, not yet
 
 ## Layout
 
-- `site/` the web app (static files, no server calls): `index.html`, `rules.js` (rule engine), `builder.js` (visual rule builder: forms, spreadsheet paste, text view, and a copy-paste prompt for drafting rules with any AI assistant), `wallet.js` and `publish.js` (one-click publish with the visitor's own wallet: claims or buys NAND if short, tapes the circuit out, registers it), `embed.js` (one script tag that puts a checker on any website; `embed-demo.html` shows it on a fictional support page), `cases.js` (on-chain case pages), `app.js`, `config.js` (addresses, which templates are published).
+- `site/` the web app (static files, no server calls): `index.html`, `rules.js` (rule engine), `builder.js` (visual rule builder: forms, spreadsheet paste, text view, and a copy-paste prompt for drafting rules with any AI assistant), `wallet.js` and `publish.js` (one-click publish with the visitor's own wallet: claims or buys NAND if short, tapes the circuit out, registers it), `embed.js` (one script tag that puts a checker on any website; `embed-demo.html` shows it on a fictional support page), `cases.js` (on-chain case pages and the reviewer record at `#reviewer`), `app.js`, `config.js` (addresses, which templates are published).
 - `contracts/` Foundry project: `RuleSetRegistry`, `TiebreakCase`, unit tests with a mock processor, a fuzz test, and a fork test against the real processor.
 - `compiler/` the first hand-built warranty circuit (14 gates) kept as a reference for the generic compiler.
 - `dist/` is the build output: `node scripts/bundle.mjs` inlines every script into one self-contained `dist/index.html` (about 80 KB, no external assets), plus `embed.js` and `embed-demo.html`. Any static host can serve it as is; that is also the shape DeWEB needs.
@@ -63,6 +63,7 @@ Browser and end-to-end tests are in `tests/browser/` (see its README): checker, 
 
 - **It does not check that answers are true.** The result follows the answers given. A reviewer decides disputed facts and can be wrong. The circuit shows the rules were applied consistently, nothing more.
 - A normal smart contract could hold the same decision table. What TapeOut adds is a published, immutable rule that anyone can re-run for free.
+- **Why a circuit and not a contract per business:** a circuit is a pure function by construction (no state, no external calls, no admin key), so customers need not audit each business's code; only the shared processor and registry need trust. Publishing a rule set is data, not a deployment. It does not compute anything a contract cannot.
 - A wallet is not a person. There is an "operator" role in the case contract so a website could submit for people without wallets, but no operator service is built; today each party needs a wallet to answer. Every submission records who sent it.
 - A reviewer who never answers, or a side who never answers, ends the case as "no decision" after the deadline. That is safe but unhelpful: the sides have to open a new case.
 - The reviewer is accepted by both sides, but nothing stops two parties from agreeing on a biased reviewer, or from agreeing on the same false answers. There is no staking, jury or slashing.
