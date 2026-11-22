@@ -36,17 +36,52 @@
   // ---------- views ----------
   function home() {
     main.innerHTML = `
-    <h1>Know if you are covered before you file.</h1>
-    <p class="lede">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
-    <div class="row"><a class="btn" href="#check/warranty">Try the warranty check</a><a class="btn ghost" href="#build">Publish your own policy</a></div>
-    <div class="grid">
-      <div class="card"><h3>For customers</h3><p>No account and no wallet. Answer yes or no, get a clear result and the exact reason, and share the link.</p></div>
-      <div class="card"><h3>For businesses</h3><p>Paste your policy as simple rules. We turn it into a checker you can put on your support page, so there is less arguing about what the rules say.</p></div>
-      <div class="card"><h3>For anyone in doubt</h3><p>A "check it yourself" button re-runs the published rules. The rules can't be changed after the fact.</p></div>
-    </div>
-    <h2>Try another example</h2>
-    <div class="grid"><div class="card"><h3>Warranty claims</h3><p class="mute">Is a repair covered?</p><a class="btn small" href="#check/warranty">Open</a></div>
-    <div class="card"><h3>Bug bounty severity</h3><p class="mute">How serious is a reported vulnerability?</p><a class="btn small" href="#check/bounty">Open</a></div></div>`;
+    <section class="hero"><div class="hero-bg" aria-hidden="true"></div>
+      <div class="confetti" aria-hidden="true"><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i><i class="c5"></i><i class="c6"></i><i class="c7"></i></div>
+      <div class="wrap hero-grid"><div class="hero-copy">
+        <span class="pill"><b></b>Rules anyone can re-run</span>
+        <h1>Know if you are covered before you file.</h1>
+        <p class="lede">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
+        <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="btn neutral" href="#build">Publish your own policy</a></div></div>
+        <div class="demo" aria-label="An example of a result">
+          <span class="tag">Example</span>
+          <div class="dq"><span>Is it within the warranty period?</span><span class="a">Yes</span></div>
+          <div class="dq"><span>Is there no excluded cause, such as water damage?</span><span class="a">No</span></div>
+          <div class="dq"><span>Is the repair type covered?</span><span class="a">Yes</span></div>
+          <div class="out"><div class="big">Not covered</div><div class="small">An excluded cause was found (for example water damage, a drop or an unauthorised repair).</div></div>
+        </div>
+      </div></section>
+    <section class="sec"><div class="wrap">
+      <span class="eyebrow">Everything in one place</span><h2>Pick where you start.</h2>
+      <p class="lede">Each part has its own colour, from a first check to a public record of how disputes ended.</p>
+      <div class="cats">
+        <a class="cat pink" href="#check/warranty"><span class="eyebrow">Customers</span><h3>Check a claim</h3><p>Answer yes or no, see the result and the exact reason. No account, no wallet.</p><span class="go">Open the checker <span class="arr">→</span></span></a>
+        <a class="cat mint" href="#build"><span class="eyebrow">Businesses</span><h3>Publish your policy</h3><p>Paste your rules and get a checker you can put on your support page.</p><span class="go">Build a checker <span class="arr">→</span></span></a>
+        <a class="cat canary" href="#agree"><span class="eyebrow">Both sides</span><h3>Agree first</h3><p>Fix the rules, the reviewer and the time limits before any dispute starts.</p><span class="go">Make an agreement <span class="arr">→</span></span></a>
+        <a class="cat violet" href="#verify"><span class="eyebrow">Anyone in doubt</span><h3>Check it yourself</h3><p>Re-run a published rule set on X Layer and see the same answer.</p><span class="go">Verify a circuit <span class="arr">→</span></span></a>
+        <a class="cat aqua" href="#reviewer"><span class="eyebrow">Reviewers</span><h3>See the record</h3><p>Who decided, who missed a deadline, read straight from the chain.</p><span class="go">Reviewer records <span class="arr">→</span></span></a>
+      </div></div></section>
+    <section class="dark"><div class="wrap">
+      <span class="eyebrow" style="color:rgba(255,255,255,.55)">How a dispute works</span><h2>Dispute the facts, not the verdict.</h2>
+      <p class="lede">Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.</p>
+      <div class="steps">
+        <div class="step"><span class="n">1</span><h3>Publish the rules</h3><p>The business writes its policy once. It is stored on X Layer and can't be changed.</p></div>
+        <div class="step"><span class="n">2</span><h3>Both sides answer</h3><p>The same yes or no questions, each with the evidence to show.</p></div>
+        <div class="step"><span class="n">3</span><h3>Only differences go to a reviewer</h3><p>A neutral person both sides accepted decides just the disputed questions.</p></div>
+        <div class="step"><span class="n">4</span><h3>The circuit gives the result</h3><p>The published rules turn the final answers into a result and a reason.</p></div>
+        <div class="step"><span class="n">5</span><h3>Anyone can re-run it</h3><p>One free read on X Layer returns the same result, with no account.</p></div>
+      </div></div></section>
+    <section class="sec cream"><div class="wrap">
+      <span class="eyebrow">Straight talk</span><h2>What it does not do.</h2>
+      <div class="limits">
+        <div><h3>It can't tell if an answer is true</h3><p>If someone gives a false answer, the result follows it. A reviewer decides disputed facts, and a reviewer can be wrong.</p></div>
+        <div><h3>It holds no money</h3><p>The contracts record decisions only. A separate contract can read a verdict and pay out.</p></div>
+        <div><h3>It is a prototype</h3><p>The contracts are unaudited, and no customers or revenue exist yet.</p></div>
+      </div></div></section>
+    <section class="finalcta"><div class="wrap">
+      <h2>Try it in a minute.</h2><p>Answer seven questions and watch the result get confirmed by a circuit on X Layer.</p>
+      <div class="cta" style="justify-content:center"><a class="btn" href="#check/warranty">Open the warranty checker <span class="arr">→</span></a><a class="btn neutral" href="#about">How it works</a></div>
+    </div></section>`;
   }
 
   // Snippets for putting a checker on another website (static: a script tag that adds an iframe, or a plain iframe).
@@ -131,10 +166,26 @@
     <h2>Status</h2><p>Prototype built for the X Layer TapeOut Accelerate hackathon. The contracts are unaudited and hold no funds. This page currently computes checkers in your browser and confirms against the chain once a checker has been published.</p>`;
   }
 
+  // ---------- motion: frosted header on scroll, scroll reveal, page entrance (all transform and opacity) ----------
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
+  const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
+  const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
+  const REVEAL = ".hero .pill,.hero h1,.hero .lede,.hero .cta,.demo,.sec h2,.sec .eyebrow,.sec .lede,.cat,.dark h2,.dark .lede,.dark .eyebrow,.step,.limits>div,.finalcta h2,.finalcta p,.finalcta .cta,.card,.q";
+  let armed = false, armTimer = 0;
+  function scan() {
+    if (!armed || !io) return;
+    main.querySelectorAll(REVEAL).forEach((el, i) => { if (el.dataset.r || el.parentElement === main) return; el.dataset.r = "1"; el.classList.add("rv"); el.style.setProperty("--d", Math.min(i, 9) * 0.06 + "s"); io.observe(el); });
+  }
+  if (!reduce) new MutationObserver(scan).observe(main, {childList: true, subtree: true});
+  function armReveal(embed) { armed = !embed && !reduce; clearTimeout(armTimer); armTimer = setTimeout(() => { armed = false; }, 2500); scan(); }
+
   // ---------- router ----------
   function route() {
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
     document.body.classList.toggle("embed", view === "embed");
+    main.classList.toggle("home", !view); main.classList.remove("enter");
+    if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
+    armReveal(view === "embed");
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));
     window.scrollTo(0, 0);
     if (!view) return home();
