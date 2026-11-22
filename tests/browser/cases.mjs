@@ -50,6 +50,9 @@ ok("the filer sees only their own answer form, never the decider's", !!(await p.
 const file = "/tmp/lgtie-evidence.bin"; fs.writeFileSync(file, "photo bytes of the damaged unit"); const want = crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
 await p.select("#evq", "4"); await (await p.$("#evf")).uploadFile(file); await until(async () => /Fingerprint 0x/.test(await T("#evh")));
 ok("the page shows the file's fingerprint without uploading it", (await T("#evh")).includes(want.slice(0, 12)), await T("#evh"));
+ok("the note is not pre-filled with the file name", (await p.$eval("#evn", e => e.value)) === "");
+ok("the form says nothing is uploaded", /not uploaded anywhere/.test(await T("#evform")));
+await p.type("#evn", "lgtie-evidence.bin");
 await p.click("#evgo");
 ok("the evidence fingerprint is recorded against question 5", await until(async () => (await T("main")).includes(want.slice(0, 10)) && /lgtie-evidence\.bin/.test(await T("main"))), (await T("main")).slice(0, 500));
 ok("the question row shows an evidence badge", /1 evidence/.test(await T("tbody")));
