@@ -31,7 +31,7 @@ nav a::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:1px;b
 nav a:hover::after,nav a.on::after{transform:scaleX(1)}
 nav a.pill{background:var(--ink);color:#fff;border-radius:9999px;padding:10px 18px;margin-left:6px}nav a.pill::after{display:none}nav a.pill:hover{transform:translateY(-2px)}
 main{max-width:880px;margin:0 auto;padding:12px 24px 80px}
-main.home{max-width:none;padding:0}main.builder{max-width:1180px}
+main.home{max-width:none;padding:0}main.builder{max-width:1180px}main.builder h1{font-size:clamp(34px,4.6vw,52px);margin:.1em 0 .2em}
 .wrap{max-width:1392px;margin:0 auto;padding:0 32px}
 /* ---------- type ---------- */
 h1,h2,h3,h4{font-family:var(--serif);font-weight:300;line-height:1.04;letter-spacing:-.04em;margin:0}
@@ -229,6 +229,29 @@ body.embed .rv{opacity:1!important;transform:none!important}body.embed main.ente
 .tryit .qa .tg button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
 .tryit .out{position:sticky;top:76px}.tryit .vres{margin:0}
 @media(max-width:760px){.tryit{grid-template-columns:1fr}.tryit .out{position:static}}
+
+/* ---------- guided builder: a stepper, one focused screen at a time ---------- */
+main[data-step] [data-s]{display:none}
+main[data-step="1"] [data-s="1"],main[data-step="2"] [data-s="2"],main[data-step="3"] [data-s="3"],main[data-step="4"] [data-s="4"]{display:block}
+main[data-step="1"] .row[data-s="1"]{display:flex}
+main[data-step="all"] [data-s]{display:block}main[data-step="all"] .row[data-s]{display:flex}
+.stepper{list-style:none;margin:22px 0 8px;padding:0;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none}.stepper.off{display:none}
+.stepper li{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0}.stepper li:not(:last-child)::after{content:"";flex:1;height:1px;background:var(--warm);min-width:12px}
+.stepper button{display:inline-flex;align-items:center;gap:10px;font:400 14px var(--sans);border:1px solid var(--warm);background:#fff;color:var(--stone);border-radius:9999px;padding:6px 16px 6px 6px;cursor:pointer;white-space:nowrap;transition:background .3s var(--ease),color .3s var(--ease),border-color .3s var(--ease),transform .2s var(--ease)}
+.stepper button:hover{border-color:var(--ink);color:var(--ink)}.stepper button:active{transform:scale(.97)}
+.stepper .sn{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--paper);color:var(--ink);font-size:13px;transition:background .3s var(--ease),color .3s var(--ease)}
+.stepper button.on{background:var(--ink);border-color:var(--ink);color:#fff}.stepper button.on .sn{background:#fff;color:var(--ink)}
+.stepper button.done{color:var(--ink)}.stepper button.done .sn{background:var(--accent);color:#fff}
+.sthead{margin:26px 0 6px;animation:enter .5s var(--ease) both}.sthead h2{margin:0 0 .25em;font-size:clamp(28px,4vw,38px)}.sthead .lede{margin:0}
+.stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepnav[hidden]{display:none}.stepnav .btn:only-of-type{margin-left:auto}
+.stepnav #snext{margin-left:auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.chipin{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--warm);border-radius:9999px;padding:4px 6px 4px 12px}
+.chipin b{font-size:12px;color:var(--stone)}.chipin input{border:0;background:transparent;padding:6px 2px;width:150px;border-radius:0}.chipin input:focus{outline:0}
+.chipin .x{border:0;background:var(--paper);border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px}
+.tryit .vsvg{background:#fff;border-radius:20px;padding:10px;margin:0 0 12px}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(max-width:700px){.stepper .st{display:none}.stepper button.on .st{display:inline}.stepper button{padding-right:6px}.stepper button.on{padding-right:14px}}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
@@ -638,17 +661,27 @@ MY POLICY:
   function build() {
     let tryAns = [], S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
     main.innerHTML = `<h1>Publish your policy as a checker</h1>
-      <p class="lede">Describe your rules in forms or paste them from a spreadsheet. Rules are checked from top to bottom, and the first one that matches decides. We turn them into a circuit and prove it gives the same answers as your rules.</p>
-      <div class="row"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
-      <details class="card" id="ai"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
+      <ol class="stepper" id="stepper">${["Questions", "Rules", "Test", "Publish"].map((t, i) => `<li><button type="button" data-step-btn="${i + 1}"><span class="sn">${i + 1}</span><span class="st">${t}</span></button></li>`).join("")}</ol>
+      <div class="row" data-s="1"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
+      <details class="card" id="ai" data-s="1"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
         <p class="small">Copy this request, paste it into any AI assistant (with your policy at the bottom), then paste its reply below. Always read the result: assistants can make mistakes.</p>
         <pre id="prompt">${esc(PROMPT)}</pre><div class="row"><button class="btn small ghost" id="cpprompt" type="button">Copy the request</button></div>
         <textarea id="aiin" rows="6" class="mono" style="min-height:120px" placeholder="Paste the assistant's reply here" spellcheck="false"></textarea>
         <div class="row"><button class="btn small" id="aiuse" type="button">Use this reply</button><span id="aimsg" class="small"></span></div></details>
-      <div class="row" role="tablist"><button class="btn small" id="tabv" type="button" aria-pressed="true">Forms</button><button class="btn small ghost" id="tabt" type="button" aria-pressed="false">Text</button></div>
-      <div id="editor"></div><div id="out"></div>`;
+      <div class="row" role="tablist" data-s="1"><button class="btn small" id="tabv" type="button" aria-pressed="true">Forms</button><button class="btn small ghost" id="tabt" type="button" aria-pressed="false">Text</button></div>
+      <div id="editor"></div><div id="out"></div>
+      <div class="stepnav" id="stepnav"><button class="btn ghost" id="sback" type="button">← Back</button><button class="btn" id="snext" type="button">Next →</button></div>`;
     const ed = $("#editor");
-    const setMode = m => { mode = m; $("#tabv").classList.toggle("ghost", m !== "visual"); $("#tabt").classList.toggle("ghost", m !== "text"); $("#tabv").setAttribute("aria-pressed", m === "visual"); $("#tabt").setAttribute("aria-pressed", m === "text"); drawEditor(); };
+    let step = 1;
+    const NAMES = ["Questions", "Rules", "Test", "Publish"];
+    const applyStep = (scroll) => { main.dataset.step = mode === "text" ? "all" : String(step);
+      $$("[data-step-btn]").forEach(b => { const n = Number(b.dataset.stepBtn); b.classList.toggle("on", n === step); b.classList.toggle("done", n < step); b.setAttribute("aria-current", n === step ? "step" : "false"); });
+      $("#stepper").classList.toggle("off", mode === "text"); $("#sback").hidden = step === 1; $("#snext").hidden = step === 4; $("#snext").textContent = "Next: " + NAMES[step] + " →"; $("#sback").textContent = "← " + NAMES[step - 2 < 0 ? 0 : step - 2];
+      $("#stepnav").hidden = mode === "text"; if (scroll) window.scrollTo({top: 0, behavior: "smooth"}); };
+    const goStep = n => { step = Math.max(1, Math.min(4, n)); applyStep(true); };
+    $$("[data-step-btn]").forEach(b => b.onclick = () => goStep(Number(b.dataset.stepBtn)));
+    $("#sback").onclick = () => goStep(step - 1); $("#snext").onclick = () => goStep(step + 1);
+    const setMode = m => { mode = m; $("#tabv").classList.toggle("ghost", m !== "visual"); $("#tabt").classList.toggle("ghost", m !== "text"); $("#tabv").setAttribute("aria-pressed", m === "visual"); $("#tabt").setAttribute("aria-pressed", m === "text"); applyStep(false); drawEditor(); };
     $("#tabv").onclick = () => { if (mode === "text") { const r = TB.parse($("#src").value); if (r.errors.length) { $("#out").innerHTML = errBox(r.errors, "Fix the text before switching to forms"); return; } S = fromPolicy(r.policy); } setMode("visual"); };
     $("#tabt").onclick = () => setMode("text");
     $$("[data-t]").forEach(b => b.onclick = () => { S = b.dataset.t === "blank" ? blank() : fromPolicy(TB.parse(TB.TEMPLATES[b.dataset.t]).policy); setMode(mode); });
@@ -667,16 +700,17 @@ MY POLICY:
           <details><summary>How to write the rules</summary><pre>${esc(PROMPT.split("How it works")[0].split("format:")[1].trim())}</pre></details>`;
         const src = $("#src"); src.value = toText(S); src.oninput = () => schedule(); renderOutput(); return;
       }
-      ed.innerHTML = `<div class="card"><h3>About this checker</h3>
+      ed.innerHTML = `<div class="sthead" data-s="1"><h2>What does a customer need to answer?</h2><p class="lede">Write yes or no questions. Word each one so that "yes" is the good answer if you can, and say what evidence to show.</p></div>
+        <div class="card" data-s="1"><h3>About this checker</h3>
         <div class="wide"><label><span>Name</span><input id="f-name" type="text" value="${esc(S.name)}"></label></div>
         <div class="wide"><label><span>One line for the customer</span><input id="f-about" type="text" value="${esc(S.about)}"></label></div></div>
-        <div class="card"><h3>Questions</h3><p class="small mute">Word each one so that "yes" is the good answer if you can. The evidence hint tells people what to show.</p>
+        <div class="card" data-s="1"><h3>Questions</h3>
           ${S.questions.map((q, i) => `<div class="qrow" data-qi="${i}"><b>${i + 1}.</b><input type="text" data-f="qt" value="${esc(q.text)}" placeholder="Question" aria-label="Question ${i + 1}"><input type="text" data-f="qh" value="${esc(q.hint)}" placeholder="Evidence (optional)" aria-label="Evidence for question ${i + 1}"><span class="acts"><button class="btn small ghost" data-a="qup" type="button" aria-label="Move up">↑</button><button class="btn small ghost" data-a="qdn" type="button" aria-label="Move down">↓</button><button class="btn small ghost" data-a="qdel" type="button" aria-label="Remove">✕</button></span></div>`).join("")}
           <div class="row"><button class="btn small ghost" data-a="qadd" type="button">+ Add a question</button></div></div>
-        <div class="card"><h3>Results</h3><p class="small mute">The possible outcomes, such as "Covered" or "Not covered".</p>
-          ${S.results.map((r, i) => `<div class="wide" data-ri="${i}" style="grid-template-columns:auto minmax(0,1fr) auto"><b>${i + 1}.</b><input type="text" data-f="rn" value="${esc(r)}" placeholder="Result name" aria-label="Result ${i + 1}"><button class="btn small ghost" data-a="rdel" type="button" aria-label="Remove">✕</button></div>`).join("")}
-          <div class="row"><button class="btn small ghost" data-a="radd" type="button">+ Add a result</button></div></div>
-        <div class="card"><h3>Rules</h3><p class="small mute">One row per rule, checked from top to bottom: the first row that matches decides. Click a cell to cycle <b>any</b>, <b>Yes</b> and <b>No</b>. The row that fires lights up in the preview below.</p>
+        <div class="sthead" data-s="2"><h2>When does each result apply?</h2><p class="lede">Name the possible results, then build the rules. Rules are checked top to bottom and the first match decides.</p></div>
+        <div class="card" data-s="2"><h3>Possible results</h3>
+          <div class="chips">${S.results.map((r, i) => `<span class="chipin" data-ri="${i}"><b>${i + 1}</b><input type="text" data-f="rn" value="${esc(r)}" placeholder="Result name" aria-label="Result ${i + 1}"><button class="x" data-a="rdel" type="button" aria-label="Delete result ${i + 1}">×</button></span>`).join("")}<button class="btn small ghost" data-a="radd" type="button">+ Add a result</button></div></div>
+        <div class="card" data-s="2"><h3>Rules</h3><p class="small mute">One row per rule, checked from top to bottom: the first row that matches decides. Click a cell to cycle <b>any</b>, <b>Yes</b> and <b>No</b>. The row that fires lights up in the preview below.</p>
           <div class="gridwrap"><table class="rgrid"><thead><tr><th></th>${S.questions.map((q, i) => `<th title="${esc(q.text)}"><span class="qn">Q${i + 1}</span><span class="qs">${esc(q.text || "(empty)")}</span></th>`).join("")}<th class="l">Then</th><th class="l">Because</th><th></th></tr></thead><tbody>
           ${S.rules.map((r, i) => `<tr class="rrow${r.conds.length ? "" : " noc"}" data-ui="${i}"><td class="rn">${i + 1}</td>${S.questions.map((q, k) => { const c = r.conds.find(c => c.q === k), v = c ? (c.yes ? "y" : "n") : "a"; return `<td><button type="button" class="cell ${v}" data-a="cell" data-q="${k}" aria-label="Rule ${i + 1}, question ${k + 1}: ${v === "y" ? "yes" : v === "n" ? "no" : "any"}">${v === "y" ? "Yes" : v === "n" ? "No" : "any"}</button></td>`; }).join("")}
             <td class="res"><select data-f="rr" aria-label="Result of rule ${i + 1}">${ropts(r.result)}</select></td><td class="why"><input type="text" data-f="rw" value="${esc(r.why)}" placeholder="${r.conds.length ? "Reason shown to the customer" : "Pick at least one Yes or No"}" aria-label="Reason for rule ${i + 1}"></td>
@@ -684,7 +718,7 @@ MY POLICY:
           <tr class="rrow def" data-def="1"><td class="rn">else</td><td colspan="${S.questions.length}" class="small mute">no rule above matched</td><td class="res"><select id="f-dr" aria-label="Default result">${ropts(S.def.result)}</select></td><td class="why"><input id="f-dw" type="text" value="${esc(S.def.why)}" placeholder="Reason shown to the customer"></td><td></td></tr>
           </tbody></table></div>
           <div class="row"><button class="btn small ghost" data-a="ruleadd" type="button">+ Add a rule</button></div></div>
-        <details class="card"${pasteOpen ? " open" : ""}><summary>Paste from a spreadsheet</summary>
+        <details class="card" data-s="2"${pasteOpen ? " open" : ""}><summary>Paste from a spreadsheet</summary>
           <p class="small">Copy cells from Excel or Google Sheets and paste. <b>Questions:</b> two columns, question then evidence. <b>Rules:</b> three columns: conditions (for example <code>Q2=no</code> or <code>Q1=yes &amp; Q3=no</code>), result name, reason.</p>
           <textarea id="pq" rows="4" class="mono" style="min-height:90px" placeholder="Question&#9;Evidence" spellcheck="false"></textarea><div class="row"><button class="btn small ghost" data-a="pasteq" type="button">Add these questions</button></div>
           <textarea id="pr" rows="4" class="mono" style="min-height:90px" placeholder="Q1=no&#9;Not covered&#9;The reason" spellcheck="false"></textarea><div class="row"><button class="btn small ghost" data-a="paster" type="button">Add these rules</button><span id="pmsg" class="small"></span></div></details>`;
@@ -765,22 +799,25 @@ MY POLICY:
       const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
       if (mode === "text") S = fromPolicy(P);
       const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
-      out.innerHTML = `<div class="card"><h3>${esc(P.name)}</h3>
+      out.innerHTML = `<div class="sthead" data-s="3"><h2>Does it behave the way you mean?</h2><p class="lede">Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.</p></div>
+        <div class="card" data-s="3"><h3>${esc(P.name)}</h3>
         <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} circuit gates</span></div>
         <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The circuit gives the same answer as your rules" : "✗ The circuit does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
         <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
-        <div class="card"><h3>Try it</h3><p class="small mute">Answer the questions the way a customer would. The result and the rule that fired update live, and the matching row in the grid lights up.</p>
+        <div class="card" data-s="3"><h3>Try it</h3>
           <div class="tryit"><div class="qs" id="tq">${P.questions.map((q, i) => `<div class="qa"><span>${i + 1}. ${esc(q.text)}</span><span class="tg" data-i="${i}"><button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></span></div>`).join("")}</div>
-            <div class="out"><div class="vres"><div class="vlab">Result</div><div class="big" id="tr"></div><div class="vwhy small" id="tw"></div></div><p class="small mute" id="tf"></p></div></div></div>
-        <div class="card"><h3>Publishing it on X Layer</h3>
+            <div class="out"><div class="vsvg" id="tcirc"></div><div class="vres"><div class="vlab">Result</div><div class="big" id="tr"></div><div class="vwhy small" id="tw"></div></div><p class="small mute" id="tf"></p></div></div></div>
+        <div class="sthead" data-s="4"><h2>Put it on X Layer</h2><p class="lede">Publishing records the circuit permanently, so anyone can re-run it. A change later means publishing a new version.</p></div>
+        <div class="card" data-s="4"><h3>Publishing it on X Layer</h3>
           <p class="small">Publishing records the circuit permanently, so the rules can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
           <p class="small"><b>Definitions hash</b> (fingerprint of the rules text, published with the circuit): <code>${h}</code></p>
           <details><summary>Circuit netlist (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
           ${pubBox(h, C)}</div>`;
       bindPub(P, canon, h, C);
       const ans = tryAns.length === nQ ? tryAns : (tryAns = P.questions.map(() => true));
+      const circ = window.TB_HERO ? window.TB_HERO.circuit($("#tcirc"), C, {w: 520, h: 250, label: "Live circuit for your rules"}) : null;
       const paintTry = () => { $$("#tq .tg").forEach(g => { const i = Number(g.dataset.i); $$("button", g).forEach(bt => bt.setAttribute("aria-pressed", String((bt.dataset.v === "1") === ans[i]))); });
-        const run = TB.run(P, ans); $("#tr").textContent = P.results[run.result] || ""; $("#tw").textContent = run.why || ""; $("#tf").textContent = run.ruleIndex >= 0 ? "Rule " + (run.ruleIndex + 1) + " decided this." : "No rule matched, so the default applies.";
+        if (circ) circ.update(ans); const run = TB.run(P, ans); $("#tr").textContent = P.results[run.result] || ""; $("#tw").textContent = run.why || ""; $("#tf").textContent = run.ruleIndex >= 0 ? "Rule " + (run.ruleIndex + 1) + " decided this." : "No rule matched, so the default applies.";
         $$(".rrow").forEach(tr => tr.classList.remove("hit")); const hit = run.ruleIndex >= 0 ? $(`.rrow[data-ui="${run.ruleIndex}"]`) : $(".rrow.def"); if (hit) hit.classList.add("hit"); };
       $$("#tq .tg button").forEach(bt => bt.onclick = () => { ans[Number(bt.closest(".tg").dataset.i)] = bt.dataset.v === "1"; paintTry(); }); paintTry();
       $("#cplink").onclick = e => copy(link, e.target); $("#cphex").onclick = e => copy(C.hex, e.target);
@@ -1298,7 +1335,7 @@ MY POLICY:
     window.TB_HERO.stop();
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
     document.body.classList.toggle("embed", view === "embed");
-    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.remove("enter");
+    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
     if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
     armReveal(view === "embed");
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));

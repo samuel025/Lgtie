@@ -31,7 +31,7 @@ nav a::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:1px;b
 nav a:hover::after,nav a.on::after{transform:scaleX(1)}
 nav a.pill{background:var(--ink);color:#fff;border-radius:9999px;padding:10px 18px;margin-left:6px}nav a.pill::after{display:none}nav a.pill:hover{transform:translateY(-2px)}
 main{max-width:880px;margin:0 auto;padding:12px 24px 80px}
-main.home{max-width:none;padding:0}main.builder{max-width:1180px}
+main.home{max-width:none;padding:0}main.builder{max-width:1180px}main.builder h1{font-size:clamp(34px,4.6vw,52px);margin:.1em 0 .2em}
 .wrap{max-width:1392px;margin:0 auto;padding:0 32px}
 /* ---------- type ---------- */
 h1,h2,h3,h4{font-family:var(--serif);font-weight:300;line-height:1.04;letter-spacing:-.04em;margin:0}
@@ -229,6 +229,29 @@ body.embed .rv{opacity:1!important;transform:none!important}body.embed main.ente
 .tryit .qa .tg button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
 .tryit .out{position:sticky;top:76px}.tryit .vres{margin:0}
 @media(max-width:760px){.tryit{grid-template-columns:1fr}.tryit .out{position:static}}
+
+/* ---------- guided builder: a stepper, one focused screen at a time ---------- */
+main[data-step] [data-s]{display:none}
+main[data-step="1"] [data-s="1"],main[data-step="2"] [data-s="2"],main[data-step="3"] [data-s="3"],main[data-step="4"] [data-s="4"]{display:block}
+main[data-step="1"] .row[data-s="1"]{display:flex}
+main[data-step="all"] [data-s]{display:block}main[data-step="all"] .row[data-s]{display:flex}
+.stepper{list-style:none;margin:22px 0 8px;padding:0;display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:none}.stepper.off{display:none}
+.stepper li{display:flex;align-items:center;gap:6px;flex:1 1 0;min-width:0}.stepper li:not(:last-child)::after{content:"";flex:1;height:1px;background:var(--warm);min-width:12px}
+.stepper button{display:inline-flex;align-items:center;gap:10px;font:400 14px var(--sans);border:1px solid var(--warm);background:#fff;color:var(--stone);border-radius:9999px;padding:6px 16px 6px 6px;cursor:pointer;white-space:nowrap;transition:background .3s var(--ease),color .3s var(--ease),border-color .3s var(--ease),transform .2s var(--ease)}
+.stepper button:hover{border-color:var(--ink);color:var(--ink)}.stepper button:active{transform:scale(.97)}
+.stepper .sn{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--paper);color:var(--ink);font-size:13px;transition:background .3s var(--ease),color .3s var(--ease)}
+.stepper button.on{background:var(--ink);border-color:var(--ink);color:#fff}.stepper button.on .sn{background:#fff;color:var(--ink)}
+.stepper button.done{color:var(--ink)}.stepper button.done .sn{background:var(--accent);color:#fff}
+.sthead{margin:26px 0 6px;animation:enter .5s var(--ease) both}.sthead h2{margin:0 0 .25em;font-size:clamp(28px,4vw,38px)}.sthead .lede{margin:0}
+.stepnav{display:flex;justify-content:space-between;gap:12px;margin:28px 0 8px}.stepnav[hidden]{display:none}.stepnav .btn:only-of-type{margin-left:auto}
+.stepnav #snext{margin-left:auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.chipin{display:inline-flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--warm);border-radius:9999px;padding:4px 6px 4px 12px}
+.chipin b{font-size:12px;color:var(--stone)}.chipin input{border:0;background:transparent;padding:6px 2px;width:150px;border-radius:0}.chipin input:focus{outline:0}
+.chipin .x{border:0;background:var(--paper);border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px}
+.tryit .vsvg{background:#fff;border-radius:20px;padding:10px;margin:0 0 12px}
+@keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(max-width:700px){.stepper .st{display:none}.stepper button.on .st{display:inline}.stepper button{padding-right:6px}.stepper button.on{padding-right:14px}}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>

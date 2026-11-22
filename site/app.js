@@ -214,7 +214,7 @@
     window.TB_HERO.stop();
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
     document.body.classList.toggle("embed", view === "embed");
-    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.remove("enter");
+    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
     if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
     armReveal(view === "embed");
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));

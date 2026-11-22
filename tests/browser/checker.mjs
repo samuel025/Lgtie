@@ -5,7 +5,7 @@ const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromiu
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]});
 const p = await b.newPage(); const errs = []; p.on("pageerror", e => errs.push("pageerror: " + e.message)); p.on("console", m => { if (m.type() === "error") errs.push("console: " + m.text()); });
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + x)); if (!c) fails++; };
-const T = sel => p.$eval(sel, e => e.innerText).catch(() => "");
+const T = sel => p.$eval(sel, e => e.textContent).catch(() => "");
 await p.setViewport({width: 1000, height: 900});
 await p.goto(BASE); await new Promise(r => setTimeout(r, 300));
 ok("home headline", /Know if you are covered/.test(await T("h1")), await T("h1"));
