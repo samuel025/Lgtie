@@ -2,7 +2,7 @@
 
 A business publishes its policy as a checker. Customers answer plain yes/no questions and see the result and the reason. If a customer and the business answer a question differently, only that question goes to a neutral reviewer. The rules are stored on X Layer as a TapeOut circuit, so they can't be changed after a case starts, and anyone can re-run the same answers through the same circuit and get the same result, for free.
 
-Prototype for the X Layer TapeOut Accelerate hackathon. The project was first called Tiebreak; it is now **LGtie**. The deployed contracts keep their original names (`RuleSetRegistry`, `TiebreakCase`, `TiebreakCaseV2`) because renaming them in the source would no longer match the bytecode on-chain. Product brief: https://claude.ai/artifact/3pvHd82LCXz7Fc5kSuJ184
+Prototype for the X Layer TapeOut Accelerate hackathon. The project was first called Tiebreak; it is now **LGtie**. The deployed contracts keep their original names (`RuleSetRegistry`, `TiebreakCase`, `TiebreakCaseV2`) because renaming them in the source would no longer match the bytecode on-chain.
 
 ## What is live (X Layer mainnet, chain 196)
 
