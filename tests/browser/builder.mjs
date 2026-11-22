@@ -19,8 +19,16 @@ ok("8 questions now", /8 questions/.test(await T("#out")));
 // add a rule on the new question
 await p.click('[data-a="ruleadd"]'); await w(300);
 const ri = (await count("[data-ui]")) - 1;
-await set(`[data-ui="${ri}"] [data-f="cq"]`, "7"); await set(`[data-ui="${ri}"] [data-f="cy"]`, "0"); await set(`[data-ui="${ri}"] [data-f="rr"]`, "1"); await set(`[data-ui="${ri}"] [data-f="rw"]`, "The receipt cannot be read."); await w(500);
+const cell = `[data-ui="${ri}"] [data-a="cell"][data-q="7"]`;
+ok("a new rule starts with every cell on any", (await p.$eval(cell, e => e.textContent.trim())) === "any");
+await p.click(cell); await w(200); ok("clicking a cell once makes it Yes", (await p.$eval(cell, e => e.textContent.trim())) === "Yes");
+await p.click(cell); await w(200); ok("clicking again makes it No", (await p.$eval(cell, e => e.textContent.trim())) === "No");
+await set(`[data-ui="${ri}"] [data-f="rr"]`, "1"); await set(`[data-ui="${ri}"] [data-f="rw"]`, "The receipt cannot be read."); await w(500);
 ok("a new rule is accepted and verified", /8 rules/.test(await T("#out")) && /same answer as your rules/.test(await T("#out")), await T("#out"));
+// the live preview names the rule that fired
+await p.evaluate(() => document.querySelectorAll("#tq .tg").forEach(g => g.querySelector('button[data-v="1"]').click())); await w(200);
+await p.click('#tq .tg[data-i="7"] button[data-v="0"]'); await w(300);
+ok("the try-it panel lights the rule that fired", (await p.$$eval(".rrow.hit", e => e.length)) === 1 && /Rule 8 decided this/.test(await T("#tf")), await T("#tf"));
 // the new rule behaves: open the checker link text
 const text = await p.evaluate(async () => { const t = document.querySelector("#tabt"); t.click(); return document.querySelector("#src").value; });
 ok("text view shows the new rule", /rule: Q8=no -> Needs review : The receipt cannot be read\./.test(text), text.slice(-400));
