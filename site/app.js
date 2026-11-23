@@ -57,6 +57,7 @@
       <div class="panel stage">${art("ember")}<div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div></div>
     </div></section>
     <div class="runs wrap"><span class="lbl">Built with</span><span>X Layer</span><span>TapeOut circuits</span><span>Solidity</span><span>One static file</span></div>
+    <section class="flowsec"><div class="wrap"><div class="sechead"><h2>From rules to result</h2><p class="lede">One idea: settle only what the two sides disagree on.</p></div>${window.TB_GFX.flow()}</div></section>
     <div class="wrap"><div class="stats3 facts">
       <div class="stat fact"><b><span data-count="39">0</span></b><span>NAND gates in the live warranty circuit (#13)</span></div>
       <div class="stat fact"><b><span data-count="128">0</span></b><span>of 128 answer combinations checked on mainnet</span></div>
@@ -105,11 +106,8 @@
     <div class="wrap"><section class="panel make">${art("sun")}<div><h2>Publish your own checker</h2><p class="lede">Paste your rules, check the circuit against them, and get a link customers can use.</p><div class="cta"><a class="btn" href="#build">Open the builder <span class="arr">→</span></a></div></div></section></div>
     <section class="sec"><div class="wrap">
       <div class="sechead"><h2>What it does not do.</h2></div>
-      <div class="trio">
-        <div><h3>It can't tell if an answer is true</h3><p>If someone gives a false answer, the result follows it. A reviewer decides disputed facts, and a reviewer can be wrong.</p></div>
-        <div><h3>It holds no money</h3><p>The contracts record decisions only. A separate contract can read a verdict and pay out.</p></div>
-        <div><h3>It is a prototype</h3><p>The contracts are unaudited, and no customers or revenue exist yet.</p></div>
-      </div></div></section>
+      ${window.TB_GFX.notCards()}
+    </div></section>
     <section class="sec"><div class="wrap faq">
       <h2 style="text-align:center">Frequently asked questions</h2>
       <div class="acc">
@@ -225,9 +223,18 @@
   }
 
   function about() {
-    main.innerHTML = `<h1>How it works</h1>
-    <div class="card"><h3>In plain words</h3><ol><li>A business writes its policy as simple rules: yes/no questions and a list of results.</li><li>The rules become a small circuit stored on X Layer through TapeOut. Once stored it can't be changed, so the business can't quietly change the rules after a claim.</li><li>A customer answers the questions and sees the result and the reason.</li><li>If the customer and the business answer a question differently, only that question goes to a neutral reviewer.</li><li>Anyone can run the same answers through the same circuit and get the same result, for free.</li></ol></div>
-    <div class="card"><h3>Customers without a wallet (new)</h3><p>A customer can act with a <b>passkey</b>, the fingerprint or face scan that unlocks their phone, instead of a wallet. The business invites them with a claim code. The customer approves the agreement and their answers on their own device, and the business or anyone with a wallet submits the signed approval and pays the small fee. The signature covers the exact action, so it cannot be changed, reused or moved to another case. The customer's own page proves on-chain that the account is really controlled by their passkey. This is live on X Layer but unaudited, and recovery after losing every device is not built yet. <a href="#join">Create a passkey</a> or <a href="embed-demo.html">try the fictional support page</a>.</p></div>
+    const G = window.TB_GFX, steps = [
+      ["Publish the rules", "A business writes its policy as yes or no questions. It becomes a small circuit on X Layer that nobody can quietly change.", ""],
+      ["Agree before anything goes wrong", "Both sides accept the rules, a neutral reviewer and the time limits. After that, none of it can be swapped.", ""],
+      ["Both sides answer the same questions", "Where the answers match, it is settled. Nobody needs to argue about what they already agree on.", ""],
+      ["Only the differences go to a person", "The reviewer both sides accepted decides just the questions they disagree on. Nothing else.", ""],
+      ["The circuit decides, and anyone can re-run it", "The final answers go through the published rules. One free read on X Layer gives the same result, with the reason.", ""],
+      ["Customers without a wallet", "A fingerprint or face scan replaces the wallet. The customer approves on their own device, and the business submits it and pays the tiny fee. Live on X Layer, unaudited, and recovery for a lost device is still being built.", `<p class="mute"><a href="#join">Create a passkey</a> · <a href="embed-demo.html">Try the fictional support page</a></p>`]
+    ];
+    main.innerHTML = `<h1>How it works</h1><p class="lede">One idea: settle only what the two sides disagree on.</p>
+    ${G.flow()}
+    ${steps.map((s, k) => `<section class="how${k % 2 ? " flip" : ""}"><div class="howtxt"><span class="hn">${k + 1}</span><h2>${s[0]}</h2><p>${s[1]}</p>${s[2]}</div><div class="ill">${G.ill[k + 1]}</div></section>`).join("")}
+    <details class="card" id="risks"><summary>What it does not do, and what can go wrong</summary>
     <h2>What it does not do</h2>
     <div class="note">It does not check that the answers are true. If someone gives a false answer, the result will follow the false answer. The reviewer decides disputed facts, and a reviewer can be wrong. The circuit shows the rules were applied consistently, nothing more.</div>
     <div class="note">A person is not a wallet. Where an operator submits answers for someone without a wallet, that is recorded, and you are trusting the operator to pass them on unchanged.</div>
@@ -245,6 +252,7 @@
       <tr><td>A rule set points at a fake processor</td><td>The site only shows rule sets it knows and checks custom ones against the official processor.</td><td>Protect someone calling the older V3 contract directly (known limitation F4). V4 accepts only the official processor.</td></tr>
     </tbody></table></div>
     <p class="small mute">The full list, with tests, is in <a href="https://github.com/samuel025/Lgtie/blob/main/docs/SECURITY.md" target="_blank" rel="noopener">docs/SECURITY.md</a>. The contracts are unaudited, hold no funds, and cannot be changed once deployed.</p>
+    </details>
     <h2>Status</h2><p>Prototype built for the X Layer TapeOut Accelerate hackathon. The contracts are unaudited and hold no funds. This page currently computes checkers in your browser and confirms against the chain once a checker has been published.</p>`;
   }
 
@@ -252,7 +260,7 @@
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
   const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
-  const REVEAL = ".hcopy>*,.stage,.realcase,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
+  const REVEAL = ".flow,.ill,.howtxt,.nocard,.hcopy>*,.stage,.realcase,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
   let armed = false, armTimer = 0;
   function scan() {
     if (!armed || !io) return;
@@ -272,7 +280,7 @@
     window.TB_HERO.stop();
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
     document.body.classList.toggle("embed", view === "embed");
-    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
+    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.toggle("about", view === "about"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
     if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
     armReveal(view === "embed");
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));

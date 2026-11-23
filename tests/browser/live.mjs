@@ -54,8 +54,11 @@ await p2.goto("http://127.0.0.1:8095/");
 const frame = async part => { for (let i = 0; i < 80; i++) { const f = p2.frames().find(f => f.url().includes(part)); if (f) return f; await w(250); } return null; };
 const join = await frame("#embed/join");
 ok("the live join page loads inside a page on another site", !!join && join.url().startsWith(LIVE), join && join.url());
-await join.waitForSelector("#mk", {timeout: 25000}); await join.click("#mk");
-ok("a passkey is created inside that cross-site frame, on the live domain", await until(async () => /^lgtie1\./.test(await join.$eval("#claim", e => e.value).catch(() => ""))), await join.$eval("main", e => e.innerText).catch(() => ""));
+await join.waitForSelector("#mk", {timeout: 25000}); await w(800);
+// a cold frame can swallow the first click (the virtual authenticator attaches asynchronously), so retry once like a patient user would
+const hasClaim = async () => /^lgtie1\./.test(await join.$eval("#claim", e => e.value).catch(() => ""));
+await join.click("#mk"); if (!(await until(hasClaim, 9000))) await join.click("#mk");
+ok("a passkey is created inside that cross-site frame, on the live domain", await until(hasClaim), await join.$eval("main", e => e.innerText).catch(() => ""));
 ok("the other site receives the claim code by checked message", await until(async () => /Maya Okoye/.test(await p2.$eval("#claims", e => e.innerText)) && !(await p2.$eval("#saved", e => e.hidden))), await p2.$eval("#claims", e => e.innerText).catch(() => ""));
 const link = await p2.$eval("#claims a.btn", a => a.href).catch(() => ""); ok("its invite link points at the live site", link.startsWith(LIVE + "index.html#pk/agree/lgtie1.") || link.startsWith(LIVE + "#pk/agree/lgtie1."), link.slice(0, 100));
 demo.close();

@@ -18,6 +18,17 @@ ok("the output node lights for a covered result and the wires change", (await p.
 const before = await T("#heroviz .vres .big"); await w(9800 + 3800); ok("autoplay resumes and changes the scenario", (await T("#heroviz .vres .big")) !== "" , before);
 ok("counters count up to their values", await (async () => { await p.evaluate(() => document.querySelector(".facts").scrollIntoView()); await w(1800); return (await T(".fact:nth-child(1) b")).trim() === "39" && /128/.test(await T(".fact:nth-child(2) b")); })(), await T(".facts"));
 ok("four feature rows, each with a grainy gradient panel", (await p.$$(".row2 .pnl .art")).length === 4);
+// ---- graphics: the flow diagram, the illustrated How-it-works page, and reduced motion
+ok("the home page has the animated flow diagram with five stages", (await p.$$(".flowsec .fnode")).length === 5 && (await p.$$(".flowsec .flab")).length === 5);
+ok("the home page shows icon cards for what it does not do", (await p.$$(".nocards .nocard")).length === 3);
+await p.goto(BASE + "#about"); await w(1200);
+ok("the About page has six illustrated steps", (await p.$$(".how")).length === 6 && (await p.$$(".how .ill svg.g")).length === 6);
+ok("the About page keeps the honest limits, tucked into a collapsible section", (await p.$("details#risks")) !== null && /known limitation F1/.test(await p.$eval("details#risks", e => e.textContent)));
+await p.evaluate(() => document.querySelectorAll(".ill").forEach(e => e.classList.add("in"))); await w(300);
+ok("illustrations animate in when they scroll into view", await p.$eval(".g1 .lock", e => getComputedStyle(e).animationName !== "none"));
+await p.emulateMediaFeatures([{name: "prefers-reduced-motion", value: "reduce"}]); await p.goto(BASE + "#about"); await w(1500);
+ok("with reduced motion every illustration is fully visible and nothing moves", await p.evaluate(() => [".g1 .bar", ".g1 .lock", ".g2 .row", ".g3 .arow", ".g5 .out", ".g6 .phone"].every(s => { const e = document.querySelector(s), c = getComputedStyle(e); return c.opacity === "1" && c.transform === "none" && c.animationName === "none"; })) && (await p.$eval(".travel", e => getComputedStyle(e).display === "none")));
+await p.emulateMediaFeatures([{name: "prefers-reduced-motion", value: "no-preference"}]);
 // checker page: the circuit lights only when every question is answered
 await p.goto(BASE + "#check/warranty"); await w(1200); await p.click(".circ-card summary"); await w(300);
 ok("the circuit is dark until all questions are answered", (await p.$$eval("#circviz .g.on", e => e.length)) === 0);
