@@ -174,8 +174,15 @@
       ${c.status >= 1 ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${yn(fa[i])} / ${yn(da[i])}</td><td>${c.status === 2 && dis[i] ? "Reviewer: " + yn(fin[i]) : dis[i] ? "Disputed" : "Agreed"}</td></tr>`).join("")}</tbody></table>` : ""}
       ${c.status === 2 ? `<div class="res nodec"><div class="big">${esc(P.results[c.result])}</div></div>` : ""}
       ${c.status === 0 && !myIn ? `<div class="qs"></div><div class="row"><button class="btn" data-act="answer" type="button" disabled>Review and sign my answers</button></div>` : c.status === 0 ? `<p class="small mute">You have answered. Waiting for the other side.</p>` : ""}
-      <div class="act"></div>`;
+      ${c.status < 2 ? `<div class="row"><button class="btn small ghost" data-act="evidence" type="button">Add evidence</button></div>` : ""}<div class="evlist"></div><div class="act"></div>`;
     $("#cs").appendChild(div);
+    readEvidence(c.id).then(list => { if (list.length) div.querySelector(".evlist").innerHTML = `<h4>Evidence recorded</h4>` + list.map(e => `<p class="small">${esc(e.question === 255 ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 40) : ""))}: “${esc(e.note)}” <span class="mute">· ${e.passkey ? (e.passkey === BigInt(accountId) ? "you" : "passkey account #" + e.passkey) : short(e.by)} · <code>${e.hash.slice(0, 10)}…</code></span></p>`).join(""); }).catch(() => {});
+    const evb = div.querySelector('[data-act="evidence"]');
+    if (evb) evb.onclick = () => { const ebox = div.querySelector(".act"); ebox.innerHTML = evidenceForm(P, c.id, "If something you signed is still waiting to be submitted, wait until it has been before signing this."); bindEvidence(ebox, c.id, async e => {
+      const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.evidence(c.id, mySide, e.question, e.hash, e.note), credentialId});
+      const note = packBox(V4().cases, enc("attachEvidenceSigned", ["uint256", "bool", "uint8", "bytes32", "string", K.SIGAUTH], [c.id, mySide, e.question, e.hash, e.note, s]), "Evidence for case #" + c.id + ": " + e.note, mySide ? c.decider.wallet : c.filer.wallet);
+      ebox.querySelector("#evout").insertAdjacentHTML("beforebegin", note); const cp = ebox.querySelector("#cplink"); if (cp) cp.onclick = ev => copy(cp.dataset.link, ev.target);
+    }); };
     const box = div.querySelector(".act"), answers = Array(nQ).fill(null), btn = div.querySelector('[data-act="answer"]'), qs = div.querySelector(".qs");
     if (qs) { P.questions.forEach((q, i) => { const d = document.createElement("div"); d.className = "q"; d.innerHTML = `<div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div>`;
         d.querySelectorAll("button").forEach(b => b.onclick = () => { answers[i] = b.dataset.v === "1"; d.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === answers[i]))); btn.disabled = answers.some(x => x === null); }); qs.appendChild(d); }); }
@@ -208,6 +215,36 @@
       const m = $("#rm"); go.disabled = true; m.className = "small mute"; m.textContent = "Confirm in your wallet…";
       try { const rc = await W().send(o.to, o.data); $("#done").innerHTML = `<div class="note ok-note">✓ Submitted. <a href="${CFG.explorer}/tx/${rc.transactionHash}" target="_blank" rel="noopener">${rc.transactionHash.slice(0, 12)}…</a></div>`; m.textContent = ""; }
       catch (e) { go.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
+    };
+  }
+
+  // ---------- evidence: a file or a written explanation. Only a fingerprint and a short note go on-chain; nothing is uploaded. ----------
+  const hashBytes = async u8 => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", u8))].map(b => b.toString(16).padStart(2, "0")).join("");
+  const evidenceForm = (P, caseId, hint) => `<div class="evbox"><h4>Add evidence</h4>
+    <p class="small mute">Nothing is uploaded. Your browser works out a fingerprint of the file (or of what you write), and only that fingerprint and the short note go on X Layer. Keep the file yourself and send it to the other side and the reviewer directly.${hint ? " " + hint : ""}</p>
+    <div class="row"><label>About <select id="evq"><option value="255">The whole case</option>${P.questions.map((q, i) => `<option value="${i}">${i + 1}. ${esc(q.text.slice(0, 50))}</option>`).join("")}</select></label></div>
+    <div class="row"><label><input type="radio" name="evsrc" value="file" checked> A photo or file</label><label><input type="radio" name="evsrc" value="text"> Write an explanation</label></div>
+    <div id="evfile" class="row"><input id="evf" type="file"></div><div id="evtext" hidden><textarea id="evt" rows="5" maxlength="4000" placeholder="Explain what happened, in your own words. This stays in a file you download; only its fingerprint is recorded."></textarea></div>
+    <div class="wide"><label><span>Short note (public)</span><input id="evn" type="text" maxlength="60" placeholder="For example: photo of the damaged casing. No names or personal details." autocomplete="off"></label></div>
+    <div class="row"><button class="btn small" id="evgo" type="button">Record the fingerprint</button><span id="evh" class="small mute"></span></div><div id="evout"></div></div>`;
+  // submit({hash, question, note}) records it; the text of a written explanation is offered as a download afterwards.
+  function bindEvidence(root, caseId, submit, after) {
+    const q = id => root.querySelector(id), srcs = root.querySelectorAll('input[name="evsrc"]');
+    srcs.forEach(r => r.onchange = () => { const t = [...srcs].find(x => x.checked).value === "text"; q("#evfile").hidden = t; q("#evtext").hidden = !t; });
+    q("#evgo").onclick = async () => {
+      const h = q("#evh"); h.className = "small mute"; h.textContent = "";
+      try {
+        const text = [...srcs].find(x => x.checked).value === "text", note = q("#evn").value.trim(), question = Number(q("#evq").value);
+        if (note.length < 3) throw new Error("Add a short note so people know what this is.");
+        if (new TextEncoder().encode(note).length > 60) throw new Error("The short note is too long (60 bytes at most).");
+        let hash, body = null;
+        if (text) { const t = q("#evt").value.trim(); if (t.length < 20) throw new Error("Write a few sentences first."); body = "LGTIE EVIDENCE STATEMENT\nCase: #" + caseId + "\nWritten: " + new Date().toISOString().slice(0, 10) + "\nNote: " + note + "\n\n" + t + "\n"; hash = await hashBytes(new TextEncoder().encode(body)); }
+        else { const f = q("#evf").files[0]; if (!f) throw new Error("Choose a file first."); hash = await hashBytes(new Uint8Array(await f.arrayBuffer())); }
+        h.textContent = "Fingerprint " + hash.slice(0, 14) + "… (the " + (text ? "text" : "file") + " never leaves your browser)";
+        q("#evgo").disabled = true; await submit({hash, question, note});
+        q("#evout").innerHTML = body ? `<div class="row"><a class="btn small ghost" download="lgtie-case-${caseId}-evidence.txt" href="data:text/plain;charset=utf-8,${encodeURIComponent(body)}">Download your written explanation</a><span class="small">Send this file to the other side and the reviewer. They can check it against the fingerprint.</span></div>` : "";
+        if (after) after();
+      } catch (e) { q("#evgo").disabled = false; h.className = "small err"; h.textContent = (e && e.message) || String(e); }
     };
   }
 
@@ -324,6 +361,7 @@
     const wacts = $("#wacts"), btn = (label, cls, fn, rerender) => { const b = document.createElement("button"); b.className = "btn small " + cls; b.type = "button"; b.textContent = label; b.onclick = act(fn, rerender); wacts.appendChild(b); };
     if (live) btn("Answer as a wallet party…", "ghost", async () => { $("#ans").innerHTML = answerForm(P); bindAnswer(c, P, id); }, false);
     if (c.status === 1) btn("I am the reviewer: decide…", "ghost", async () => { if (!blind && RV.isReviewer(W().account(), cc) && namesFor2 !== Number(id)) { await pkCase(id, {review: true}); return; } $("#ans").innerHTML = answerForm(P, dis, window.TB_REVIEW.fields()); window.TB_REVIEW.bind($("#ans")); bindReview(P, dis, id, ev, c); }, false);
+    if (live) btn("Add evidence…", "ghost", async () => { $("#ans").innerHTML = evidenceForm(P, id); bindEvidence($("#ans"), id, async e => { msg.className = "small mute"; msg.textContent = "Confirm in your wallet…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), e.question, e.hash, e.note])); msg.className = "small ok"; msg.textContent = "✓ Recorded on X Layer."; }, () => { const b = document.createElement("button"); b.className = "btn small"; b.type = "button"; b.textContent = "Show the updated case"; b.onclick = () => pkCase(id); $("#evout").appendChild(b); }); }, false);
     if (live) btn("I am the reviewer: confirm I am taking part", "ghost", async () => { await W().send(V4().cases, enc("acknowledgeReviewer", ["uint256"], [Number(id)])); });
     if (opts && opts.review) setTimeout(() => { const b = [...wacts.children].find(x => /decide/.test(x.textContent)); if (b) b.click(); }, 0);
     if ((c.status === 0 && Date.now() / 1000 > c.answerBy) || (c.status === 1 && Date.now() / 1000 > c.reviewBy)) btn("Close this case (the time has passed)", "", async () => { await W().send(V4().cases, enc("expire", ["uint256"], [Number(id)])); });

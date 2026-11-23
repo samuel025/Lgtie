@@ -102,6 +102,26 @@ await as(RELAYER, "#relay/" + pack); await until(async () => /would succeed/.tes
 ok("the relayer submits her signed answers", await until(async () => /Submitted/.test(await T("#done"))), await T("#rm") + await T("#done"));
 await as(RELAYER, "#relay/" + pack);
 ok("submitting the same signed answers again fails (no replay)", await until(async () => /would fail/.test(await T("#sim"))), await T("#sim"));
+// ---- 7b. Evidence: the customer signs a file's fingerprint; the business records a written explanation. Nothing is uploaded.
+fs.writeFileSync("/tmp/lgtie-photo.txt", "pretend this is a photo of the damaged casing");
+const photoHash = "0x" + crypto.createHash("sha256").update(fs.readFileSync("/tmp/lgtie-photo.txt")).digest("hex");
+RELAYS = ["ws://127.0.0.1:8099"]; await as("", "#mine"); await p.click("#find"); await until(async () => !!(await p.$('[data-act="evidence"]')));
+await p.click('[data-act="evidence"]'); ok("the customer's case card has an evidence form with a file and a written option", !!(await p.$("#evf")) && !!(await p.$('input[name="evsrc"][value="text"]')) && /Nothing is uploaded/.test(await T(".evbox")), await T("#cs"));
+await p.click("#evgo"); ok("the evidence form refuses an empty submission", /short note/.test(await T("#evh")), await T("#evh"));
+await p.type("#evn", "Photo of the damaged casing"); await p.click("#evgo"); ok("it refuses a missing file", /Choose a file/.test(await T("#evh")), await T("#evh"));
+await (await p.$("#evf")).uploadFile("/tmp/lgtie-photo.txt"); await p.click("#evgo");
+ok("she signs the evidence and it is sent to the business's inbox", await until(async () => /Sent to the other side's inbox/.test(await T("#inboxst"))) && (await T("#evh")).includes(photoHash.slice(0, 14)), await T("#cs"));
+const evLink = await p.$eval("#cs #cplink", e => e.dataset.link);
+await as(BUSINESS, "#inbox"); await p.click("#ibc").catch(() => {});
+ok("the evidence shows up in the business's inbox", await until(async () => /Waiting for you \(1\)/.test(await T("#ibl")) && /Evidence for case #1: Photo of the damaged casing/.test(await T("#ibl"))), await T("#ibl"));
+await p.click("[data-go]"); ok("the business submits her evidence", await until(async () => /Submitted/.test(await T("#ibs"))), await T("#ibs"));
+await as(BUSINESS, "#pk/case/1"); await clickText("#wacts button", "Add evidence"); await w(300);
+await p.click('input[name="evsrc"][value="text"]'); await p.type("#evn", "Our account of the repair"); await p.type("#evt", "The customer brought the product in on the fourth day. We inspected it and found no sign of impact."); await p.click("#evgo");
+ok("the business records a written explanation and can download it", await until(async () => /Recorded on X Layer/.test(await T("#cmsg"))) && !!(await p.$('#evout a[download]')), await T("#cmsg"));
+const txtHref = await p.$eval("#evout a[download]", a => a.href), txt = decodeURIComponent(txtHref.split(",").slice(1).join(",")), txtHash = "0x" + crypto.createHash("sha256").update(txt, "utf8").digest("hex");
+await clickText("#evout button", "Show the updated case"); await w(1500);
+ok("the case page lists both pieces of evidence with the right fingerprints and roles", /Photo of the damaged casing/.test(await T("main")) && /Our account of the repair/.test(await T("main")) && (await p.$$eval("tr.evrow", r => r.map(x => x.dataset.h))).includes(photoHash) && (await p.$$eval("tr.evrow", r => r.map(x => x.dataset.h))).includes(txtHash), await T("main"));
+ok("the written explanation file is what was fingerprinted", /LGTIE EVIDENCE STATEMENT/.test(txt) && /found no sign of impact/.test(txt));
 await as(REVIEWER, "#pk/cases"); ok("the passkey list page links to the agreement and the case", await until(async () => !!(await p.$('a[href="#pk/case/1"]')) && !!(await p.$('a[href="#pk/agreement/1"]'))), await T("main"));
 await as(REVIEWER, "#case"); ok("the normal case page points to the passkey list", !!(await p.$('a[href="#pk/cases"]')));
 await as(REVIEWER, "#pk/case/1");
