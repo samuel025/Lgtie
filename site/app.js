@@ -48,11 +48,11 @@
     main.innerHTML = `
     <section class="hero3"><div class="wrap hgrid">${tie()}
       <div class="hcopy">
-        <span class="tag"><i class="dot"></i>Two sides, one set of questions</span>
-        <h1>Know if you are covered before you file.</h1>
-        <p class="sub">Businesses publish their policy once, as a checker anyone can use. You answer plain questions, see the result and the reason, and anyone can re-run it and get the same answer.</p>
-        <div class="cta"><a class="btn" href="#check/warranty">Try the warranty check <span class="arr">→</span></a><a class="btn ghost" href="#build">Publish your policy</a></div>
-        <p class="small mute fine">No account. No wallet. Nothing is held for anyone.</p>
+        <span class="tag"><i class="dot"></i>The dispute layer for published rules</span>
+        <h1>When two sides disagree, settle only what they disagree on.</h1>
+        <p class="sub">Both sides answer the same yes or no questions under rules published on X Layer. Where they agree, it is settled. Only the differences go to a reviewer they both accepted, and anyone can re-run the result for free.</p>
+        <div class="cta"><a class="btn" href="#case/1">See a real case <span class="arr">→</span></a><a class="btn ghost" href="#check/warranty">Try the warranty check</a></div>
+        <p class="small mute fine">Checking a claim needs no account and no wallet. Nothing is ever held in escrow.</p>
       </div>
       <div class="panel stage">${art("ember")}<div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div></div>
     </div></section>
@@ -63,12 +63,16 @@
       <div class="quote fact">A rules engine with a dispute process, not a truth oracle. If someone lies, the result follows the lie, so a reviewer both sides accepted decides the disputed facts.<div class="by"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z"/><circle cx="19" cy="12" r="1.5"/></svg></span><span>How LGtie describes itself<br>Prototype, unaudited, holds no funds</span></div></div>
     </div></div>
     <section class="sec"><div class="wrap">
+      <div class="sechead"><h2>Not a mock-up.</h2><p class="lede">We ran a complete case on X Layer mainnet: an agreement, a case, answers from both sides and a free re-run. All three roles were wallets we controlled, so treat it as a demonstration, not a customer.</p></div>
+      <div class="card realcase" id="realcase" style="margin-top:28px"><p class="mute small">Reading the case from X Layer…</p></div>
+    </div></section>
+    <section class="sec"><div class="wrap">
       <div class="sechead"><h2>Dispute the facts, not the verdict.</h2><p class="lede">Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.</p></div>
-      ${feat(false, "sand", "Check a claim", "Know the answer before you file", [
-        ["Answers in plain yes or no", "Each question says what evidence to show. No account and no wallet are needed."],
-        ["A result and the exact reason", "The checker names the rule that decided it, so nothing is a black box."],
-        ["The same result for everyone", "A free read on X Layer re-runs the published rules and returns the same answer."]],
-        `<div class="bub">Was it bought from an authorised seller?</div><div class="bub me">No</div><div class="bub">Got it. That needs a person to look at it.</div><div class="bub res2"><div class="t">Needs review</div><small>It was not bought from an authorised seller, so a person has to look at it.</small></div>`)}
+      ${feat(false, "sand", "When you disagree", "Only the disputed answers go to a person", [
+        ["Both sides answer the same questions", "The filer and the other side each answer in their own wallet, before a deadline, under the rules they agreed."],
+        ["Agreed answers stand", "Where the two sides give the same answer, nobody needs to decide anything."],
+        ["A reviewer settles only the differences", "A neutral reviewer both sides accepted answers just the questions they disagree on, and the published rules give the result."]],
+        `<div class="mini"><div class="ln"><span class="k">1. Registered?</span><span>Yes · No → <b>Reviewer: Yes</b></span></div><div class="ln"><span class="k">2. In warranty?</span><span>Yes · Yes → agreed</span></div><div class="ln"><span class="k">3. Authorised seller?</span><span>Yes · Yes → agreed</span></div><div class="ln"><span class="k">Result</span><span class="chip">Covered</span></div></div>`)}
       ${feat(true, "ink", "Agree first", "Fix the terms before any dispute", [
         ["The rules, locked in", "An agreement names the published rule set. Once both sides accept, it can't change."],
         ["A reviewer both sides accept", "Disputed questions go to a neutral person each side has approved."],
@@ -93,10 +97,6 @@
 &lt;/script&gt;</code></pre><div class="ok2"><span class="chip">Live</span> Checker appears on your page</div></div></div></div>
     </div></section>
     <div class="wrap"><section class="panel make">${art("sun")}<div><h2>Publish your own checker</h2><p class="lede">Paste your rules, check the circuit against them, and get a link customers can use.</p><div class="cta"><a class="btn" href="#build">Open the builder <span class="arr">→</span></a></div></div></section></div>
-    <section class="sec"><div class="wrap">
-      <div class="sechead"><h2>Not a mock-up.</h2><p class="lede">We ran a complete case on X Layer mainnet: an agreement, a case, answers from both sides and a free re-run. All three roles were wallets we controlled, so treat it as a demonstration, not a customer.</p></div>
-      <div class="card realcase" id="realcase" style="margin-top:28px"><p class="mute small">Reading the case from X Layer…</p></div>
-    </div></section>
     <section class="sec"><div class="wrap">
       <div class="sechead"><h2>What it does not do.</h2></div>
       <div class="trio">

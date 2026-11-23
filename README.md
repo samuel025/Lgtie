@@ -53,6 +53,7 @@ Two examples are built in: `warranty` and `bounty` (bug-bounty severity, not yet
 - `compiler/` the first hand-built warranty circuit (14 gates) kept as a reference for the generic compiler.
 - `dist/` is the build output: `node scripts/bundle.mjs` inlines every script into one self-contained `dist/index.html` (about 220 KB including the embedded Inter typeface, which is open-licence; no external assets), plus `embed.js` and `embed-demo.html`. Any static host can serve it as is; that is also the shape DeWEB needs.
 - `docs/VERDICT.md` how another contract reads a case's verdict.
+- `docs/SUBMISSION.md` the hackathon submission text (with three `TODO` items to fill) and `docs/DEMO.md` a three-minute demo script.
 - `scripts/` `deploy.sh`, `deploy-case-v2.sh`, `deploy-v3.sh` and `publish-rules.sh` (each has a read-only `preflight` mode; you run the spending steps with your own Foundry keystore) and `compile.mjs`.
 - `tests/` `rules.test.mjs`, `mainnet-verify.mjs`. `test/fork-tapeout.mjs` tapes the circuit out on a local fork.
 

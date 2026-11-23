@@ -8,7 +8,7 @@ let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL "
 const T = sel => p.$eval(sel, e => e.textContent).catch(() => "");
 await p.setViewport({width: 1000, height: 900});
 await p.goto(BASE); await new Promise(r => setTimeout(r, 300));
-ok("home headline", /Know if you are covered/.test(await T("h1")), await T("h1"));
+ok("home headline", /settle only what they disagree on/.test(await T("h1")), await T("h1"));
 await p.goto(BASE + "#check/warranty"); await new Promise(r => setTimeout(r, 300));
 ok("warranty page has 7 questions", (await p.$$(".q")).length === 7);
 for (let i = 0; i < 7; i++) await p.evaluate(i => document.querySelectorAll(".q")[i].querySelector('button[data-v="1"]').click(), i);
