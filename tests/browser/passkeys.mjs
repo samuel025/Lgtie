@@ -122,6 +122,20 @@ const txtHref = await p.$eval("#evout a[download]", a => a.href), txt = decodeUR
 await clickText("#evout button", "Show the updated case"); await w(1500);
 ok("the case page lists both pieces of evidence with the right fingerprints and roles", /Photo of the damaged casing/.test(await T("main")) && /Our account of the repair/.test(await T("main")) && (await p.$$eval("tr.evrow", r => r.map(x => x.dataset.h))).includes(photoHash) && (await p.$$eval("tr.evrow", r => r.map(x => x.dataset.h))).includes(txtHash), await T("main"));
 ok("the written explanation file is what was fingerprinted", /LGTIE EVIDENCE STATEMENT/.test(txt) && /found no sign of impact/.test(txt));
+// ---- 7c. Two signed actions in a row: the second is queued behind the first and the inbox submits them in order.
+for (const [i, name] of [[1, "Receipt for the purchase"], [2, "Warranty card"]]) {
+  fs.writeFileSync("/tmp/lgtie-doc" + i + ".txt", "document number " + i);
+  await as("", "#mine"); await p.click("#find"); await until(async () => !!(await p.$('[data-act="evidence"]'))); await p.click('[data-act="evidence"]');
+  await p.type("#evn", name); await (await p.$("#evf")).uploadFile("/tmp/lgtie-doc" + i + ".txt"); await p.click("#evgo");
+  ok("she signs evidence #" + i + " without waiting for the earlier one" + (i === 2 ? " and is told it is queued" : ""), await until(async () => /Sent to the other side's inbox/.test(await T("#inboxst"))) && (i === 1 || /queued behind/.test(await T("#packbox"))), await T("#cs"));
+}
+await as(BUSINESS, "#inbox"); await p.click("#ibc").catch(() => {});
+ok("the inbox shows the first as ready and the second as waiting for the earlier one", await until(async () => /Waiting for you \(1\)/.test(await T("#ibl")) && /Receipt for the purchase/.test(await T("#ibl")) && /Waiting for an earlier action \(1\)/.test(await T("#ibl"))), await T("#ibl"));
+ok("the queued one has no submit button yet", (await p.$$("[data-go]")).length === 1, await T("#ibl"));
+await p.click("[data-go]");
+ok("after the first is submitted the second becomes ready", await until(async () => /Waiting for you \(1\)/.test(await T("#ibl")) && /Warranty card/.test(await T("#ibl")) && !/Waiting for an earlier action/.test(await T("#ibl"))), await T("#ibl"));
+await p.click("[data-go]"); ok("and it submits too", await until(async () => /Waiting for you \(0\)/.test(await T("#ibl")) && /Done or expired \(4\)/.test(await T("#ibl"))), await T("#ibl"));
+await as(BUSINESS, "#pk/case/1"); ok("both pieces of evidence are on the case", /Receipt for the purchase/.test(await T("main")) && /Warranty card/.test(await T("main")), await T("main"));
 await as(REVIEWER, "#pk/cases"); ok("the passkey list page links to the agreement and the case", await until(async () => !!(await p.$('a[href="#pk/case/1"]')) && !!(await p.$('a[href="#pk/agreement/1"]'))), await T("main"));
 await as(REVIEWER, "#case"); ok("the normal case page points to the passkey list", !!(await p.$('a[href="#pk/cases"]')));
 await as(REVIEWER, "#pk/case/1");

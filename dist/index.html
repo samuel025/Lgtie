@@ -1778,22 +1778,33 @@ MY POLICY:
 
   // ---------- signing and relaying ----------
   // Sign one action: fetch the account's current nonce, build the challenge locally, ask the passkey, check on-chain that this passkey controls the account.
+  // A signed action must be submitted in order (the contract requires the exact next number). If the customer signs a second action before the first
+  // has been submitted, give it the following number and remember that locally. A remembered number is forgotten after a day (the deadline), or once the chain catches up.
+  let lastSigned = null, chainNonceSeen = 0n;
+  const nonceKey = id => "lgtie.nonce." + CFG.chainId + "." + id;
+  async function nextNonce(id) {
+    const chain = await readNonce(id); chainNonceSeen = chain; let q = null; try { q = JSON.parse(localStorage.getItem(nonceKey(id)) || "null"); } catch (e) {}
+    return q && BigInt(q.next) > chain && Date.now() / 1000 - q.at < DAY ? BigInt(q.next) : chain;
+  }
+  const saveNonce = (id, nonce) => { try { localStorage.setItem(nonceKey(id), JSON.stringify({next: Number(nonce) + 1, at: Math.floor(Date.now() / 1000)})); } catch (e) {} };
   async function signAction({accountId, consumer, payloadHash, credentialId}) {
-    const nonce = await readNonce(accountId), head = await W().rpc("eth_getBlockByNumber", ["latest", false]), deadline = BigInt(Number(BigInt(head.timestamp)) + DAY);   // the chain's clock, not the browser's
+    const nonce = await nextNonce(accountId), head = await W().rpc("eth_getBlockByNumber", ["latest", false]), deadline = BigInt(Number(BigInt(head.timestamp)) + DAY);   // the chain's clock, not the browser's
     const ch = K.challenge({chainId: CFG.chainId, registry: V4().passkeys, consumer, accountId, nonce, deadline, payloadHash});
     const a = await navigator.credentials.get({publicKey: {challenge: ch, rpId: location.hostname, userVerification: "required", allowCredentials: credentialId ? [{type: "public-key", id: K.unb64u(credentialId)}] : []}});
     const assertion = K.assertionTuple(new Uint8Array(a.response.authenticatorData), new TextDecoder().decode(a.response.clientDataJSON), new Uint8Array(a.response.signature));
     const r = words(await call(V4().passkeys, enc("isControlledBy", ["uint256", "bytes32", K.ASSERTION], [accountId, K.hex(ch), assertion])));
     if (r[0] !== 1n) throw new Error("This passkey does not control that account, so nothing was signed for it.");
+    saveNonce(accountId, nonce); lastSigned = {nonce: Number(nonce), acct: Number(accountId), queued: nonce > chainNonceSeen};
     return K.sigAuthTuple(nonce, deadline, Number(r[1]), assertion);
   }
-  const packOf = (to, data, summary) => K.b64u(K.utf8(JSON.stringify({v: 1, to, data, summary, chainId: CFG.chainId})));
+  const packOf = (to, data, summary) => K.b64u(K.utf8(JSON.stringify({v: 1, to, data, summary, chainId: CFG.chainId, ...(lastSigned ? {n: lastSigned.nonce, a: lastSigned.acct} : {})})));
   const isRealAddr = a => isAddr(a) && !/^0x0+$/.test(a);
   // After signing, drop the signed action in the other side's inbox (public relays). The copy-link fallback stays, because relays can drop messages.
   function packBox(to, data, summary, target) {
     const pack = packOf(to, data, summary), link = location.href.split("#")[0] + "#relay/" + pack, canPost = isRealAddr(target) && window.TB_NOSTR;
     if (canPost) setTimeout(() => deliver(target, pack), 0);
-    return `<div class="note ok-note" id="packbox"><b>Signed.</b> ${esc(summary)}<br>
+    const queued = lastSigned && lastSigned.queued;
+    return `<div class="note ok-note" id="packbox"><b>Signed.</b> ${esc(summary)}<br>${queued ? `<span class="small">This is queued behind something you signed earlier that has not been submitted yet. They are submitted in order.</span><br>` : ""}
       ${canPost ? `<span class="small" id="inboxst">Sending it to the other side's inbox…</span><br><span class="small mute">They see it when they open their inbox and submit it for you. It only does what you just approved, and it expires in 24 hours.</span>` : `<span class="small">Send this link to the person who will submit it (the business, or anyone with a wallet). It only does what you just approved, and it expires in 24 hours.</span>`}
       <div class="row"><button class="btn small ${canPost ? "ghost" : ""}" id="cplink" type="button" data-link="${esc(link)}">${canPost ? "Or copy the link and send it yourself" : "Copy the link"}</button></div><details><summary class="small">Show the signed action</summary><pre id="packtxt">${esc(link)}</pre></details></div>`;
   }
@@ -1887,7 +1898,7 @@ MY POLICY:
     $("#cs").appendChild(div);
     readEvidence(c.id).then(list => { if (list.length) div.querySelector(".evlist").innerHTML = `<h4>Evidence recorded</h4>` + list.map(e => `<p class="small">${esc(e.question === 255 ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 40) : ""))}: “${esc(e.note)}” <span class="mute">· ${e.passkey ? (e.passkey === BigInt(accountId) ? "you" : "passkey account #" + e.passkey) : short(e.by)} · <code>${e.hash.slice(0, 10)}…</code></span></p>`).join(""); }).catch(() => {});
     const evb = div.querySelector('[data-act="evidence"]');
-    if (evb) evb.onclick = () => { const ebox = div.querySelector(".act"); ebox.innerHTML = evidenceForm(P, c.id, "If something you signed is still waiting to be submitted, wait until it has been before signing this."); bindEvidence(ebox, c.id, async e => {
+    if (evb) evb.onclick = () => { const ebox = div.querySelector(".act"); ebox.innerHTML = evidenceForm(P, c.id, ""); bindEvidence(ebox, c.id, async e => {
       const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.evidence(c.id, mySide, e.question, e.hash, e.note), credentialId});
       const note = packBox(V4().cases, enc("attachEvidenceSigned", ["uint256", "bool", "uint8", "bytes32", "string", K.SIGAUTH], [c.id, mySide, e.question, e.hash, e.note, s]), "Evidence for case #" + c.id + ": " + e.note, mySide ? c.decider.wallet : c.filer.wallet);
       ebox.querySelector("#evout").insertAdjacentHTML("beforebegin", note); const cp = ebox.querySelector("#cplink"); if (cp) cp.onclick = ev => copy(cp.dataset.link, ev.target);
@@ -1967,15 +1978,21 @@ MY POLICY:
     const start = async () => {
       const me = W().account(); if (!me) return; $("#ibc").hidden = true;
       const items = new Map(), seenPacks = new Set(), render = () => {
-        const all = [...items.values()].sort((a, b) => b.at - a.at), ready = all.filter(i => i.state === "ready"), checking = all.filter(i => i.state === "checking"), old = all.filter(i => i.state === "old");
+        const all = [...items.values()].sort((a, b) => b.at - a.at), later = all.filter(i => i.state === "later"), ready = all.filter(i => i.state === "ready"), checking = all.filter(i => i.state === "checking"), old = all.filter(i => i.state === "old");
         $("#ibl").innerHTML = `<h2>Waiting for you (${ready.length})</h2>${ready.length ? ready.map(i => `<div class="card" data-k="${i.key}"><p><b>${esc(String(i.o.summary || "A signed action").slice(0, 200))}</b></p><p class="small mute">Sent ${ago(i.at)} · to <code>${short(i.o.to)}</code>. The description comes from the sender; check the result on the case page afterwards.</p><div class="row"><button class="btn" data-go="${i.key}" type="button">Submit with my wallet</button><a class="btn small ghost" href="#relay/${i.pack}">Open on its own page</a><span class="small" data-m></span></div></div>`).join("") : `<p class="mute">${checking.length ? "Checking…" : "Nothing waiting. This page keeps listening while it is open."}</p>`}
+          ${later.length ? `<h3>Waiting for an earlier action (${later.length})</h3>${later.map(i => `<p class="small mute">${esc(String(i.o.summary || "A signed action").slice(0, 120))} · ${ago(i.at)}. The customer signed something earlier that has to be submitted first.</p>`).join("")}` : ""}
           ${old.length ? `<details><summary class="small">Done or expired (${old.length})</summary>${old.map(i => `<p class="small mute">${esc(String(i.o.summary || "A signed action").slice(0, 120))} · ${ago(i.at)}</p>`).join("")}</details>` : ""}`;
         document.querySelectorAll("[data-go]").forEach(b => b.onclick = async () => {
           const i = items.get(b.dataset.go), m = b.parentNode.querySelector("[data-m]"); b.disabled = true; m.className = "small mute"; m.textContent = "Confirm in your wallet…";
-          try { const rc = await W().send(i.o.to, i.o.data); i.state = "old"; m.textContent = ""; render(); $("#ibs").className = "small ok"; $("#ibs").textContent = "✓ Submitted. " + rc.transactionHash.slice(0, 12) + "…"; }
+          try { const rc = await W().send(i.o.to, i.o.data); i.state = "old"; m.textContent = ""; [...items.values()].filter(x => x.state === "later" || x.state === "checking").forEach(check); render(); $("#ibs").className = "small ok"; $("#ibs").textContent = "✓ Submitted. " + rc.transactionHash.slice(0, 12) + "…"; }
           catch (e) { b.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
         });
-      }, check = async i => { try { await W().rpc("eth_call", [{from: me, to: i.o.to, data: i.o.data}, "latest"]); i.state = "ready"; } catch { i.state = "old"; } render(); };
+      }, check = async i => {
+        try {
+          if (Number.isInteger(i.o.n) && Number.isInteger(i.o.a)) { const chain = Number(await readNonce(i.o.a)); if (i.o.n < chain) { i.state = "old"; render(); return; } if (i.o.n > chain) { i.state = "later"; render(); return; } }
+          await W().rpc("eth_call", [{from: me, to: i.o.to, data: i.o.data}, "latest"]); i.state = "ready";
+        } catch { i.state = "old"; } render();
+      };
       const N = window.TB_NOSTR, rel = N.relaysConfigured(), since = Math.floor(Date.now() / 1000) - 3 * 86400;
       stopInbox = N.listen(rel, N.filterFor(me, since), ev => {
         let msg; try { msg = JSON.parse(ev.content); } catch { return; } if (!msg || typeof msg.pack !== "string") return;
