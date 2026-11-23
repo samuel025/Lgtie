@@ -16,7 +16,7 @@ Prototype for the X Layer TapeOut Accelerate hackathon. The project was first ca
 | `TiebreakCase` (v1, simple) | `0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987` |
 | `TiebreakCaseV2` | `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3`. **Has a flaw, no longer used by the site** (see below) |
 | `AgreementRegistry` | `0xC3e61E38d977Be9e9B4649e5965892bF6f675180` (V3 system, in use) |
-| `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (in use; fixes the V2 flaw; 72 contract tests) |
+| `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (in use; fixes the V2 flaw; 83 contract tests) |
 
 On mainnet there is one real run, played by the team with three wallets it controlled: agreement #1 and case #1 (decided "Covered", one question settled by the reviewer). It is a demonstration, not a customer. The home page reads it live.
 
@@ -49,10 +49,11 @@ Two examples are built in: `warranty` and `bounty` (bug-bounty severity, not yet
 ## Layout
 
 - `site/` the web app (static files, no server calls): `index.html`, `rules.js` (rule engine), `builder.js` (a guided four-step rule builder: Questions, Rules, Test, Publish, with a click-to-cycle rule grid, a live try-it panel that lights the circuit and the rule that fired, spreadsheet paste, a text view, and a copy-paste prompt for drafting rules with any AI assistant), `hero.js` (draws a real compiled circuit and lights it with live answers: the home hero, and "watch the circuit work" on every checker page), `wallet.js` and `publish.js` (one-click publish with the visitor's own wallet: claims or buys NAND if short, tapes the circuit out, registers it), `embed.js` (one script tag that puts a checker on any website; `embed-demo.html` shows it on a fictional support page), `cases.js` (on-chain pages: agreements at `#agree`, cases at `#case`, printable receipts at `#receipt/<id>`, reviewer records at `#reviewer`, business records at `#business/<address>`), `app.js`, `config.js` (addresses, which templates are published).
-- `contracts/` Foundry project: `RuleSetRegistry`, `AgreementRegistry`, `TiebreakCaseV3` (plus the earlier `TiebreakCase` and `TiebreakCaseV2`), 72 unit and fuzz tests with a mock processor, and a fork test against the real processor.
+- `contracts/` Foundry project: `RuleSetRegistry`, `AgreementRegistry`, `TiebreakCaseV3` (plus the earlier `TiebreakCase` and `TiebreakCaseV2`), 83 unit and fuzz tests with a mock processor, and a fork test against the real processor.
 - `compiler/` the first hand-built warranty circuit (14 gates) kept as a reference for the generic compiler.
 - `dist/` is the build output: `node scripts/bundle.mjs` inlines every script into one self-contained `dist/index.html` (about 220 KB including the embedded Inter typeface, which is open-licence; no external assets), plus `embed.js` and `embed-demo.html`. Any static host can serve it as is; that is also the shape DeWEB needs.
 - `docs/VERDICT.md` how another contract reads a case's verdict.
+- `docs/PASSKEYS.md` a design in progress for parties who act with a passkey instead of a wallet, and the log of the feasibility gate (passed; nothing deployed).
 - `docs/SECURITY.md` a manual security review of the deployed contracts: what held up, six known limitations (each pinned by a test), and what a next version would change. `docs/VALIDATION.md` the questions to ask real users.
 - `docs/SUBMISSION.md` the hackathon submission text (with three `TODO` items to fill) and `docs/DEMO.md` a three-minute demo script.
 - `scripts/` `deploy.sh`, `deploy-case-v2.sh`, `deploy-v3.sh` and `publish-rules.sh` (each has a read-only `preflight` mode; you run the spending steps with your own Foundry keystore) and `compile.mjs`.
