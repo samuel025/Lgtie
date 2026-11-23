@@ -94,6 +94,8 @@ await as(RELAYER, "#relay/" + pack); await until(async () => /would succeed/.tes
 ok("the relayer submits her signed answers", await until(async () => /Submitted/.test(await T("#done"))), await T("#rm") + await T("#done"));
 await as(RELAYER, "#relay/" + pack);
 ok("submitting the same signed answers again fails (no replay)", await until(async () => /would fail/.test(await T("#sim"))), await T("#sim"));
+await as(REVIEWER, "#pk/cases"); ok("the passkey list page links to the agreement and the case", await until(async () => !!(await p.$('a[href="#pk/case/1"]')) && !!(await p.$('a[href="#pk/agreement/1"]'))), await T("main"));
+await as(REVIEWER, "#case"); ok("the normal case page points to the passkey list", !!(await p.$('a[href="#pk/cases"]')));
 await as(REVIEWER, "#pk/case/1");
 ok("the case now waits for the reviewer and question 5 is disputed", /Waiting for the reviewer/.test(await T("main")) && /Disputed/.test(await T("tbody")), await T("main"));
 await clickText("#wacts button", "I am the reviewer: decide"); await w(1500);

@@ -1315,6 +1315,7 @@ MY POLICY:
     const opts = (vals, def) => vals.map(([d, label]) => `<option value="${d}"${d === def ? " selected" : ""}>${label}</option>`).join(""), days = [[1, "1 day"], [3, "3 days"], [7, "7 days"], [14, "14 days"], [30, "30 days"]];
     main.innerHTML = `<h1>Settle a disagreement</h1><p class="lede">Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer, and the published rules give the result. A case nobody finishes in time ends with no decision. Best of all, <a href="#agree">agree on the rules before there is a dispute</a>.</p>
       <div class="card"><h3>Under an agreement</h3><p class="small">If you both accepted an agreement, open the case from the agreement page: the rules, the reviewer and the time limits are already fixed.</p><div class="row"><input id="agn" type="number" min="1" placeholder="Agreement number" style="width:180px"><button class="btn ghost" id="aggo" type="button">Open the agreement</button></div></div>
+      <div class="card"><h3>Customer with a fingerprint, no wallet?</h3><p class="small">Cases opened with a passkey customer are listed on their own page.</p><div class="row"><a class="btn small ghost" href="#pk/cases">See passkey agreements and cases</a></div></div>
       <div class="card"><h3>Without an agreement</h3>
         <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
         <div class="wide"><label><span>The other side (for example the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
@@ -1862,6 +1863,15 @@ MY POLICY:
     if (inForce) add("Open a dispute under this agreement", "", async () => { const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
     const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if (cs.length) $("#cases").innerHTML = `<h3>Cases</h3>` + cs.map(c => `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(STATUS[c.status])}</p>`).join("");
   }
+  async function pkAll() {
+    if (!deployed()) { notDeployed("Passkey cases"); return; }
+    main.innerHTML = `<h1>Passkey agreements and cases</h1><p class="lede">Everything opened with a customer's fingerprint or face. Cases between two wallets are on <a href="#case">the other case page</a>.</p><p class="mute" id="pkl">Reading from X Layer…</p>`;
+    try {
+      const [ags, cs] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase)]);
+      $("#pkl").outerHTML = `<div class="card"><h3>Agreements</h3>${ags.length ? ags.map(a => { const P = policyOf(a.ruleSetId); return `<p><a href="#pk/agreement/${a.id}">Agreement #${a.id}</a> · ${esc(P ? P.name : "rule set " + a.ruleSetId)} · ${a.cancelled ? "Withdrawn" : a.acceptedAt ? "In force" : "Waiting for the customer"}</p>`; }).join("") : `<p class="mute">None yet.</p>`}<p class="small"><a href="#pk/agree">Invite a customer with a fingerprint</a></p></div>
+        <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
+    } catch (e) { $("#pkl").textContent = "Could not read from X Layer right now. Try again in a moment."; }
+  }
   async function pkCase(id, opts) {
     if (!deployed()) { notDeployed("Case"); return; }
     main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
@@ -1920,7 +1930,7 @@ MY POLICY:
     };
   }
 
-  window.TB_PASSKEYS = {join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
 })();
 
 </script><script>/* app.js */
@@ -2157,6 +2167,7 @@ MY POLICY:
       ["invite", "Invite a customer with no wallet", "They approve with their fingerprint or face. You send it in and pay the tiny fee.", "#pk/agree", "Invite by fingerprint"],
       ["wallet", "Invite a customer with a wallet", "Propose an agreement that fixes the rules, the neutral person and the time limits.", "#agree", "Make an agreement"],
       ["cases", "Handle a case", "Open a dispute, answer the questions, or look one up by number.", "#case", "Go to cases"],
+      ["cases", "Cases with fingerprint customers", "See the agreements and cases you opened with customers who use a passkey, and answer them.", "#pk/cases", "See passkey cases"],
       ["embed", "Put it on your website", "Add the claim check or the fingerprint sign-up with one line of code.", "embed-demo.html", "See a demo page"],
       ["records", "Reviewer records", "See who decided cases, and who did not decide in time.", "#reviewer", "See the records"],
       ["dev", "For developers", "Re-run any published rules on the public network, or read a case's decision from another contract.", "#verify", "Verify a circuit"]
@@ -2238,7 +2249,7 @@ MY POLICY:
     if (view === "join") return window.TB_PASSKEYS.join();
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();

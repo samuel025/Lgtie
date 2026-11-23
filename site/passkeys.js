@@ -243,6 +243,15 @@
     if (inForce) add("Open a dispute under this agreement", "", async () => { const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
     const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if (cs.length) $("#cases").innerHTML = `<h3>Cases</h3>` + cs.map(c => `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(STATUS[c.status])}</p>`).join("");
   }
+  async function pkAll() {
+    if (!deployed()) { notDeployed("Passkey cases"); return; }
+    main.innerHTML = `<h1>Passkey agreements and cases</h1><p class="lede">Everything opened with a customer's fingerprint or face. Cases between two wallets are on <a href="#case">the other case page</a>.</p><p class="mute" id="pkl">Reading from X Layer…</p>`;
+    try {
+      const [ags, cs] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase)]);
+      $("#pkl").outerHTML = `<div class="card"><h3>Agreements</h3>${ags.length ? ags.map(a => { const P = policyOf(a.ruleSetId); return `<p><a href="#pk/agreement/${a.id}">Agreement #${a.id}</a> · ${esc(P ? P.name : "rule set " + a.ruleSetId)} · ${a.cancelled ? "Withdrawn" : a.acceptedAt ? "In force" : "Waiting for the customer"}</p>`; }).join("") : `<p class="mute">None yet.</p>`}<p class="small"><a href="#pk/agree">Invite a customer with a fingerprint</a></p></div>
+        <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
+    } catch (e) { $("#pkl").textContent = "Could not read from X Layer right now. Try again in a moment."; }
+  }
   async function pkCase(id, opts) {
     if (!deployed()) { notDeployed("Case"); return; }
     main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
@@ -301,5 +310,5 @@
     };
   }
 
-  window.TB_PASSKEYS = {join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
 })();

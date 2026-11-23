@@ -231,6 +231,7 @@
       ["invite", "Invite a customer with no wallet", "They approve with their fingerprint or face. You send it in and pay the tiny fee.", "#pk/agree", "Invite by fingerprint"],
       ["wallet", "Invite a customer with a wallet", "Propose an agreement that fixes the rules, the neutral person and the time limits.", "#agree", "Make an agreement"],
       ["cases", "Handle a case", "Open a dispute, answer the questions, or look one up by number.", "#case", "Go to cases"],
+      ["cases", "Cases with fingerprint customers", "See the agreements and cases you opened with customers who use a passkey, and answer them.", "#pk/cases", "See passkey cases"],
       ["embed", "Put it on your website", "Add the claim check or the fingerprint sign-up with one line of code.", "embed-demo.html", "See a demo page"],
       ["records", "Reviewer records", "See who decided cases, and who did not decide in time.", "#reviewer", "See the records"],
       ["dev", "For developers", "Re-run any published rules on the public network, or read a case's decision from another contract.", "#verify", "Verify a circuit"]
@@ -312,7 +313,7 @@
     if (view === "join") return window.TB_PASSKEYS.join();
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();
