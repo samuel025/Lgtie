@@ -1,46 +1,72 @@
 # LGtie
 
-**Live:** https://lgtie.vercel.app/ · [fictional support page with the passkey flow](https://lgtie.vercel.app/embed-demo.html)
+**Settle disputes fairly, with rules everyone can see first.**
 
-A business publishes its policy as a checker. Customers answer plain yes/no questions and see the result and the reason. If a customer and the business answer a question differently, only that question goes to a neutral reviewer. The rules are stored on X Layer as a TapeOut circuit, so they can't be changed after a case starts, and anyone can re-run the same answers through the same circuit and get the same result, for free.
+**Live:** https://lgtie.vercel.app/ · [Try the fictional support page](https://lgtie.vercel.app/embed-demo.html) · [See a real case on X Layer](https://lgtie.vercel.app/#case/1)
 
-Prototype for the X Layer TapeOut Accelerate hackathon. The project was first called Tiebreak; it is now **LGtie**. The deployed contracts keep their original names (`RuleSetRegistry`, `TiebreakCase`, `TiebreakCaseV2`, `TiebreakCaseV3`) because renaming them in the source would no longer match the bytecode on-chain.
+LGtie is a prototype for the **X Layer TapeOut Accelerate** hackathon. It is early software: the contracts are unaudited and it has no customers yet.
 
-**No wallet needed for a customer.** A customer can act with a passkey (the fingerprint or face scan that unlocks their phone) instead of a wallet: the business invites them with a claim code, they approve on their own device, and anyone with a wallet submits the signed approval and pays the fee. This runs on `PasskeyRegistry`, `AgreementRegistryV2` and `TiebreakCaseV4` (live on X Layer, unaudited). See `docs/PASSKEYS.md`.
+## The problem
 
-**Receipts.** Any decided case has a one-page result receipt at `#receipt/<case id>` (questions, who answered what, who settled each, parties, evidence fingerprints, and a live re-run of the published rules) that prints or saves as a PDF. The home page links to a real mainnet case played by the team.
+When a claim or a report is disputed (a warranty repair, a refund, a bug's severity), the rules usually live inside one side's own process. Both sides argue about the whole outcome, nobody can show afterwards that the rules were applied the same way every time, and the person who decides is often one of the parties.
 
-## What is live (X Layer mainnet, chain 196)
+## What LGtie does
 
-| Thing | Address / id |
+1. A business **publishes its rules in advance** as simple yes or no questions. Once published they cannot be changed quietly.
+2. Both sides **agree up front** on those rules, on a neutral person who would decide any disagreement, and on the time limits.
+3. If a dispute comes, **both sides answer the same questions**. Where the answers match, it is settled.
+4. **Only the questions they disagree on** go to the neutral person. Nothing else.
+5. The published rules turn the final answers into a **result and a reason**, and **anyone can re-run it for free** and get the same result.
+
+A customer does not need a crypto wallet: they can approve with the fingerprint or face scan that unlocks their phone.
+
+LGtie never holds anyone's money. It records decisions and checks that rules were applied consistently. It cannot tell whether someone is telling the truth; a neutral person settles the facts the two sides disagree on.
+
+## Try it (no wallet needed)
+
+| What | Where |
 | --- | --- |
-| TapeOut processor (existing, reused) | `0x9e2849c04a513fe64db07521cbe52d078d905c0e` |
-| Warranty rule set circuit | #13 (7 inputs, 2 outputs, 39 NAND gates) |
-| `RuleSetRegistry` | `0x25E87D367316038a2d3B6A4fe3d58AA453D4c219` (rule set #1 = "Warranty claims") |
-| `TiebreakCase` (v1, simple) | `0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987` |
-| `TiebreakCaseV2` | `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3`. **Has a flaw, no longer used by the site** (see below) |
-| `AgreementRegistry` | `0xC3e61E38d977Be9e9B4649e5965892bF6f675180` (V3 system, in use) |
-| `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (in use; fixes the V2 flaw; 119 contract tests) |
-| `PasskeyRegistry` | `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E` (passkey accounts; deployed Nov 23, not yet used) |
-| `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` (the counterparty can be a passkey account) |
-| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey sides; fixes the V3 limitations F1 to F4; trusts only the official processor) |
-
-On mainnet there is one real run, played by the team with three wallets it controlled: agreement #1 and case #1 (decided "Covered", one question settled by the reviewer). It is a demonstration, not a customer. The home page reads it live.
-
-`node tests/mainnet-verify.mjs` runs circuit #13 on mainnet for all 128 answer combinations and compares with the rules (read-only).
+| Check a warranty claim and see the result and the reason | https://lgtie.vercel.app/#check/warranty |
+| Read a real case that was settled on X Layer (played by the team, so a demonstration, not a customer) | https://lgtie.vercel.app/#case/1 |
+| Its one-page receipt, which you can print or save as a PDF | https://lgtie.vercel.app/#receipt/1 |
+| A fictional support page with the fingerprint (passkey) flow embedded | https://lgtie.vercel.app/embed-demo.html |
+| How it works, as a short animated story | https://lgtie.vercel.app/#about |
 
 ## How it works
 
-1. **Rules** are written as plain lines (see below). `site/rules.js` parses them, runs them directly, compiles them to a NAND netlist, and proves the circuit equals the rules on every answer combination.
-2. **Publishing** tapes the circuit out on the TapeOut processor (a 0.0013 OKB fee plus one NAND token per gate) and registers it in `RuleSetRegistry` with the SHA-256 of the rules text. Entries never change; a new version is a new entry.
-3. **An agreement (optional, before any dispute)** (`AgreementRegistry`): two parties accept one published rule set, a neutral reviewer, the time limits and a fingerprint of their written terms. Once accepted it can never be changed or withdrawn, so neither side can swap the rules or the reviewer halfway through. Either party can then open a case under it.
-4. **A case** (`TiebreakCaseV3`, or `TiebreakCaseV4` when a side acts by passkey): the filer and the decider each submit answers before a deadline. Equal answers finish the case at once. Different answers go to a reviewer **both sides have accepted** (the opener proposes one, the other side accepts or counter-proposes), whose answers count only for the disputed questions, also before a deadline. The processor's `eval` computes the result and anyone can call `replay(id)` to recompute it. A case nobody finishes in time can be closed by anyone and ends as **no decision**; nobody wins by default. Other contracts read the outcome with `verdict(id)` (see `docs/VERDICT.md`); LGtie itself never holds funds.
-5. **Evidence:** either side, their helper or the reviewer can attach a SHA-256 fingerprint (and a short note) to a question or to the whole case. The page hashes the file in the browser; nothing is uploaded. A fingerprint shows a file has not changed since, not that it is genuine. On a case page (and on the receipt) a reviewer can drop a file they were sent into a box, and the browser says whether it is identical to a recorded fingerprint; the file is never uploaded.
-6. **The web page** needs no wallet to check a claim (it reads the processor over public RPC). A wallet party (the business, the reviewer) needs a wallet to act; a customer can instead act with a passkey (step 7). Agreement and case pages offer a ready-to-send invitation (a message with the page link); the other side's role is read from the chain when they connect, not from the link.
+```
+  1. The business publishes its rules          (yes/no questions, stored on X Layer)
+                    |
+                    v
+  2. Both sides agree in advance on            the rules, a neutral person, the time limits
+                    |
+                    v
+  3. Both sides answer the same questions ---- answers match --->  settled, no argument
+                    |
+              answers differ
+                    v
+  4. The neutral person answers ONLY the questions they differ on
+                    |
+                    v
+  5. The published rules give the result and the reason
+                    |
+                    v
+     Anyone can re-run it, for free, and get the same result
+```
 
-7. **Passkey parties** (`PasskeyRegistry`, `AgreementRegistryV2`, `TiebreakCaseV4`): a customer creates a passkey at `#join` and gets a claim code (public, nothing secret). The business registers it and proposes an agreement at `#pk/agree`. The customer signs the acceptance and her answers on her own device at `#mine`; the page first proves on-chain that her passkey controls the account it found. Every signed action covers the chain, the contract, the account, a one-time number, a deadline and the exact action, so it cannot be altered, replayed or moved. Anyone with a wallet can submit it at `#relay/<pack>` and pays the fee. X Layer verifies the passkey signature with its native P-256 precompile. The embed (`data-flow="join"` or `"mine"`) lets a business offer this on its own site; `site/embed-demo.html` is a fictional Acme page that does.
+- **Rules.** A business writes questions and rules in a guided builder. The page turns them into a small logic circuit and proves, in the browser, that the circuit gives the same answer as the rules in **every possible situation**.
+- **Publishing.** One click records the circuit on the TapeOut processor and registers it, with a fingerprint of the rules text, in a public registry. An entry never changes; a new version is a new entry.
+- **Agreements (optional).** Two parties accept one published rule set, a neutral reviewer and the time limits. After that none of it can be changed or withdrawn.
+- **Cases.** Each side answers before a deadline. Equal answers finish the case at once. Different answers go to the reviewer both sides accepted, who answers only the disputed questions. A case nobody finishes in time ends as **no decision**; nobody wins by default.
+- **Result and replay.** The processor computes the result. Anyone can recompute it, and other contracts can read the decision with `verdict(id)` (see `docs/VERDICT.md`).
+- **Evidence.** Files are never uploaded. A party records a digital fingerprint of a file plus a short note. A reviewer can drop the file they were sent into the case page, and the browser says whether it is identical to the recorded one. A fingerprint shows a file is unchanged, not that it is genuine.
+- **Receipts.** Any decided case has a one-page receipt (`#receipt/<case id>`) with who answered what, who settled each question, and a live re-check of the rules.
 
-### Rules format
+### Customers without a wallet (passkeys)
+
+A customer creates a **passkey** (the same thing that unlocks their phone) and gets a public claim code. The business registers it and proposes an agreement. The customer approves the agreement and their answers on their own device. Each approval covers the exact action, the case, a one-time number and a deadline, so it cannot be altered, replayed or moved. Anyone with a wallet, usually the business, submits it and pays the tiny network fee. X Layer verifies the passkey signature with its built-in P-256 check. The customer's own page first proves on-chain that the account is controlled by their passkey. Details and tests are in `docs/PASSKEYS.md`.
+
+### Writing rules
 
 ```
 name: Warranty claims
@@ -53,51 +79,62 @@ rule: Q1=yes & Q3=no -> Not covered : Join conditions with &
 default: Covered : Shown when no rule matched
 ```
 
-Two examples are built in: `warranty` and `bounty` (bug-bounty severity, not yet published on-chain).
+Two examples are built in: `warranty` (published) and `bounty` (bug-bounty severity, not yet published).
 
-## Layout
+### Put it on your own website
 
-- `site/` the web app (static files, no server calls): `index.html`, `rules.js` (rule engine), `builder.js` (a guided four-step rule builder: Questions, Rules, Test, Publish, with a click-to-cycle rule grid, a live try-it panel that lights the circuit and the rule that fired, spreadsheet paste, a text view, and a copy-paste prompt for drafting rules with any AI assistant), `graphics.js` (the animated flow diagram, the six illustrations on the How-it-works page and the icon cards: inline SVG animated with CSS, finished state with reduced motion), `pkcore.js` and `passkeys.js` (the passkey flows: keccak and ABI encoding checked against Foundry, and the pages `#join`, `#mine`, `#relay`, `#pk/agree`, `#pk/agreement`, `#pk/case`), `hero.js` (draws a real compiled circuit and lights it with live answers: the home hero, and "watch the circuit work" on every checker page), `wallet.js` and `publish.js` (one-click publish with the visitor's own wallet: claims or buys NAND if short, tapes the circuit out, registers it), `embed.js` (one script tag that puts a checker on any website; `embed-demo.html` shows it on a fictional support page), `cases.js` (on-chain pages: agreements at `#agree`, cases at `#case`, printable receipts at `#receipt/<id>`, reviewer records at `#reviewer`, business records at `#business/<address>`), `app.js`, `config.js` (addresses, which templates are published).
-- `contracts/` Foundry project: `RuleSetRegistry`, `AgreementRegistry`, `TiebreakCaseV3`, `PasskeyRegistry`, `AgreementRegistryV2`, `TiebreakCaseV4`, `WebAuthnP256` (plus the earlier `TiebreakCase` and `TiebreakCaseV2`), 119 unit and fuzz tests with a mock processor, and a fork test against the real processor.
-- `compiler/` the first hand-built warranty circuit (14 gates) kept as a reference for the generic compiler.
-- `vercel.json` tells Vercel to serve `dist/` with no build step (Framework Preset "Other"). See "Deploy" below.
-- `dist/` is the build output: `node scripts/bundle.mjs` inlines every script into one self-contained `dist/index.html` (about 220 KB including the embedded Inter typeface, which is open-licence; no external assets), plus `embed.js` and `embed-demo.html`. Any static host can serve it as is; that is also the shape DeWEB needs.
-- `docs/VERDICT.md` how another contract reads a case's verdict.
-- `docs/PASSKEYS.md` a design for parties who act with a passkey instead of a wallet: `PasskeyRegistry`, `AgreementRegistryV2` and `TiebreakCaseV4`, plus the pages `#join`, `#mine`, `#relay`, `#pk/agree`; built and tested end to end in a real browser on a fork, deployed on mainnet on Nov 23 (`scripts/deploy-v4.sh`) but not yet used by the site's home flows, with the gate log.
-- `docs/SECURITY.md` a manual security review of the deployed contracts: what held up, six known limitations (each pinned by a test), and what a next version would change. `docs/VALIDATION.md` the questions to ask real users.
-- `docs/SUBMISSION.md` the hackathon submission text (with three `TODO` items to fill) and `docs/DEMO.md` a three-minute demo script.
-- `scripts/` `deploy.sh`, `deploy-case-v2.sh`, `deploy-v3.sh`, `deploy-v4.sh` (resumable) and `publish-rules.sh` (each has a read-only `preflight` mode; you run the spending steps with your own Foundry keystore) and `compile.mjs`.
-- `tests/` `rules.test.mjs`, `pkcore.test.mjs` (checks the passkey encoding against `cast`), `mainnet-verify.mjs`. `test/fork-tapeout.mjs` tapes the circuit out on a local fork.
+```html
+<div></div><script src="https://lgtie.vercel.app/embed.js" data-checker="warranty" async></script>
+```
 
-## Deploy
+Add `data-flow="join"` to let customers create a passkey on your page (your page receives the claim code through `data-onclaim="yourFunction"`), or `data-flow="mine"` to show a customer their own cases. The embed only adds a frame and relays two checked messages. `site/embed-demo.html` is a complete example.
 
-Any static host works; the site is one file plus `embed.js` and `embed-demo.html`. On Vercel: import the repository, leave the Framework Preset as **Other**, leave the root directory as `./`, and deploy. `vercel.json` already sets the output directory to `dist` and turns off the install and build steps, because `dist/` is committed. After changing anything in `site/`, run `node scripts/bundle.mjs` and commit `dist/`. A passkey is tied to the site's exact address, so decide the final address before anyone creates real passkeys.
+## What is live on X Layer (chain 196)
 
-`node tests/browser/live.mjs` (or `LIVE_URL=... node tests/browser/live.mjs`) smoke-tests the deployed site: it only reads from mainnet and writes nothing.
+| Contract | Address |
+| --- | --- |
+| TapeOut processor (existing, reused) | `0x9e2849c04a513fe64db07521cbe52d078d905c0e` |
+| Warranty rules | circuit #13: 7 questions, 39 logic gates, checked against the written rules on all 128 situations |
+| `RuleSetRegistry` | `0x25E87D367316038a2d3B6A4fe3d58AA453D4c219` (rules #1 is "Warranty claims") |
+| `AgreementRegistry` | `0xC3e61E38d977Be9e9B4649e5965892bF6f675180` |
+| `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (wallet parties; used by the real case above) |
+| `PasskeyRegistry` | `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E` |
+| `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` (the other party can be a passkey account) |
+| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey parties; accepts only the official processor) |
 
-## Run and test
+The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the team; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
+
+## Run it yourself
 
 ```
 cd site && python3 -m http.server 8090        # then open http://localhost:8090
-node tests/rules.test.mjs                      # rule engine, 14 checks
-cd contracts && forge test                     # unit and fuzz tests; add --match-contract TiebreakForkTest for the real-processor test (needs network)
+node tests/rules.test.mjs                      # rule engine
+node tests/pkcore.test.mjs                     # passkey encoding, checked against Foundry's cast
+cd contracts && forge test                     # 119 contract tests (some run on a fork of X Layer and need network access)
 node tests/mainnet-verify.mjs                  # read-only check of circuit #13 on X Layer
 ```
 
-Browser and end-to-end tests are in `tests/browser/` (see its README): checker, builder, embed, hero, receipt, one-click publish and the whole case flow with a simulated wallet on a fork. The case flow has also been run once with real wallets on mainnet (see above). If a browser test fails oddly, check that no old `anvil` is still listening on port 8547.
+Browser tests (checker, builder, embed, receipt, publishing, the full case flow, the passkey story including a cross-site frame, and a read-only smoke test of the live site) are in `tests/browser/`; see its README for what they need.
 
-## Security note: a flaw in the V2 case contract
+**Deploy.** The site is static: one page plus `embed.js` and `embed-demo.html`, in `dist/`. `node scripts/bundle.mjs` rebuilds it from `site/`. On Vercel, import the repository and keep the Framework Preset as **Other**; `vercel.json` already serves `dist/` with no build step. A passkey is tied to the site's exact address, so decide the final address before anyone creates real passkeys.
 
-In `TiebreakCaseV2` (and V1), the wallet that opened a case automatically became its "operator", and an operator could answer and approve the reviewer for **both** sides. A filer could therefore submit the decider's answers first, and the decider would be locked out by "already answered". No funds were at risk (the contracts hold none) and no real case had been opened, but it would have let one side decide a case alone. `TiebreakCaseV3` fixes it: each side can name only its own single helper, a helper acts only for the side that named it, and nobody can appoint a helper for the other side. `contracts/test/TiebreakV3.t.sol` includes a test that demonstrates the attack on the real V2 code and tests that it no longer works. `TiebreakCaseV3` is deployed and is the contract the site uses; V2 remains on-chain, unused.
+## Project layout
+
+| Path | What is in it |
+| --- | --- |
+| `site/` | The web app, with no server: rule engine and compiler (`rules.js`), guided rule builder (`builder.js`), case, agreement, receipt and reviewer pages (`cases.js`), passkey pages (`passkeys.js`, `pkcore.js`), one-click publishing (`publish.js`, `wallet.js`), animated graphics (`graphics.js`, `hero.js`), embed script (`embed.js`), addresses (`config.js`) |
+| `contracts/` | Foundry project with the contracts above and their tests |
+| `dist/` | The built site, a single self-contained page (about 300 KB including the embedded Inter typeface; no external assets) |
+| `scripts/` | Deploy and publish scripts (`deploy-v3.sh`, `deploy-v4.sh`, `publish-rules.sh`, ...). Each has a read-only `preflight` mode and you run the spending steps with your own Foundry keystore |
+| `tests/`, `test/` | Rule engine, passkey encoding, mainnet check and browser tests |
+| `docs/` | `PASSKEYS.md` (passkey design and test log), `VERDICT.md` (reading a decision from another contract), `SECURITY.md` (a manual security review) |
 
 ## Honest limits
 
-- **It does not check that answers are true.** The result follows the answers given. A reviewer decides disputed facts and can be wrong. The circuit shows the rules were applied consistently, nothing more.
-- A normal smart contract could hold the same decision table. What TapeOut adds is a published, immutable rule that anyone can re-run for free.
-- **Why a circuit and not a contract per business:** a circuit is a pure function by construction (no state, no external calls, no admin key), so customers need not audit each business's code; only the shared processor and registry need trust. Publishing a rule set is data, not a deployment. It does not compute anything a contract cannot.
-- A wallet is not a person, and neither is a passkey. A passkey proves that the holder of a device approved an action, not who they are. The business ties a passkey to a customer through its own login, and the customer's page checks the account is really controlled by her passkey. Passkey recovery after losing every device is not built yet (a second device or a synced passkey is the fallback), and the passkey flows are untested on real phones and in Safari and Firefox. Every submission records who sent it.
-- A reviewer who never answers, or a side who never answers, ends the case as "no decision" after the deadline. That is safe but unhelpful: the sides have to open a new case.
-- The reviewer is accepted by both sides, but nothing stops two parties from agreeing on a biased reviewer, or from agreeing on the same false answers. There is no staking, jury or slashing.
-- No escrow on purpose. See `docs/VERDICT.md` for how a separate contract can pay out from a verdict.
-- Contracts are unaudited and hold no funds. No customers, revenue or validated prices exist; any prices or plans are hypotheses.
-- Publishing from the page spends the visitor's own OKB and needs a wallet; `scripts/publish-rules.sh` does the same from a terminal. Published custom checkers get a link (`#check/c=<rules>/rs=<id>`) that re-checks the rules text against the registry hash. Embed: `<div></div><script src=".../embed.js" data-checker="warranty" async></script>` (add `data-flow="join"` or `data-flow="mine"` for the passkey flows; `site/embed-demo.html` is a fictional Acme page showing them) (the checker page prints a ready snippet). Not built: assisted passkey recovery, signing evidence from the passkey page, a public hosted copy, the paid plans. Everything stays static on purpose, so it can move to DeWEB later.
+- **It does not check that answers are true.** The result follows the answers given. A reviewer decides disputed facts, and a reviewer can be wrong. LGtie shows the rules were applied consistently, nothing more.
+- **A neutral reviewer can still be biased.** Both sides accept the reviewer, but nothing stops them agreeing on a bad one, or on the same false answers. There is no staking, jury or penalty.
+- **A case nobody finishes ends as "no decision".** That is safe, but the sides then have to open a new case.
+- **Passkeys prove a device, not a person.** The business ties a passkey to a customer through its own login. If someone loses every device with their passkey, recovery is not built yet (a second device or a synced passkey is the fallback). The passkey flows are tested in Chrome and have not been tried on real phones, Safari or Firefox.
+- **A normal smart contract could hold the same decision table.** What TapeOut adds is a rule published as data, so it cannot hold hidden state or an admin key, and anyone can re-run it for free.
+- **No escrow, on purpose.** Another system can read a decision and pay out; see `docs/VERDICT.md`.
+- **Early prototype.** The contracts are unaudited and hold no funds. There are no customers, no revenue and no validated prices; any pricing ideas are hypotheses. Not built yet: assisted passkey recovery, signing evidence from the passkey page, and more than one published rule set.
