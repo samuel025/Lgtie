@@ -253,6 +253,12 @@
   function armReveal(embed) { armed = !embed && !reduce; clearTimeout(armTimer); armTimer = setTimeout(() => { armed = false; }, 2500); scan(); }
 
   // ---------- router ----------
+  // Inside a host page's frame: tell the host how tall the page is so the frame can resize.
+  let embedWatching = false;
+  function embedHeight() {
+    if (embedWatching || window.parent === window || !window.ResizeObserver) return; embedWatching = true;
+    new ResizeObserver(() => window.parent.postMessage({lgtie: "height", h: Math.ceil(document.body.getBoundingClientRect().height + 16)}, "*")).observe(document.body);
+  }
   function route() {
     window.TB_HERO.stop();
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
@@ -264,6 +270,7 @@
     window.scrollTo(0, 0);
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
+    if (view === "embed" && (key === "join" || key === "mine")) { embedHeight(); return key === "join" ? window.TB_PASSKEYS.join() : window.TB_PASSKEYS.mine(); }
     if (view === "embed") return check(key || "warranty", rest.join("/"), true);
     if (view === "agree") return window.TB_CASES.agreements();
     if (view === "agreement") return key ? window.TB_CASES.agreement(key) : window.TB_CASES.agreements();
@@ -273,7 +280,7 @@
     if (view === "join") return window.TB_PASSKEYS.join();
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree() : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();

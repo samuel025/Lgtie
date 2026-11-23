@@ -3,10 +3,41 @@
 <title>Acme Laptops Support (demo page, fictional brand)</title>
 <style>body{margin:0;font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d2530;background:#eef1f5}
 header{background:#1f3a5f;color:#fff;padding:14px 20px;font-weight:700;font-size:20px}header small{font-weight:400;opacity:.8;margin-left:10px}
-main{max-width:760px;margin:0 auto;padding:22px 16px 60px}h1{font-size:28px}.box{background:#fff;border:1px solid #d6dde6;border-radius:12px;padding:16px 18px;margin:16px 0}
-.demo{font-size:14px;color:#5b6675}</style></head>
+main{max-width:760px;margin:0 auto;padding:22px 16px 60px}h1{font-size:28px}h2{font-size:21px;margin:28px 0 6px}.box{background:#fff;border:1px solid #d6dde6;border-radius:12px;padding:16px 18px;margin:16px 0}
+.demo{font-size:14px;color:#5b6675}.staff{background:#fff8e6;border-color:#ecd9a2}.staff code{word-break:break-all;font-size:12px}
+.pill{display:inline-block;background:#e4ecf6;border-radius:99px;padding:2px 10px;font-size:13px}table{border-collapse:collapse;width:100%;font-size:14px}td{padding:6px 8px 6px 0;border-bottom:1px solid #eadfb8;vertical-align:top}
+a.btn{display:inline-block;background:#1f3a5f;color:#fff;text-decoration:none;border-radius:8px;padding:6px 12px;font-size:14px}</style></head>
 <body><header>Acme Laptops <small>Support</small></header>
-<main><p class="demo">Demo page for the LGtie embed. Acme Laptops is a fictional brand; nothing here is a real warranty.</p>
+<main><p class="demo">Demo page for the LGtie embed. Acme Laptops is a fictional brand; nothing here is a real warranty, and the "staff view" below only imitates what Acme's own server would do.</p>
+
 <h1>Is my repair covered?</h1><p>Answer a few questions to see whether your warranty would cover the repair, before you contact us.</p>
 <div class="box"><div></div><script src="embed.js" data-checker="warranty" async></script></div>
-<p>Still unsure? Contact our support team and mention the result link from the checker above.</p></main></body></html>
+
+<h2>File a claim with your fingerprint or face</h2>
+<p>No wallet, no app and no crypto. Create a passkey in a few seconds, the same way you unlock your phone. Acme then invites you to an agreement and, if there is ever a disagreement, only the facts you differ on go to a neutral reviewer.</p>
+<div class="box"><div></div><script src="embed.js" data-flow="join" data-onclaim="acmeSaveClaim" data-min-height="260" async></script>
+  <p id="saved" class="demo" hidden>✓ Acme saved your claim code with your account. Acme staff will invite you to an agreement shortly.</p></div>
+
+<h2>My claim</h2>
+<p>After Acme has invited you, check your claim and sign your answers here. Nothing is sent from your device; you only approve with your fingerprint or face.</p>
+<div class="box"><div></div><script src="embed.js" data-flow="mine" data-min-height="240" async></script></div>
+
+<div class="box staff"><b>Acme staff view <span class="pill">demo</span></b>
+  <p class="demo">In a real integration Acme's server stores the claim code with the logged-in customer's account (the code is public, not a secret). Staff then invite the customer to an agreement. Here the "database" is this browser's storage.</p>
+  <div id="claims"><p class="demo">No claims yet.</p></div></div>
+</main>
+<script>
+// A stand-in for Acme's own back end: keep the claim codes that customers' browsers hand over.
+var LGTIE = ""; (function () { var s = document.querySelector('script[data-flow="join"]'); LGTIE = s ? s.src.replace(/[^\/?#]*([?#].*)?$/, "") : ""; })();
+function load() { try { return JSON.parse(localStorage.getItem("acme.claims") || "[]"); } catch (e) { return []; } }
+function render() {
+  var list = load(), box = document.getElementById("claims"); if (!list.length) { box.innerHTML = '<p class="demo">No claims yet.</p>'; return; }
+  box.innerHTML = "<table><tbody>" + list.map(function (c) { return '<tr><td><b>' + c.customer + '</b><br><span class="demo">' + new Date(c.at).toLocaleString() + '</span></td><td><code>' + c.claim.slice(0, 60) + '…</code></td><td><a class="btn" id="invite' + c.n + '" target="_blank" rel="noopener" href="' + LGTIE + 'index.html#pk/agree/' + c.claim + '">Invite to an agreement</a></td></tr>'; }).join("") + "</tbody></table>";
+}
+function acmeSaveClaim(claim) {
+  var list = load(); if (list.some(function (c) { return c.claim === claim; })) return;
+  list.push({n: list.length + 1, customer: "Maya Okoye (demo customer, logged in)", claim: claim, at: Date.now()});
+  localStorage.setItem("acme.claims", JSON.stringify(list)); document.getElementById("saved").hidden = false; render();
+}
+render();
+</script></body></html>

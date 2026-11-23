@@ -72,8 +72,10 @@ Built on `site/pkcore.js`: keccak256, ABI encoding, the payload hashes and the W
 
 **Found while testing:** signature deadlines were first set from the browser clock. A chain clock ahead of the browser could make a fresh signature look expired. They now use the latest block's timestamp.
 
+**Frame test (`tests/browser/passkeys-frame.mjs`).** A fictional Acme page served from a different site embeds LGtie with `<script src=".../embed.js" data-flow="join" data-onclaim="...">`. Passkey creation, the account-control check and signing all work inside the cross-site frame; the host page receives the claim code through a postMessage that checks the sender's origin, and a forged message from the page itself is ignored. The embed adds `allow="publickey-credentials-create *; publickey-credentials-get *"`, which cross-site frames need. `site/embed-demo.html` is now the Acme demo: checker, "file a claim with your fingerprint or face", "my claim", and a stand-in staff view that shows how a real back end would store the claim code and send an invite link.
+
 **Still open**
-- Passkeys inside an embedded frame or pop-up, and on real phones, have not been tested. The virtual authenticator behaves like a platform passkey but is not a phone.
+- Real phones and other browsers: the frame test used Chrome with a virtual authenticator. Safari and Firefox rules for passkeys in cross-site frames, and storage partitioning there, are untested. (The pages avoid relying on local storage inside the frame: they find the account by the passkey itself.)
 - The final public domain is not chosen; a passkey made on `localhost` will not work there.
 - Evidence signing is built into the contract but has no page yet.
 - Gate 4 (assisted recovery) is not built.

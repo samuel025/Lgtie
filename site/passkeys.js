@@ -191,7 +191,7 @@
   // ---------- the business and the reviewer (wallets) ----------
   const needWallet = async () => { if (!W().account()) await W().connect(); return W().account(); };
   const logTopic = (rc, addr) => { const l = rc.logs.find(l => l.address.toLowerCase() === addr.toLowerCase() && l.topics.length > 1); return l ? Number(BigInt(l.topics[1])) : 0; };
-  function pkAgree() {
+  function pkAgree(prefill) {
     if (!deployed()) { notDeployed("Invite a customer by passkey"); return; }
     main.innerHTML = `<h1>Invite a customer who has no wallet</h1><p class="lede">Paste the claim code your customer created at <code>#join</code>. We register their passkey (a small network fee, paid by you) and propose an agreement to them. They accept with their fingerprint or face, and you submit it.</p>
       <div class="card"><div class="wide"><label><span>Customer's claim code</span><input id="cc" type="text" placeholder="lgtie1.…" autocomplete="off"></label></div>
@@ -199,6 +199,7 @@
         <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label><label>Time to answer <select id="aw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label><label>Time for the reviewer <select id="rw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label></div>
         <div class="wide"><label><span>Written terms (optional)</span><textarea id="terms" rows="3" placeholder="Only a fingerprint goes on-chain"></textarea></label></div>
         <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button><span id="msg" class="small"></span></div></div>`;
+    if (prefill) $("#cc").value = prefill;
     $("#go").onclick = async () => {
       const msg = $("#msg"), say = (t, cls) => { msg.className = "small " + (cls || "mute"); msg.textContent = t; };
       try {
