@@ -79,10 +79,21 @@
     return K.sigAuthTuple(nonce, deadline, Number(r[1]), assertion);
   }
   const packOf = (to, data, summary) => K.b64u(K.utf8(JSON.stringify({v: 1, to, data, summary, chainId: CFG.chainId})));
-  function packBox(to, data, summary) {
-    const pack = packOf(to, data, summary), link = location.href.split("#")[0] + "#relay/" + pack;
-    return `<div class="note ok-note" id="packbox"><b>Signed.</b> ${esc(summary)}<br><span class="small">Send this link to the person who will submit it (the business, or anyone with a wallet). It only does what you just approved, and it expires in 24 hours.</span>
-      <div class="row"><button class="btn small" id="cplink" type="button" data-link="${esc(link)}">Copy the link</button></div><details><summary class="small">Show the signed action</summary><pre id="packtxt">${esc(link)}</pre></details></div>`;
+  const isRealAddr = a => isAddr(a) && !/^0x0+$/.test(a);
+  // After signing, drop the signed action in the other side's inbox (public relays). The copy-link fallback stays, because relays can drop messages.
+  function packBox(to, data, summary, target) {
+    const pack = packOf(to, data, summary), link = location.href.split("#")[0] + "#relay/" + pack, canPost = isRealAddr(target) && window.TB_NOSTR;
+    if (canPost) setTimeout(() => deliver(target, pack), 0);
+    return `<div class="note ok-note" id="packbox"><b>Signed.</b> ${esc(summary)}<br>
+      ${canPost ? `<span class="small" id="inboxst">Sending it to the other side's inbox…</span><br><span class="small mute">They see it when they open their inbox and submit it for you. It only does what you just approved, and it expires in 24 hours.</span>` : `<span class="small">Send this link to the person who will submit it (the business, or anyone with a wallet). It only does what you just approved, and it expires in 24 hours.</span>`}
+      <div class="row"><button class="btn small ${canPost ? "ghost" : ""}" id="cplink" type="button" data-link="${esc(link)}">${canPost ? "Or copy the link and send it yourself" : "Copy the link"}</button></div><details><summary class="small">Show the signed action</summary><pre id="packtxt">${esc(link)}</pre></details></div>`;
+  }
+  async function deliver(target, pack) {
+    const st = () => document.querySelector("#inboxst"); let n = 0;
+    try { const N = window.TB_NOSTR, rel = N.relaysConfigured(), ev = await N.makeEvent(target, {v: 1, pack}); n = await N.publish(rel, ev); } catch (e) { n = 0; }
+    const el = st(); if (!el) return;
+    if (n > 0) { el.className = "small ok"; el.textContent = `✓ Sent to the other side's inbox (${n} relay${n > 1 ? "s" : ""}).`; }
+    else { el.className = "small err"; el.textContent = "Could not reach the inbox relays. Copy the link below and send it yourself."; }
   }
 
   // ---------- #join: create a passkey ----------
@@ -147,12 +158,12 @@
     if (accept) accept.onclick = () => run(async () => {
       const digest = K.payload.termsDigest({proposerWallet: a.proposer.wallet, proposerPasskey: a.proposer.passkey, counterpartyWallet: a.counterparty.wallet, counterpartyPasskey: a.counterparty.passkey, ruleSetId: a.ruleSetId, termsHash: a.termsHash, reviewer: a.reviewer, answerWindow: a.answerWindow, reviewWindow: a.reviewWindow});
       const s = await signAction({accountId, consumer: V4().agreements, payloadHash: K.payload.accept(a.id, digest), credentialId});
-      return packBox(V4().agreements, enc("acceptSigned", ["uint256", K.SIGAUTH], [a.id, s]), "Accept agreement #" + a.id);
+      return packBox(V4().agreements, enc("acceptSigned", ["uint256", K.SIGAUTH], [a.id, s]), "Accept agreement #" + a.id, a.proposer.wallet);
     }, "Signed. Not final until someone submits the link", accept);
     if (open) open.onclick = () => run(async () => {
       const asProposer = a.proposer.passkey === BigInt(accountId), eh = "0x" + "0".repeat(64);
       const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.open(a.id, eh, asProposer), credentialId});
-      return packBox(V4().cases, enc("openFromAgreementSigned", ["uint256", "bytes32", "bool", K.SIGAUTH], [a.id, eh, asProposer, s]), "Start a dispute under agreement #" + a.id);
+      return packBox(V4().cases, enc("openFromAgreementSigned", ["uint256", "bytes32", "bool", K.SIGAUTH], [a.id, eh, asProposer, s]), "Start a dispute under agreement #" + a.id, asProposer ? a.counterparty.wallet : a.proposer.wallet);
     }, "Signed. Not started until someone submits the link", open);
   }
   function caseCard(c, accountId, credentialId) {
@@ -173,17 +184,19 @@
         const mask = answers.reduce((m, v, i) => m + (v ? 1n << BigInt(i) : 0n), 0n);
         box.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`;
         const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.submit(c.id, asFiler, mask), credentialId});
-        box.innerHTML = packBox(V4().cases, enc("submitSigned", ["uint256", "bool", "uint64", K.SIGAUTH], [c.id, asFiler, mask, s]), `Answers for case #${c.id}: ` + answers.map((v, i) => (i + 1) + "=" + (v ? "yes" : "no")).join(", "));
-        const cp = box.querySelector("#cplink"); if (cp) cp.onclick = e => copy(cp.dataset.link, e.target);
+        box.innerHTML = packBox(V4().cases, enc("submitSigned", ["uint256", "bool", "uint64", K.SIGAUTH], [c.id, asFiler, mask, s]), `Answers for case #${c.id}: ` + answers.map((v, i) => (i + 1) + "=" + (v ? "yes" : "no")).join(", "), asFiler ? c.decider.wallet : c.filer.wallet);
+        btn.hidden = true; const cp = box.querySelector("#cplink"); if (cp) cp.onclick = e => copy(cp.dataset.link, e.target);
       } catch (e) { box.innerHTML = `<p class="small err">${esc((e && e.message) || String(e))}</p>`; }
     };
   }
 
   // ---------- #relay/<pack>: send a signed action with a wallet ----------
+  // A relay pack is only sent if it points at one of the three LGtie passkey contracts on this chain.
+  const parsePack = pack => { let o; try { o = JSON.parse(new TextDecoder().decode(K.unb64u(pack))); } catch { return {damaged: true}; } const ok = o && o.v === 1 && isAddr(o.to) && /^0x[0-9a-f]+$/.test(o.data || "") && o.chainId === CFG.chainId && [V4().cases, V4().agreements, V4().passkeys].some(a => a && a.toLowerCase() === o.to.toLowerCase()); return ok ? {o} : {bad: true}; };
   async function relay(pack) {
     if (!deployed()) { notDeployed("Send a signed action"); return; }
-    let o; try { o = JSON.parse(new TextDecoder().decode(K.unb64u(pack))); } catch { main.innerHTML = `<h1>Send a signed action</h1><p class="err">This link is damaged.</p>`; return; }
-    const ok = o && o.v === 1 && isAddr(o.to) && /^0x[0-9a-f]+$/.test(o.data || "") && o.chainId === CFG.chainId && [V4().cases, V4().agreements, V4().passkeys].some(a => a && a.toLowerCase() === o.to.toLowerCase());
+    const pp = parsePack(pack), o = pp.o; if (pp.damaged) { main.innerHTML = `<h1>Send a signed action</h1><p class="err">This link is damaged.</p>`; return; }
+    const ok = !!o;
     if (!ok) { main.innerHTML = `<h1>Send a signed action</h1><p class="err">This link does not point at an LGtie passkey contract, so it will not be sent.</p>`; return; }
     main.innerHTML = `<h1>Send a signed action</h1><p class="lede">A person approved the action below with their passkey. You only submit it and pay the small network fee. The contract accepts it only if the passkey signature is valid, and it can only do what was signed.</p>
       <div class="card"><p><b>${esc(String(o.summary || "A signed action").slice(0, 200))}</b></p><p class="small mute">To <code>${short(o.to)}</code> on X Layer. The description above comes from the link, so check the result on the case page afterwards.</p><div id="sim" class="small mute">Checking whether it would succeed…</div>
@@ -197,6 +210,38 @@
       catch (e) { go.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
     };
   }
+
+  // ---------- #inbox: signed actions customers have posted for this wallet ----------
+  let stopInbox = null;
+  async function inbox() {
+    if (!deployed()) { notDeployed("Inbox"); return; }
+    if (stopInbox) { stopInbox(); stopInbox = null; }
+    main.innerHTML = `<h1>Inbox</h1><p class="lede">When a customer approves something with their passkey, it lands here, addressed to your wallet. Open it, check it, and submit it. You pay the small network fee and the customer never needs a wallet.</p>
+      <div class="card"><div class="row"><button class="btn" id="ibc" type="button">Connect my wallet</button><span id="ibs" class="small mute"></span></div></div><div id="ibl"></div>`;
+    const start = async () => {
+      const me = W().account(); if (!me) return; $("#ibc").hidden = true;
+      const items = new Map(), seenPacks = new Set(), render = () => {
+        const all = [...items.values()].sort((a, b) => b.at - a.at), ready = all.filter(i => i.state === "ready"), checking = all.filter(i => i.state === "checking"), old = all.filter(i => i.state === "old");
+        $("#ibl").innerHTML = `<h2>Waiting for you (${ready.length})</h2>${ready.length ? ready.map(i => `<div class="card" data-k="${i.key}"><p><b>${esc(String(i.o.summary || "A signed action").slice(0, 200))}</b></p><p class="small mute">Sent ${ago(i.at)} · to <code>${short(i.o.to)}</code>. The description comes from the sender; check the result on the case page afterwards.</p><div class="row"><button class="btn" data-go="${i.key}" type="button">Submit with my wallet</button><a class="btn small ghost" href="#relay/${i.pack}">Open on its own page</a><span class="small" data-m></span></div></div>`).join("") : `<p class="mute">${checking.length ? "Checking…" : "Nothing waiting. This page keeps listening while it is open."}</p>`}
+          ${old.length ? `<details><summary class="small">Done or expired (${old.length})</summary>${old.map(i => `<p class="small mute">${esc(String(i.o.summary || "A signed action").slice(0, 120))} · ${ago(i.at)}</p>`).join("")}</details>` : ""}`;
+        document.querySelectorAll("[data-go]").forEach(b => b.onclick = async () => {
+          const i = items.get(b.dataset.go), m = b.parentNode.querySelector("[data-m]"); b.disabled = true; m.className = "small mute"; m.textContent = "Confirm in your wallet…";
+          try { const rc = await W().send(i.o.to, i.o.data); i.state = "old"; m.textContent = ""; render(); $("#ibs").className = "small ok"; $("#ibs").textContent = "✓ Submitted. " + rc.transactionHash.slice(0, 12) + "…"; }
+          catch (e) { b.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
+        });
+      }, check = async i => { try { await W().rpc("eth_call", [{from: me, to: i.o.to, data: i.o.data}, "latest"]); i.state = "ready"; } catch { i.state = "old"; } render(); };
+      const N = window.TB_NOSTR, rel = N.relaysConfigured(), since = Math.floor(Date.now() / 1000) - 3 * 86400;
+      stopInbox = N.listen(rel, N.filterFor(me, since), ev => {
+        let msg; try { msg = JSON.parse(ev.content); } catch { return; } if (!msg || typeof msg.pack !== "string") return;
+        const pp = parsePack(msg.pack); if (!pp.o || seenPacks.has(msg.pack)) return; seenPacks.add(msg.pack);
+        const i = {key: "k" + items.size, pack: msg.pack, o: pp.o, at: ev.created_at, state: "checking"}; items.set(i.key, i); render(); check(i);
+      }, s => { $("#ibs").className = "small mute"; $("#ibs").textContent = `Listening on ${s.open} of ${s.total} relays for ${short(me)}`; });
+      render();
+    };
+    $("#ibc").onclick = async () => { try { await W().connect(); await start(); } catch (e) { $("#ibs").className = "small err"; $("#ibs").textContent = (e && e.message) || String(e); } };
+    if (W().account()) start();
+  }
+  const ago = t => { const s = Math.max(0, Math.floor(Date.now() / 1000) - t); return s < 90 ? "just now" : s < 5400 ? Math.round(s / 60) + " min ago" : s < 129600 ? Math.round(s / 3600) + " h ago" : Math.round(s / 86400) + " days ago"; };
 
   // ---------- the business and the reviewer (wallets) ----------
   const needWallet = async () => { if (!W().account()) await W().connect(); return W().account(); };
@@ -235,7 +280,7 @@
         <tr><td>Customer</td><td>${a.counterparty.passkey ? `passkey account #${a.counterparty.passkey}` : `<code>${a.counterparty.wallet}</code>`}</td></tr>
         <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)}</td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance</td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr><tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code></td></tr></tbody></table></div>
-      ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. They will give you a link to submit.</div>` : ""}
+      ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</div>` : ""}
       <div class="row" id="acts"></div><div id="amsg" class="small"></div><div id="cases"></div>`;
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
@@ -310,5 +355,5 @@
     };
   }
 
-  window.TB_PASSKEYS = {all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
 })();

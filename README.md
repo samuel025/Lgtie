@@ -67,6 +67,8 @@ LGtie never holds anyone's money. It records decisions and checks that rules wer
 
 A customer creates a **passkey** (the same thing that unlocks their phone) and gets a public claim code. The business registers it and proposes an agreement. The customer approves the agreement and their answers on their own device. Each approval covers the exact action, the case, a one-time number and a deadline, so it cannot be altered, replayed or moved. Anyone with a wallet, usually the business, submits it and pays the tiny network fee. X Layer verifies the passkey signature with its built-in P-256 check. The customer's own page first proves on-chain that the account is controlled by their passkey. Details and tests are in `docs/PASSKEYS.md`.
 
+**The inbox.** A passkey can sign but cannot pay network fees, so someone with a wallet has to submit what the customer signed. After signing, the customer's page posts the signed action to a few public message relays (Nostr), addressed to the business's wallet address. The business opens `#inbox`, sees what is waiting, and submits it with one click. A relay cannot change a signed action (the contract rejects any change) and learns nothing that is not already public on-chain; it can drop a message, so a copy-link fallback is always shown. The business has to open the inbox; there are no notifications because there is no server.
+
 ### Writing rules
 
 ```
@@ -123,7 +125,7 @@ Browser tests (checker, builder, embed, receipt, publishing, the full case flow,
 
 | Path | What is in it |
 | --- | --- |
-| `site/` | The web app, with no server: rule engine and compiler (`rules.js`), guided rule builder (`builder.js`), case, agreement, receipt and reviewer pages (`cases.js`, `reviewer.js`), passkey pages (`passkeys.js`, `pkcore.js`), one-click publishing (`publish.js`, `wallet.js`), animated graphics (`graphics.js`, `hero.js`), embed script (`embed.js`), addresses (`config.js`) |
+| `site/` | The web app, with no server: rule engine and compiler (`rules.js`), guided rule builder (`builder.js`), case, agreement, receipt and reviewer pages (`cases.js`, `reviewer.js`), passkey pages and inbox (`passkeys.js`, `nostr.js`, `pkcore.js`), one-click publishing (`publish.js`, `wallet.js`), animated graphics (`graphics.js`, `hero.js`), embed script (`embed.js`), addresses (`config.js`) |
 | `contracts/` | Foundry project with the contracts above and their tests |
 | `dist/` | The built site, a single self-contained page (about 300 KB including the embedded Inter typeface; no external assets) |
 | `scripts/` | Deploy and publish scripts (`deploy-v3.sh`, `deploy-v4.sh`, `publish-rules.sh`, ...). Each has a read-only `preflight` mode and you run the spending steps with your own Foundry keystore |
@@ -135,6 +137,7 @@ Browser tests (checker, builder, embed, receipt, publishing, the full case flow,
 - **It does not check that answers are true.** The result follows the answers given. A reviewer decides disputed facts, and a reviewer can be wrong. LGtie shows the rules were applied consistently, nothing more.
 - **A neutral reviewer can still be biased.** Both sides accept the reviewer, but nothing stops them agreeing on a bad one, or on the same false answers. There is no staking, jury or penalty. Written reasons make a bad decision visible, they do not prevent it.
 - **A case nobody finishes ends as "no decision".** That is safe, but the sides then have to open a new case.
+- **The inbox depends on public relays.** They are run by other people, may be slow or drop messages, and nothing tells the business to look; messages older than three days are not shown. The customer's page says when relays could not be reached, and the copy-link fallback still works.
 - **Passkeys prove a device, not a person.** The business ties a passkey to a customer through its own login. If someone loses every device with their passkey, recovery is not built yet (a second device or a synced passkey is the fallback). The passkey flows are tested in Chrome and have not been tried on real phones, Safari or Firefox.
 - **A normal smart contract could hold the same decision table.** What TapeOut adds is a rule published as data, so it cannot hold hidden state or an admin key, and anyone can re-run it for free.
 - **No escrow, on purpose.** Another system can read a decision and pay out; see `docs/VERDICT.md`.

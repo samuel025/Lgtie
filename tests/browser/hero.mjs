@@ -24,7 +24,7 @@ ok("the home page asks where to start and offers three doors", /Where do you wan
 ok("the hero says what the product is for without jargon", !/X Layer|circuit|NAND|reviewer/.test(await p.$eval(".hcopy", e => e.textContent)), await p.$eval(".hcopy", e => e.textContent));
 await p.goto(BASE + "#for-business"); await w(800);
 const hubLinks = await p.$$eval(".paths .path", a => a.map(x => x.getAttribute("href")));
-ok("the For businesses page lists every business task as a card that links somewhere real", hubLinks.length === 8 && ["#build", "#pk/cases", "#pk/agree", "#agree", "#case", "#reviewer", "#verify", "embed-demo.html"].every(h => hubLinks.includes(h)), hubLinks.join(","));
+ok("the For businesses page lists every business task as a card that links somewhere real", hubLinks.length === 9 && ["#build", "#inbox", "#pk/cases", "#pk/agree", "#agree", "#case", "#reviewer", "#verify", "embed-demo.html"].every(h => hubLinks.includes(h)), hubLinks.join(","));
 await p.goto(BASE); await w(1200);
 // ---- graphics: the flow diagram, the illustrated How-it-works page, and reduced motion
 ok("the home page has the animated flow diagram with five stages", (await p.$$(".flowsec .fnode")).length === 5 && (await p.$$(".flowsec .flab")).length === 5);

@@ -1,7 +1,8 @@
 // End to end: a customer with NO wallet settles a dispute with a passkey. Real pages, a Chrome virtual authenticator for the passkey, simulated wallets
 // for the business, the relayer and the reviewer, and PasskeyRegistry + AgreementRegistryV2 + TiebreakCaseV4 deployed on a fork of X Layer (anvil on 8547).
 // Needs: anvil forking X Layer on 127.0.0.1:8547, `forge`, Chrome, and the site served at http://localhost:8090.
-import puppeteer from "puppeteer-core"; import fs from "node:fs"; import crypto from "node:crypto"; import {execFileSync} from "node:child_process";
+import puppeteer from "puppeteer-core"; import fs from "node:fs"; import crypto from "node:crypto"; import {execFileSync} from "node:child_process"; import {startRelay} from "./nostr-relay.mjs";
+const relay = startRelay(8099); let RELAYS = ["ws://127.0.0.1:8099"];   // a local Nostr relay stands in for the public ones
 const BASE = "http://localhost:8090/index.html", ANVIL = "http://127.0.0.1:8547", CFGP = "/home/samuel/Documents/tiebreak/site/config.js", REG = "0x25E87D367316038a2d3B6A4fe3d58AA453D4c219", PROC = "0x9e2849c04a513fe64db07521cbe52d078d905c0e";
 const BUSINESS = "0x7e57000000000000000000000000000000000d01", REVIEWER = "0x7e57000000000000000000000000000000000e01", RELAYER = "0x7e57000000000000000000000000000000000c01", DEPLOYER = "0x7e57000000000000000000000000000000000dd1";
 const arpc = async (m, p) => { const r = await (await fetch(ANVIL, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify({jsonrpc: "2.0", id: 1, method: m, params: p})})).json(); if (r.error) throw new Error(JSON.stringify(r.error)); return r.result; };
@@ -29,7 +30,7 @@ await p.evaluateOnNewDocument(ANVIL => { window.ethereum = {request: async ({met
 const cdp = await p.target().createCDPSession(); await cdp.send("WebAuthn.enable");
 const authn = async () => (await cdp.send("WebAuthn.addVirtualAuthenticator", {options: {protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}})).authenticatorId;
 const mayaDevice = await authn();
-const as = async (addr, hash) => { await p.evaluate(a => localStorage.setItem("acct", a), addr).catch(() => {}); await p.goto(BASE + "?" + Date.now() + hash); await w(900); };
+const as = async (addr, hash) => { await p.evaluate((a, r) => { localStorage.setItem("acct", a); localStorage.setItem("lgtie.inboxRelays", JSON.stringify(r)); }, addr, RELAYS).catch(() => {}); await p.goto(BASE + "?" + Date.now() + hash); await w(900); };
 const clickText = (sel, text) => p.evaluate((s, t) => { const b = [...document.querySelectorAll(s)].find(x => x.textContent.trim().startsWith(t)); if (!b) return false; b.click(); return true; }, sel, text);
 await p.goto(BASE); await p.evaluate(() => localStorage.setItem("acct", ""));
 const answers = async (noIdx) => p.evaluate(n => document.querySelectorAll("#ans .yn, .card .qs .yn").forEach((g, i) => g.querySelector(`button[data-v="${(g.dataset.i ?? i) == n ? 0 : 1}"]`).click()), noIdx ?? -1);
@@ -52,15 +53,20 @@ await as("", "#mine"); await p.click("#find");
 ok("the page confirms her passkey controls the account", await until(async () => /Account #1 is controlled by your passkey/.test(await T("#fm"))), await T("#fm"));
 ok("she sees the agreement waiting for her", await until(async () => /Agreement #1/.test(await T("#ags"))) && !!(await p.$('[data-act="accept"]')), await T("#list"));
 await p.click('[data-act="accept"]');
-ok("she signs the acceptance and gets a link to send", await until(async () => !!(await p.$("#cplink"))), await T("#ags"));
+ok("she signs the acceptance and the button is gone, with the waiting status shown", await until(async () => !!(await p.$("#cplink"))) && (await p.$eval('[data-act="accept"]', e => e.hidden)) && /Signed\. Not final/.test(await T("#ags .badge")), await T("#ags"));
+ok("her phone posts it to the business's inbox automatically", await until(async () => /Sent to the other side's inbox \(1 relay\)/.test(await T("#inboxst"))), await T("#packbox"));
 const acceptLink = await p.$eval("#cplink", e => e.dataset.link);
-ok("the link is a relay pack, not a secret", /#relay\/[A-Za-z0-9_-]+$/.test(acceptLink));
+ok("the copy link is still there as a fallback and is a relay pack, not a secret", /#relay\/[A-Za-z0-9_-]+$/.test(acceptLink));
+ok("the relay holds one event tagged for the business and nothing readable beyond the signed action", relay.size() === 1 && relay.events[0].tags.some(x => x[1] === "lgtie-in-" + BUSINESS.toLowerCase()) && JSON.parse(relay.events[0].content).pack === acceptLink.split("#relay/")[1]);
 
-// ---- 4. Somebody with a wallet submits it. It costs her nothing.
-await as(RELAYER, "#relay/" + acceptLink.split("#relay/")[1]);
-ok("the relayer sees what would happen and that it would succeed", await until(async () => /would succeed/.test(await T("#sim"))), await T("#sim"));
-await p.click("#go");
-ok("the relayer submits it", await until(async () => /Submitted/.test(await T("#done"))), await T("#rm") + await T("#done"));
+// ---- 4. The business opens its inbox and submits with one click. It costs her nothing.
+await as(RELAYER, "#inbox"); await p.click("#ibc").catch(() => {}); await w(1500);
+ok("an inbox for some other wallet shows nothing waiting", /Waiting for you \(0\)/.test(await T("#ibl")), await T("#ibl"));
+await as(BUSINESS, "#inbox"); await p.click("#ibc").catch(() => {});
+ok("the business's inbox shows her acceptance as waiting", await until(async () => /Waiting for you \(1\)/.test(await T("#ibl")) && /Accept agreement #1/.test(await T("#ibl"))), await T("#ibl"));
+await p.click("[data-go]");
+ok("the business submits it from the inbox", await until(async () => /Submitted/.test(await T("#ibs")) && /Waiting for you \(0\)/.test(await T("#ibl"))), await T("#ibs") + await T("#ibl"));
+ok("the submitted item moves to done", /Done or expired \(1\)/.test(await T("#ibl")), await T("#ibl"));
 await as(BUSINESS, "#pk/agreement/1");
 ok("the agreement is now in force", /In force since/.test(await T("main")), await T("main"));
 await p.click("#acts button"); // open a dispute under the agreement
@@ -74,8 +80,10 @@ ok("the business's answers are recorded", await until(async () => /Waiting for a
 await as("", "#mine"); await p.click("#find"); await until(async () => /controlled by your passkey/.test(await T("#fm")));
 await until(async () => !!(await p.$('[data-act="answer"]')));
 await p.evaluate(() => document.querySelectorAll("#cs .qs .yn").forEach((g, i) => g.querySelector(`button[data-v="${i === 4 ? 0 : 1}"]`).click()));
+RELAYS = ["ws://127.0.0.1:1"]; await p.evaluate(r => localStorage.setItem("lgtie.inboxRelays", JSON.stringify(r)), RELAYS);
 await p.click('[data-act="answer"]');
 ok("she signs her answers (a different one on question 5) and gets a link", await until(async () => !!(await p.$("#cs #cplink"))), await T("#cs"));
+ok("with the relays unreachable she is told so and can still copy the link", await until(async () => /Could not reach the inbox relays/.test(await T("#inboxst")), 15000), await T("#cs"));
 const answerLink = await p.$eval("#cs #cplink", e => e.dataset.link);
 
 // ---- 6. Attacks on the relay link before anyone submits it.
