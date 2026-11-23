@@ -23,3 +23,7 @@ npm i puppeteer-core            # in any folder; then run: node <path>/checker.m
 The simulated wallet signs with anvil's impersonated accounts, so these tests spend nothing. A real-wallet run (for example OKX Wallet on mainnet) has not been done.
 
 `passkeys.mjs` and `passkeys-frame.mjs` deploy fresh contracts to the fork by default. Run them with `USE_DEPLOYED=1` to use the contracts already deployed on mainnet (read from `site/config.js`).
+
+`passkeys.mjs` also covers the business inbox (a customer's signed action is posted to a relay and submitted from `#inbox`, including queued actions and the relays-unreachable fallback), passkey evidence, and the reviewer's written reasons with the Side A / Side B view. It starts a tiny local Nostr relay from `nostr-relay.mjs`, which needs the `ws` package next to `puppeteer-core` (`npm i ws`). Set `SHOTS=/some/dir` to save screenshots.
+
+Unit tests (no browser): `node tests/rules.test.mjs`, `node tests/pkcore.test.mjs`, `node tests/reviewer.test.mjs` and `node tests/nostr.test.mjs` (BIP-340 signatures against the official vectors).
