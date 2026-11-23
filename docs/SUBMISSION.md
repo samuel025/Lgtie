@@ -27,7 +27,8 @@ LGtie is not a replacement for any of these. It targets the stage before them: a
 3. **Settle a case.** Each side answers the same questions before a deadline. Equal answers finish the case at once. Only the questions they answered differently go to the reviewer, and only that reviewer's answers to those questions count. A case nobody finishes in time ends as **no decision**; nobody wins by default.
 4. **Anyone can re-run it.** The processor's `eval` is a free read, so anyone can recompute the result. Other contracts can read `verdict(id)` from the case contract. LGtie holds no funds.
 5. **Evidence without uploads.** Parties attach a SHA-256 fingerprint of a file and a short note. The files stay with the people. A reviewer can drop a file they were sent into the case page to check it is identical to the recorded one.
-6. **A one-page receipt** for any decided case, printable as a PDF, with a live re-run of the published rules.
+6. **Customers without a wallet.** A customer can act with a passkey, the fingerprint or face scan that unlocks their phone. The business invites them with a claim code, they approve the agreement and their answers on their own device, and anyone with a wallet submits the signed approval and pays the fee. The signature covers the exact action, so it cannot be changed, replayed or moved to another case, and the customer's own page proves on-chain that the account is controlled by her passkey. X Layer's native P-256 verifier checks the signature. A business can offer this on its own site with one embed line.
+7. **A one-page receipt** for any decided case, printable as a PDF, with a live re-run of the published rules.
 
 ## Why TapeOut
 
@@ -40,6 +41,7 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 - `RuleSetRegistry`: `0x25E87D367316038a2d3B6A4fe3d58AA453D4c219` (rule set #1)
 - `AgreementRegistry`: `0xC3e61E38d977Be9e9B4649e5965892bF6f675180`
 - `TiebreakCaseV3`: `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67`
+- Passkey system (deployed Nov 23, 2026; no real cases yet): `PasskeyRegistry` `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E`, `AgreementRegistryV2` `0x802995325A576b69175DCE24e8D643553C9ba2ed`, `TiebreakCaseV4` `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (trusts only the official TapeOut processor)
 - One real run, played by the team with three wallets it controls: agreement #1 and case #1, decided "Covered" with one question settled by the reviewer. It is a demonstration, not a customer. The home page reads it live.
 
 ## Try it
@@ -51,13 +53,13 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 
 ## What we tested and fixed
 
-72 contract tests plus browser end-to-end tests (checker, builder, embed, publish, the whole case flow, receipt). While building, we found a flaw in our own earlier case contract (the opener could answer for both sides). We fixed it in `TiebreakCaseV3`, disclosed it in the README, and the site no longer uses the flawed contract. A later manual review of the deployed V3 contracts (`docs/SECURITY.md`) found six more limitations, none of which can lose funds; each is pinned by a test and listed with what a next version would change.
+119 contract tests plus browser end-to-end tests (checker, builder, embed, publish, the whole case flow, receipt, the passkey story including a cross-site frame, and the same passkey story against the deployed contracts on a fork of mainnet). While building, we found a flaw in our own earlier case contract (the opener could answer for both sides). We fixed it in `TiebreakCaseV3`, disclosed it in the README, and the site no longer uses the flawed contract. A later manual review of the deployed V3 contracts (`docs/SECURITY.md`) found six more limitations, none of which can lose funds; each is pinned by a test and listed with what a next version would change.
 
 ## Honest limits
 
 - It does not check that answers are true. The result follows the answers given; a reviewer decides disputed facts and can be wrong. The circuit shows the rules were applied consistently, nothing more.
 - A reviewer both sides accepted can still be biased, and two parties can agree on the same false answer. There is no staking, jury or slashing.
-- The contracts are unaudited and hold no funds. There are no customers, no revenue and no validated price.
+- The contracts are unaudited and hold no funds. The passkey system is new: recovery after losing every device is not built, and it is untested on real phones and in Safari and Firefox (it was tested in Chrome with a virtual authenticator, including inside a cross-site frame). There are no customers, no revenue and no validated price.
 - Only one rule set is published on mainnet so far.
 - Other entries also compile rules to TapeOut circuits. We do not claim to be first at that. What we built that we have not seen elsewhere is the dispute process around the rules.
 

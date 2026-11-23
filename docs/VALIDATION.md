@@ -25,7 +25,11 @@ Start with their last real dispute, then show the product only at the end. Do no
 9. Who would pay for something like this, you or the other side or a platform? Roughly how much would be too much?
 10. Who else should I talk to?
 
-After question 10, show the home page's real case and the receipt, and ask: "What is confusing? What is missing?"
+11. If the other side would have to create a wallet to take part, would they? What if they could approve with their fingerprint or face, and you submitted it for them and paid the fee?
+12. What would you need to trust a customer's passkey as "this is really my customer"? (Their login on your site, a call, a read-back code?)
+13. If a customer lost their phone mid-dispute, what would you expect to happen?
+
+After question 13, show the home page's real case and the receipt, and ask: "What is confusing? What is missing?"
 
 ## Outreach message
 

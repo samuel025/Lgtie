@@ -34,6 +34,12 @@ Have the wallet unlocked on a throwaway account only if you want to do the live 
 - Scroll to the black result card and the badge that says the rules were re-run: "The processor re-ran the rules just now and got the same result. Other contracts can read this verdict. Nothing is held in escrow."
 - Scroll to Evidence: "Files are never uploaded. A fingerprint is recorded, and a reviewer can drop the file they were sent here to check it is identical."
 
+## Optional, 40 seconds (replace the receipt if short on time): no wallet needed
+
+**Show:** open `embed-demo.html` (the fictional Acme page). Scroll to "File a claim with your fingerprint or face", click **Create my passkey** and approve with the device prompt. Point at the Acme staff view that appears.
+**Say:** "A customer with no wallet creates a passkey the same way they unlock their phone. Acme's page gets a public claim code, and staff invite them to an agreement. The customer approves with their fingerprint, and anyone with a wallet submits it. The signature covers the exact answers, so nobody can change them. This is live on X Layer, and it is new and unaudited."
+**Do not say** that it recovers lost devices (not built yet) or that it works on every phone (only tested in Chrome).
+
 ## 2:20 to 2:40: the receipt
 
 **Show:** click Receipt, then Print or save as PDF.

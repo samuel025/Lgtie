@@ -107,6 +107,7 @@
         <div class="wide"><label><span>Your written terms (optional)</span><textarea id="terms" rows="4" placeholder="Paste the agreement text. Only its fingerprint goes on-chain; keep the text yourselves."></textarea></label></div>
         <p class="small mute">Your wallet proposes; the other party's wallet accepts. Nothing is held in escrow.</p>
         <div class="row"><button class="btn" id="prop" type="button">Propose the agreement</button><span id="msg" class="small"></span></div></div>
+      <div class="card"><h3>Your customer has no wallet?</h3><p class="small">Invite them by passkey instead: they approve with their fingerprint or face, and you submit it. <a href="#pk/agree">Invite a customer by passkey</a>.</p></div>
       <div class="card"><h3>Look up an agreement</h3><div class="row"><input id="agn" type="number" min="1" placeholder="Agreement number" style="width:180px"><button class="btn ghost" id="aggo" type="button">Open</button></div><div id="recent" class="small mute"></div></div>`;
     $("#aggo").onclick = () => { const n = Number($("#agn").value); if (n) location.hash = "#agreement/" + n; };
     $("#prop").onclick = async () => {

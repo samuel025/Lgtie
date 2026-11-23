@@ -32,8 +32,12 @@ A contract that holds funds is a much bigger target than one that only records d
 
 ## Which contract
 
-Use `TiebreakCaseV3` once it is deployed (`site/config.js` shows the current address). `TiebreakCaseV2` has the same `verdict` function but a flaw that let a case's opener answer for both sides, so don't build on it; see the README.
+Use `TiebreakCaseV4` for new work, or `TiebreakCaseV3`; both are deployed on X Layer mainnet and `site/config.js` shows the current addresses (`caseContract` for V3, `v4.cases` for V4). `TiebreakCaseV2` has the same `verdict` function but a flaw that let a case's opener answer for both sides, so don't build on it; see the README.
 
 ## Deployed addresses
 
-`TiebreakCaseV2` is on X Layer mainnet at `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3` (also in `site/config.js` as `caseContract`). The first case contract (`caseContractV1`, `0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987`) has no reviewer acceptance, no deadlines and no `verdict` function.
+`TiebreakCaseV3` is at `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` and `TiebreakCaseV4` at `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (both on X Layer mainnet). The flawed `TiebreakCaseV2` is at `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3` (`caseContractV2` in `site/config.js`) and should not be used. The first case contract (`caseContractV1`, `0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987`) has no reviewer acceptance, no deadlines and no `verdict` function.
+
+## TiebreakCaseV4
+
+`TiebreakCaseV4` (deployed Nov 23, 2026 at `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0`; also in `site/config.js` under `v4.cases`) has the same `verdict(uint256) returns (bool isFinal, uint8 result, uint256 ruleSetId, uint64 finalAnswers)` function and the same `IVerdictSource` interface, so a consumer written for V3 can read V4 cases by changing the address. Always check `isFinal` first. V4 also accepts only rule sets on the trusted TapeOut processor.

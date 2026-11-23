@@ -50,3 +50,26 @@ None can lose funds. Severity is about integrity of the process, not money.
 ## Reporting
 
 This is a prototype. If you find a problem, open an issue on the repository.
+
+## Update: the V4 contracts (deployed Nov 23, 2026)
+
+`TiebreakCaseV4`, `AgreementRegistryV2` and `PasskeyRegistry` are deployed on mainnet (addresses in the README). They address the limitations above for **new** cases; V3 cases already on-chain keep them.
+
+| Finding | In V4 |
+| --- | --- |
+| F1 reviewer swap under an agreement | Fixed: `proposeReviewer` is refused when the case has an agreement. Tested. |
+| F2 reviewer never consents | Addressed in the data: `reviewerAcked` records whether the reviewer ever took part. The reviewer record can use it. A reviewer is still named without their prior consent. |
+| F3 shared evidence slots | Fixed: evidence is capped per role (filer 15, decider 15, reviewer 6). Tested. |
+| F4 any processor | Fixed: only rule sets on the trusted processor (set at deployment) can be used. Tested. |
+| F5 no consent to be named | Unchanged. |
+| F6 non-final verdict reads as result 0 | Unchanged. Consumers must check `isFinal`. |
+
+**New surface added by passkeys, and what was checked** (`contracts/test/PasskeyV4.t.sol`, `WebAuthn.t.sol`, `tests/browser/passkeys.mjs`):
+- Signatures are not unique, so replay protection is a per-account nonce consumed on success, with a deadline. Tested: replay, wrong nonce, expired, altered action, another case, another contract, and that a failed call leaves the nonce untouched.
+- A signature meant for one contract cannot be spent through another, and a stranger cannot burn someone's nonce, because the calling contract's address is inside the signed challenge.
+- Someone else's passkey, a wrong key index, an unknown account, an assertion for another site (relying-party hash) and a missing user-verification flag are refused.
+- **Fake account under a customer's identifier.** Anyone can register an account with any key, so a business could register one under a customer's handle with its own key. The contract cannot prevent that. The customer's page calls `isControlledBy` and warns her if her passkey does not control the account. Tested in the browser.
+- The relay page only sends to the three LGtie passkey contracts on the right chain, and shows whether the call would succeed.
+- Signature deadlines are taken from the chain's latest block, not the browser clock.
+
+**Not covered, and open:** this is my own review, not an independent audit. Passkey recovery after losing every device is not built. Real phones, Safari and Firefox are untested. The page can only show a person what it displays, since WebAuthn cannot show the signed hash, so a compromised page could show one thing and sign another. The business creates the customer's account and can stall by not submitting a signed action (the signed action can be submitted by anyone, so the customer can ask another wallet holder).
