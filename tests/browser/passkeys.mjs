@@ -17,6 +17,7 @@ const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromiu
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage();
 const errs = []; p.on("pageerror", e => errs.push("pageerror: " + e.message));
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 400))); if (!c) fails++; };
+const shot = async n => { if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, {recursive: true}); await p.screenshot({path: process.env.SHOTS + "/" + n + ".png", fullPage: true}); } };   // SHOTS=/some/dir saves screenshots
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 30000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await w(300); } return false; }
 const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`);
@@ -75,7 +76,7 @@ await w(800);
 
 // ---- 5. Both sides answer. The business uses its wallet; Maya signs.
 ok("the case page shows the passkey customer as a side", /passkey account #1/.test(await T("main")));
-await clickText("#wacts button", "Answer as a wallet party"); await w(300); await answers(-1); await p.click("#send");
+await clickText("#wacts button", "Answer the questions"); await w(300); await answers(-1); await p.click("#send");
 ok("the business's answers are recorded", await until(async () => /Waiting for answers/.test(await T("main")) && /Yes/.test(await T("tbody"))), await T("main"));
 await as("", "#mine"); await p.click("#find"); await until(async () => /controlled by your passkey/.test(await T("#fm")));
 await until(async () => !!(await p.$('[data-act="answer"]')));
@@ -106,8 +107,8 @@ ok("submitting the same signed answers again fails (no replay)", await until(asy
 fs.writeFileSync("/tmp/lgtie-photo.txt", "pretend this is a photo of the damaged casing");
 const photoHash = "0x" + crypto.createHash("sha256").update(fs.readFileSync("/tmp/lgtie-photo.txt")).digest("hex");
 RELAYS = ["ws://127.0.0.1:8099"]; await as("", "#mine"); await p.click("#find"); await until(async () => !!(await p.$('[data-act="evidence"]')));
-await p.click('[data-act="evidence"]'); ok("the customer's case card has an evidence form with a file and a written option", !!(await p.$("#evf")) && !!(await p.$('input[name="evsrc"][value="text"]')) && /Nothing is uploaded/.test(await T(".evbox")), await T("#cs"));
-await p.click("#evgo"); ok("the evidence form refuses an empty submission", /short note/.test(await T("#evh")), await T("#evh"));
+await shot("customer-case-card"); await p.click('[data-act="evidence"]'); ok("the customer's case card has an evidence form with a file and a written option", !!(await p.$("#evf")) && !!(await p.$('[data-evsrc="text"]')) && /Nothing is uploaded/.test(await T(".evbox")), await T("#cs"));
+await shot("customer-evidence-form"); await p.click("#evgo"); ok("the evidence form refuses an empty submission", /short note/.test(await T("#evh")), await T("#evh"));
 await p.type("#evn", "Photo of the damaged casing"); await p.click("#evgo"); ok("it refuses a missing file", /Choose a file/.test(await T("#evh")), await T("#evh"));
 await (await p.$("#evf")).uploadFile("/tmp/lgtie-photo.txt"); await p.click("#evgo");
 ok("she signs the evidence and it is sent to the business's inbox", await until(async () => /Sent to the other side's inbox/.test(await T("#inboxst"))) && (await T("#evh")).includes(photoHash.slice(0, 14)), await T("#cs"));
@@ -115,8 +116,8 @@ const evLink = await p.$eval("#cs #cplink", e => e.dataset.link);
 await as(BUSINESS, "#inbox"); await p.click("#ibc").catch(() => {});
 ok("the evidence shows up in the business's inbox", await until(async () => /Waiting for you \(1\)/.test(await T("#ibl")) && /Evidence for case #1: Photo of the damaged casing/.test(await T("#ibl"))), await T("#ibl"));
 await p.click("[data-go]"); ok("the business submits her evidence", await until(async () => /Submitted/.test(await T("#ibs"))), await T("#ibs"));
-await as(BUSINESS, "#pk/case/1"); await clickText("#wacts button", "Add evidence"); await w(300);
-await p.click('input[name="evsrc"][value="text"]'); await p.type("#evn", "Our account of the repair"); await p.type("#evt", "The customer brought the product in on the fourth day. We inspected it and found no sign of impact."); await p.click("#evgo");
+await as(BUSINESS, "#pk/case/1"); await clickText("#wacts button", "Add evidence"); await w(300); await shot("business-evidence-form");
+await p.click('[data-evsrc="text"]'); await p.type("#evn", "Our account of the repair"); await p.type("#evt", "The customer brought the product in on the fourth day. We inspected it and found no sign of impact."); await p.click("#evgo");
 ok("the business records a written explanation and can download it", await until(async () => /Recorded on X Layer/.test(await T("#cmsg"))) && !!(await p.$('#evout a[download]')), await T("#cmsg"));
 const txtHref = await p.$eval("#evout a[download]", a => a.href), txt = decodeURIComponent(txtHref.split(",").slice(1).join(",")), txtHash = "0x" + crypto.createHash("sha256").update(txt, "utf8").digest("hex");
 await clickText("#evout button", "Show the updated case"); await w(1500);
@@ -140,7 +141,7 @@ await as(REVIEWER, "#pk/cases"); ok("the passkey list page links to the agreemen
 await as(REVIEWER, "#case"); ok("the normal case page points to the passkey list", !!(await p.$('a[href="#pk/cases"]')));
 await as(REVIEWER, "#pk/case/1");
 ok("the case now waits for the reviewer and question 5 is disputed", /Waiting for the reviewer/.test(await T("main")) && /Disputed/.test(await T("tbody")), await T("main"));
-await clickText("#wacts button", "I am the reviewer: decide"); await w(1500);
+await clickText("#wacts button", "Decide as the reviewer"); await w(1500);
 ok("the reviewer sees Side A and Side B instead of the parties", /names are hidden/.test(await T("main")) && /Side A opened the case/.test(await T("main")) && !(await p.$$eval("main tbody th, main .small", e => e.some(x => /Opened by/.test(x.innerText)))), await T("main"));
 ok("the decision form opened by itself after connecting", !!(await p.$("#rv-one")));
 await p.evaluate(() => document.querySelectorAll("#ans .yn").forEach(g => g.querySelector('button[data-v="1"]').click())); await p.click("#send");

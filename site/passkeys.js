@@ -182,12 +182,12 @@
     const mySide = c.filer.passkey === BigInt(accountId), asFiler = mySide, nQ = P.questions.length, myIn = mySide ? c.filerIn : c.deciderIn, div = document.createElement("div"); div.className = "card";
     const fa = bits(c.filerAnswers, nQ), da = bits(c.deciderAnswers, nQ), dis = bits(c.disputed, nQ), fin = bits(c.finalAnswers, nQ), yn = v => v ? "Yes" : "No";
     div.innerHTML = `<h3>Case #${c.id}: ${esc(P.name)}</h3><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">${c.status === 0 ? "Answers due by " + when(c.answerBy) : c.status === 1 ? "The reviewer has until " + when(c.reviewBy) : ""}</span></p>
-      ${c.status >= 1 ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${yn(fa[i])} / ${yn(da[i])}</td><td>${c.status === 2 && dis[i] ? "Reviewer: " + yn(fin[i]) : dis[i] ? "Disputed" : "Agreed"}</td></tr>`).join("")}</tbody></table>` : ""}
+      ${c.status >= 1 ? `<table class="ctab"><thead><tr><th>Question</th><th>You</th><th>Other side</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${yn((mySide ? fa : da)[i])}</td><td>${yn((mySide ? da : fa)[i])}</td><td>${c.status === 2 && dis[i] ? "Reviewer: " + yn(fin[i]) : dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`}</td></tr>`).join("")}</tbody></table>` : ""}
       ${c.status === 2 ? `<div class="res nodec"><div class="big">${esc(P.results[c.result])}</div></div>` : ""}
       ${c.status === 0 && !myIn ? `<div class="qs"></div><div class="row"><button class="btn" data-act="answer" type="button" disabled>Review and sign my answers</button></div>` : c.status === 0 ? `<p class="small mute">You have answered. Waiting for the other side.</p>` : ""}
-      ${c.status < 2 ? `<div class="row"><button class="btn small ghost" data-act="evidence" type="button">Add evidence</button></div>` : ""}<div class="evlist"></div><div class="act"></div>`;
+      <div class="evhead"><div><b>Evidence</b><div class="small mute">Photos, receipts or a written account</div></div>${c.status < 2 ? `<button class="btn small ghost plus" data-act="evidence" type="button">Add evidence</button>` : ""}</div><div class="evlist"></div><div class="act"></div>`;
     $("#cs").appendChild(div);
-    readEvidence(c.id).then(list => { if (list.length) div.querySelector(".evlist").innerHTML = `<h4>Evidence recorded</h4>` + list.map(e => `<p class="small">${esc(e.question === 255 ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 40) : ""))}: “${esc(e.note)}” <span class="mute">· ${e.passkey ? (e.passkey === BigInt(accountId) ? "you" : "passkey account #" + e.passkey) : short(e.by)} · <code>${e.hash.slice(0, 10)}…</code></span></p>`).join(""); }).catch(() => {});
+    readEvidence(c.id).then(list => { if (list.length) div.querySelector(".evlist").innerHTML = list.map(e => `<p class="small">${esc(e.question === 255 ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 40) : ""))}: “${esc(e.note)}” <span class="mute">· ${e.passkey ? (e.passkey === BigInt(accountId) ? "you" : "passkey account #" + e.passkey) : short(e.by)} · <code>${e.hash.slice(0, 10)}…</code></span></p>`).join(""); }).catch(() => {});
     const evb = div.querySelector('[data-act="evidence"]');
     if (evb) evb.onclick = () => { const ebox = div.querySelector(".act"); ebox.innerHTML = evidenceForm(P, c.id, ""); bindEvidence(ebox, c.id, async e => {
       const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.evidence(c.id, mySide, e.question, e.hash, e.note), credentialId});
@@ -232,20 +232,23 @@
   // ---------- evidence: a file or a written explanation. Only a fingerprint and a short note go on-chain; nothing is uploaded. ----------
   const hashBytes = async u8 => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", u8))].map(b => b.toString(16).padStart(2, "0")).join("");
   const evidenceForm = (P, caseId, hint) => `<div class="evbox"><h4>Add evidence</h4>
-    <p class="small mute">Nothing is uploaded. Your browser works out a fingerprint of the file (or of what you write), and only that fingerprint and the short note go on X Layer. Keep the file yourself and send it to the other side and the reviewer directly.${hint ? " " + hint : ""}</p>
-    <div class="row"><label>About <select id="evq"><option value="255">The whole case</option>${P.questions.map((q, i) => `<option value="${i}">${i + 1}. ${esc(q.text.slice(0, 50))}</option>`).join("")}</select></label></div>
-    <div class="row"><label><input type="radio" name="evsrc" value="file" checked> A photo or file</label><label><input type="radio" name="evsrc" value="text"> Write an explanation</label></div>
-    <div id="evfile" class="row"><input id="evf" type="file"></div><div id="evtext" hidden><textarea id="evt" rows="5" maxlength="4000" placeholder="Explain what happened, in your own words. This stays in a file you download; only its fingerprint is recorded."></textarea></div>
-    <div class="wide"><label><span>Short note (public)</span><input id="evn" type="text" maxlength="60" placeholder="For example: photo of the damaged casing. No names or personal details." autocomplete="off"></label></div>
-    <div class="row"><button class="btn small" id="evgo" type="button">Record the fingerprint</button><span id="evh" class="small mute"></span></div><div id="evout"></div></div>`;
+    <p class="small mute">Nothing is uploaded. Your browser makes a fingerprint, and only that and your short note go on X Layer. Keep the file and send it to the other side and the reviewer yourself.${hint ? " " + hint : ""}</p>
+    <div class="seg" role="group" aria-label="Kind of evidence"><button type="button" data-evsrc="file" aria-pressed="true">A photo or file</button><button type="button" data-evsrc="text" aria-pressed="false">Write an explanation</button></div>
+    <div id="evfile"><label class="drop" id="evdrop"><input id="evf" type="file"><b id="evdn">Choose a photo or file</b><span class="small mute">It stays on your device</span></label></div>
+    <div id="evtext" hidden><label class="field"><span>Your explanation</span><textarea id="evt" rows="5" maxlength="4000" placeholder="Explain what happened, in your own words. It stays in a file you download; only its fingerprint is recorded."></textarea></label></div>
+    <label class="field"><span>What is it about?</span><select id="evq"><option value="255">The whole case</option>${P.questions.map((q, i) => `<option value="${i}">${i + 1}. ${esc(q.text.slice(0, 60))}</option>`).join("")}</select></label>
+    <label class="field"><span>Short note everyone can see</span><input id="evn" type="text" maxlength="60" placeholder="For example: photo of the damaged casing" autocomplete="off"></label>
+    <div class="row"><button class="btn" id="evgo" type="button">Record the fingerprint</button><button class="btn ghost" id="evcancel" type="button">Cancel</button></div><p id="evh" class="small mute"></p><div id="evout"></div></div>`;
   // submit({hash, question, note}) records it; the text of a written explanation is offered as a download afterwards.
   function bindEvidence(root, caseId, submit, after) {
-    const q = id => root.querySelector(id), srcs = root.querySelectorAll('input[name="evsrc"]');
-    srcs.forEach(r => r.onchange = () => { const t = [...srcs].find(x => x.checked).value === "text"; q("#evfile").hidden = t; q("#evtext").hidden = !t; });
+    const q = id => root.querySelector(id), segs = root.querySelectorAll("[data-evsrc]"), mode = () => [...segs].find(x => x.getAttribute("aria-pressed") === "true").dataset.evsrc;
+    segs.forEach(b => b.onclick = () => { segs.forEach(x => x.setAttribute("aria-pressed", String(x === b))); q("#evfile").hidden = b.dataset.evsrc === "text"; q("#evtext").hidden = b.dataset.evsrc !== "text"; });
+    q("#evf").onchange = () => { const f = q("#evf").files[0]; q("#evdn").textContent = f ? f.name : "Choose a photo or file"; q("#evdrop").classList.toggle("has", !!f); };
+    q("#evcancel").onclick = () => { root.innerHTML = ""; };
     q("#evgo").onclick = async () => {
       const h = q("#evh"); h.className = "small mute"; h.textContent = "";
       try {
-        const text = [...srcs].find(x => x.checked).value === "text", note = q("#evn").value.trim(), question = Number(q("#evq").value);
+        const text = mode() === "text", note = q("#evn").value.trim(), question = Number(q("#evq").value);
         if (note.length < 3) throw new Error("Add a short note so people know what this is.");
         if (new TextEncoder().encode(note).length > 60) throw new Error("The short note is too long (60 bytes at most).");
         let hash, body = null;
@@ -265,7 +268,7 @@
     if (!deployed()) { notDeployed("Inbox"); return; }
     if (stopInbox) { stopInbox(); stopInbox = null; }
     main.innerHTML = `<h1>Inbox</h1><p class="lede">When a customer approves something with their passkey, it lands here, addressed to your wallet. Open it, check it, and submit it. You pay the small network fee and the customer never needs a wallet.</p>
-      <div class="card"><div class="row"><button class="btn" id="ibc" type="button">Connect my wallet</button><span id="ibs" class="small mute"></span></div></div><div id="ibl"></div>`;
+      <div class="card"><ol class="ibsteps"><li><b>The customer signs</b> with their fingerprint or face.</li><li><b>It appears here</b>, addressed to your wallet. Nothing to copy or paste.</li><li><b>You submit it</b> and pay the small network fee.</li></ol><div class="row"><button class="btn" id="ibc" type="button">Connect my wallet</button></div><p id="ibs" class="small mute"></p></div><div id="ibl"></div>`;
     const start = async () => {
       const me = W().account(); if (!me) return; $("#ibc").hidden = true;
       const items = new Map(), seenPacks = new Set(), render = () => {
@@ -303,11 +306,16 @@
   function pkAgree(prefill) {
     if (!deployed()) { notDeployed("Invite a customer by passkey"); return; }
     main.innerHTML = `<h1>Invite a customer who has no wallet</h1><p class="lede">Paste the claim code your customer created at <code>#join</code>. We register their passkey (a small network fee, paid by you) and propose an agreement to them. They accept with their fingerprint or face, and you submit it.</p>
-      <div class="card"><div class="wide"><label><span>Customer's claim code</span><input id="cc" type="text" placeholder="lgtie1.…" autocomplete="off"></label></div>
-        <div class="wide"><label><span>Neutral reviewer</span><input id="rv" type="text" placeholder="0x… (not you)" autocomplete="off"></label></div>
-        <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label><label>Time to answer <select id="aw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label><label>Time for the reviewer <select id="rw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label></div>
-        <div class="wide"><label><span>Written terms (optional)</span><textarea id="terms" rows="3" placeholder="Only a fingerprint goes on-chain"></textarea></label></div>
-        <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button><span id="msg" class="small"></span></div></div>`;
+      <div class="card formcard">
+        <label class="field"><span>Customer's claim code</span><input id="cc" type="text" placeholder="lgtie1.…" autocomplete="off"><em class="small mute">The customer creates it at <b>#join</b> and sends it to you. It contains nothing secret.</em></label>
+        <label class="field"><span>Neutral reviewer's address</span><input id="rv" type="text" placeholder="0x… (not you)" autocomplete="off"><em class="small mute">The person both sides accept to decide only the questions they disagree on.</em></label>
+        <div class="fgrid">
+          <label class="field"><span>Rules</span><select id="rs"><option value="1">Warranty claims (published)</option></select></label>
+          <label class="field"><span>Time to answer</span><select id="aw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label>
+          <label class="field"><span>Time for the reviewer</span><select id="rw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label>
+        </div>
+        <label class="field"><span>Written terms (optional)</span><textarea id="terms" rows="3" placeholder="Only a fingerprint of this text goes on-chain"></textarea></label>
+        <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button></div><p id="msg" class="small"></p></div>`;
     if (prefill) $("#cc").value = prefill;
     $("#go").onclick = async () => {
       const msg = $("#msg"), say = (t, cls) => { msg.className = "small " + (cls || "mute"); msg.textContent = t; };
@@ -376,11 +384,11 @@
     const wal = $("#wal"), msg = $("#cmsg"), act = (fn, rerender) => async () => { try { await needWallet(); msg.className = "small mute"; msg.textContent = rerender === false ? "" : "Confirm in your wallet…"; await fn(); if (rerender !== false) await pkCase(id); } catch (e) { msg.className = "small err"; msg.textContent = (e && e.message) || String(e); } };
     wal.innerHTML = `<h3>Actions for a wallet</h3><p class="small mute">If you are the business, the reviewer or anyone closing an expired case, connect your wallet. A customer with a passkey acts at <a href="#mine">My cases</a>.</p><div class="row" id="wacts"></div><div id="ans"></div>`;
     const wacts = $("#wacts"), btn = (label, cls, fn, rerender) => { const b = document.createElement("button"); b.className = "btn small " + cls; b.type = "button"; b.textContent = label; b.onclick = act(fn, rerender); wacts.appendChild(b); };
-    if (live) btn("Answer as a wallet party…", "ghost", async () => { $("#ans").innerHTML = answerForm(P); bindAnswer(c, P, id); }, false);
-    if (c.status === 1) btn("I am the reviewer: decide…", "ghost", async () => { if (!blind && RV.isReviewer(W().account(), cc) && namesFor2 !== Number(id)) { await pkCase(id, {review: true}); return; } $("#ans").innerHTML = answerForm(P, dis, window.TB_REVIEW.fields()); window.TB_REVIEW.bind($("#ans")); bindReview(P, dis, id, ev, c); }, false);
-    if (live) btn("Add evidence…", "ghost", async () => { $("#ans").innerHTML = evidenceForm(P, id); bindEvidence($("#ans"), id, async e => { msg.className = "small mute"; msg.textContent = "Confirm in your wallet…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), e.question, e.hash, e.note])); msg.className = "small ok"; msg.textContent = "✓ Recorded on X Layer."; }, () => { const b = document.createElement("button"); b.className = "btn small"; b.type = "button"; b.textContent = "Show the updated case"; b.onclick = () => pkCase(id); $("#evout").appendChild(b); }); }, false);
-    if (live) btn("I am the reviewer: confirm I am taking part", "ghost", async () => { await W().send(V4().cases, enc("acknowledgeReviewer", ["uint256"], [Number(id)])); });
-    if (opts && opts.review) setTimeout(() => { const b = [...wacts.children].find(x => /decide/.test(x.textContent)); if (b) b.click(); }, 0);
+    if (live) btn("Answer the questions", "ghost", async () => { $("#ans").innerHTML = answerForm(P); bindAnswer(c, P, id); }, false);
+    if (c.status === 1) btn("Decide as the reviewer", "ghost", async () => { if (!blind && RV.isReviewer(W().account(), cc) && namesFor2 !== Number(id)) { await pkCase(id, {review: true}); return; } $("#ans").innerHTML = answerForm(P, dis, window.TB_REVIEW.fields()); window.TB_REVIEW.bind($("#ans")); bindReview(P, dis, id, ev, c); }, false);
+    if (live) btn("Add evidence", "ghost plus", async () => { $("#ans").innerHTML = evidenceForm(P, id); bindEvidence($("#ans"), id, async e => { msg.className = "small mute"; msg.textContent = "Confirm in your wallet…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), e.question, e.hash, e.note])); msg.className = "small ok"; msg.textContent = "✓ Recorded on X Layer."; }, () => { const b = document.createElement("button"); b.className = "btn small"; b.type = "button"; b.textContent = "Show the updated case"; b.onclick = () => pkCase(id); $("#evout").appendChild(b); }); }, false);
+    if (live) btn("Confirm I am taking part (reviewer)", "ghost", async () => { await W().send(V4().cases, enc("acknowledgeReviewer", ["uint256"], [Number(id)])); });
+    if (opts && opts.review) setTimeout(() => { const b = [...wacts.children].find(x => /decide/i.test(x.textContent)); if (b) b.click(); }, 0);
     if ((c.status === 0 && Date.now() / 1000 > c.answerBy) || (c.status === 1 && Date.now() / 1000 > c.reviewBy)) btn("Close this case (the time has passed)", "", async () => { await W().send(V4().cases, enc("expire", ["uint256"], [Number(id)])); });
   }
   const answerForm = (P, only, extra) => `<div class="qs">${P.questions.map((q, i) => (only && !only[i]) ? "" : `<div class="q"><div class="t">${i + 1}. ${esc(q.text)}</div><div class="yn" data-i="${i}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>`).join("")}</div>${extra || ""}<div class="row"><button class="btn" id="send" type="button">Send my answers</button></div>`;

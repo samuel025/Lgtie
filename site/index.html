@@ -383,7 +383,18 @@ main.hub{max-width:1100px}
 /* ---------- reviewer reasons ---------- */
 .rvfields{margin:18px 0 6px;padding:16px 18px;background:#fff;border-radius:20px}.rvfields h4{margin:0 0 6px}.rvfields textarea{margin:6px 0 10px;min-height:110px}
 .rvcoi{display:flex;gap:10px;align-items:flex-start;margin-top:6px}.rvcoi input{margin-top:5px}.rreason{font-size:16px;margin:.5em 0}
-.evbox{margin:14px 0;padding:16px 18px;background:#fff;border-radius:20px}.evbox h4{margin:0 0 6px}.evbox textarea{margin:6px 0}.evbox label{display:inline-flex;gap:6px;align-items:center;margin-right:14px}.evlist{margin-top:10px}
+.btn.ghost{box-shadow:inset 0 0 0 1px rgba(0,0,0,.24)}.btn.ghost:hover{box-shadow:inset 0 0 0 1px var(--ink)}.res .btn.ghost{box-shadow:none}
+.btn.plus::before{content:"+";font-size:18px;line-height:1;margin-right:-2px}
+.evbox{margin:14px 0;padding:22px 22px 20px;background:#fff;border-radius:20px}.evbox h4{margin:0 0 6px;font-size:20px;font-weight:400}.evbox>p.small{margin:0 0 16px}
+.seg{display:inline-flex;background:var(--paper);border-radius:9999px;padding:4px;gap:2px;margin-bottom:14px;max-width:100%;flex-wrap:wrap}.seg button{border:0;background:transparent;font:400 14px var(--sans);padding:9px 16px;border-radius:9999px;cursor:pointer;color:var(--stone)}.seg button[aria-pressed=true]{background:var(--ink);color:#fff}
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;border:1.5px dashed #9a9a94;border-radius:16px;padding:26px 16px;cursor:pointer;text-align:center;background:var(--paper);transition:border-color .2s}.drop:hover{border-color:var(--ink)}.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}.drop b{font-weight:400;font-size:16px;overflow-wrap:anywhere}.drop.has{border-style:solid;border-color:var(--ink);background:#fff}
+.field{display:block;margin:16px 0 0}.field>span{display:block;font-size:13px;color:var(--stone);margin-bottom:6px}.field input,.field select,.field textarea{width:100%;box-sizing:border-box}
+.evbox .row{margin-top:20px}#evh{margin:10px 0 0}
+.evhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0 8px;padding-top:16px;border-top:1px solid var(--warm)}.evhead b{font-weight:400;font-size:17px}.evlist p{margin:.35em 0}
+.ctab{width:100%;border-collapse:collapse;font-size:14px}.ctab th{text-align:left;font-weight:400;color:var(--stone);padding:4px 8px 8px 0}.ctab td{padding:10px 8px 10px 0;border-top:1px solid var(--warm);vertical-align:top}.ctab td:nth-child(n+2){white-space:nowrap}
+.formcard{padding:26px 26px 22px}.formcard .field:first-child{margin-top:0}.formcard em{display:block;font-style:normal;margin-top:6px}.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0 14px}@media(max-width:640px){.fgrid{grid-template-columns:minmax(0,1fr)}}.formcard .row{margin-top:22px}#msg{margin:10px 0 0}
+.ibsteps{margin:0 0 18px;padding-left:22px;display:grid;gap:8px}.ibsteps li{padding-left:4px}.ibsteps b{font-weight:400;color:var(--ink)}
+.fgrid{margin-top:4px}.field select{padding:10px 13px;font-size:16px}.formcard em{margin-bottom:2px}.row input[type=number],.row input[type=text]{min-width:190px}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
