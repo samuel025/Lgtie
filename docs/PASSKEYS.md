@@ -40,7 +40,7 @@ Reproduce: `node prototypes/passkey/gen-vector.mjs > contracts/test/WebAuthnVect
 | `AgreementRegistryV2` | The counterparty may be a passkey account; it accepts by signature over a hash of every term. Anyone may submit the signed message, so the business pays the fee. |
 | `TiebreakCaseV4` | A side can be a wallet or a passkey account. A passkey side acts by `submitSigned`, `attachEvidenceSigned` or `openFromAgreementSigned`. Passkey sides exist only under an agreement, so the reviewer was fixed in advance. |
 
-**What is tested (115 contract tests in total, 30 of them new for Gate 2, all on a fork of X Layer so a real P-256 verifier runs):**
+**What is tested (115 contract tests in total, 32 of them new for Gate 2, all on a fork of X Layer so a real P-256 verifier runs):**
 a passkey customer settles a dispute without a wallet, including against the real TapeOut processor and circuit #13; signed actions cannot be replayed, altered, moved to another case or contract, used after the deadline, or burned by a stranger (a failed call leaves the nonce untouched); someone else's passkey is refused; a second passkey can be added and can act; a lost passkey can be removed but never the last one; the business cannot answer for the customer.
 
 **Fixes carried over from `docs/SECURITY.md`:** F1 (reviewer cannot be replaced under an agreement), F2 (a `reviewerAcked` flag records whether the reviewer ever took part), F3 (evidence caps per role), F4 (only rule sets on the trusted processor). F5 and F6 are unchanged.
