@@ -40,6 +40,15 @@ Have the wallet unlocked on a throwaway account only if you want to do the live 
 **Say:** "A customer with no wallet creates a passkey the same way they unlock their phone. Acme's page gets a public claim code, and staff invite them to an agreement. The customer approves with their fingerprint, and anyone with a wallet submits it. The signature covers the exact answers, so nobody can change them. This is live on X Layer, and it is new and unaudited."
 **Do not say** that it recovers lost devices (not built yet) or that it works on every phone (only tested in Chrome).
 
+## Optional, 40 seconds: no copying links, and a reviewer who must explain
+
+Only do this if you have rehearsed it on the live site with two devices; the real case on mainnet has no written reasons, so never claim it does.
+
+**Show:** on the phone, the customer's **My cases** page: tap **Add evidence**, choose a photo, add a short note and sign. Point at "Sent to the other side's inbox". On the laptop, open `#inbox`: the item is waiting. Click **Submit with my wallet**.
+**Say:** "The customer signs with a fingerprint and it lands in the business's inbox. Nobody copies a link, and the customer never needs a wallet."
+**Then show** the reviewer's decision form: "Before a reviewer can decide, they write their reasons and sign a declaration of no conflict. While deciding they see Side A and Side B instead of names. Only a fingerprint of the statement goes on-chain. This makes a bad decision visible. It does not stop one."
+**Do not say** that relays are guaranteed to deliver (they are public and may drop messages) or that this removes reviewer bias.
+
 ## 2:20 to 2:40: the receipt
 
 **Show:** click Receipt, then Print or save as PDF.

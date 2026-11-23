@@ -85,12 +85,13 @@ Built on `site/pkcore.js`: keccak256, ABI encoding, the payload hashes and the W
 **Still open**
 - Real phones and other browsers: the frame test used Chrome with a virtual authenticator. Safari and Firefox rules for passkeys in cross-site frames, and storage partitioning there, are untested. (The pages avoid relying on local storage inside the frame: they find the account by the passkey itself.)
 - The final public domain is not chosen; a passkey made on `localhost` will not work there.
-- Evidence signing is built into the contract but has no page yet.
+- Evidence signing now has a page: a customer adds a file fingerprint or a written explanation on My cases, signs it, and it reaches the business's inbox. Signed actions queue in order (the page remembers the next number for a day).
+- The business inbox uses public Nostr relays (`site/nostr.js`); relays can drop messages, so a copy-link fallback remains.
 - Gate 4 (assisted recovery) is not built.
 
 ## Next gates
 
-- Gate 3 follow-ups: a demo on the Acme page, evidence signing in the UI, and frame and phone tests on the real domain.
+- Gate 3 follow-ups: a demo on the Acme page, frame and phone tests on the real domain.
 - Gate 4: assisted recovery with reviewer countersignature and delay, and a written security review.
 
 Stop rule: if any gate goes badly, fall back to crypto-native users plus the no-wallet demo.

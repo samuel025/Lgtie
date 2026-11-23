@@ -28,7 +28,9 @@ LGtie is not a replacement for any of these. It targets the stage before them: a
 4. **Anyone can re-run it.** The processor's `eval` is a free read, so anyone can recompute the result. Other contracts can read `verdict(id)` from the case contract. LGtie holds no funds.
 5. **Evidence without uploads.** Parties attach a SHA-256 fingerprint of a file and a short note. The files stay with the people. A reviewer can drop a file they were sent into the case page to check it is identical to the recorded one.
 6. **Customers without a wallet.** A customer can act with a passkey, the fingerprint or face scan that unlocks their phone. The business invites them with a claim code, they approve the agreement and their answers on their own device, and anyone with a wallet submits the signed approval and pays the fee. The signature covers the exact action, so it cannot be changed, replayed or moved to another case, and the customer's own page proves on-chain that the account is controlled by her passkey. X Layer's native P-256 verifier checks the signature. A business can offer this on its own site with one embed line.
-7. **A one-page receipt** for any decided case, printable as a PDF, with a live re-run of the published rules.
+7. **A reviewer who must explain.** Before deciding, a reviewer writes reasons and signs a conflict-of-interest declaration. The page records a fingerprint of the written statement, shows the one-line reason on the case and receipt, and shows the reviewer "Side A" and "Side B" instead of addresses. This makes a biased decision visible; it does not prevent one.
+8. **No copying links.** After a customer signs, their page posts the signed action to public message relays addressed to the business's wallet. The business opens an inbox and submits it in one click. Signed actions queue in order, and a copy-link fallback is always shown. There is still no server of ours.
+9. **A one-page receipt** for any decided case, printable as a PDF, with a live re-run of the published rules.
 
 ## Why TapeOut
 
@@ -58,7 +60,8 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 ## Honest limits
 
 - It does not check that answers are true. The result follows the answers given; a reviewer decides disputed facts and can be wrong. The circuit shows the rules were applied consistently, nothing more.
-- A reviewer both sides accepted can still be biased, and two parties can agree on the same false answer. There is no staking, jury or slashing.
+- A reviewer both sides accepted can still be biased, and two parties can agree on the same false answer. There is no staking, jury or slashing. Required written reasons and the Side A / Side B view make a bad decision visible and harder, not impossible.
+- The inbox depends on public relays run by others, which can be slow or drop messages, and nothing notifies the business: it has to open the inbox. The copy-link fallback always works.
 - The contracts are unaudited and hold no funds. The passkey system is new: recovery after losing every device is not built, and it is untested on real phones and in Safari and Firefox (it was tested in Chrome with a virtual authenticator, including inside a cross-site frame). There are no customers, no revenue and no validated price.
 - Only one rule set is published on mainnet so far.
 - Other entries also compile rules to TapeOut circuits. We do not claim to be first at that. What we built that we have not seen elsewhere is the dispute process around the rules.
