@@ -2,7 +2,15 @@
 
 Goal: let a party act without installing a wallet or paying gas, with high-stakes assurance and recoverable identity. A party's identity is a **passkey** (Face ID, fingerprint or PIN). Their device makes a P-256 signature; anyone can submit it; the contract verifies it. The business that needs the case pays the fee.
 
-Status: **Gates 1, 2 and 3 passed. The contracts and the pages are built and tested end to end in a real browser on a fork, but NOT deployed on mainnet (`scripts/deploy-v4.sh`).** Unaudited.
+Status: **Gates 1, 2 and 3 passed. Deployed on X Layer mainnet on Nov 23, 2026** (addresses below; no accounts, agreements or cases yet). The pages and contracts were tested end to end in a real browser, including against the deployed contracts on a fork of mainnet. Unaudited.
+
+| Contract | Address |
+| --- | --- |
+| `PasskeyRegistry` | `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E` |
+| `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` |
+| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (trusts only the TapeOut processor `0x9e28…5c0e`) |
+
+The first deployment attempt stopped after the registry because `deploy-v4.sh` passed `--constructor-args` before another option; the script was fixed and resumed with `PASSKEYS_EXISTING`.
 
 ## Design in short
 

@@ -17,6 +17,9 @@ Prototype for the X Layer TapeOut Accelerate hackathon. The project was first ca
 | `TiebreakCaseV2` | `0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3`. **Has a flaw, no longer used by the site** (see below) |
 | `AgreementRegistry` | `0xC3e61E38d977Be9e9B4649e5965892bF6f675180` (V3 system, in use) |
 | `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (in use; fixes the V2 flaw; 119 contract tests) |
+| `PasskeyRegistry` | `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E` (passkey accounts; deployed Nov 23, not yet used) |
+| `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` (the counterparty can be a passkey account) |
+| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey sides; fixes the V3 limitations F1 to F4; trusts only the official processor) |
 
 On mainnet there is one real run, played by the team with three wallets it controlled: agreement #1 and case #1 (decided "Covered", one question settled by the reviewer). It is a demonstration, not a customer. The home page reads it live.
 
@@ -53,7 +56,7 @@ Two examples are built in: `warranty` and `bounty` (bug-bounty severity, not yet
 - `compiler/` the first hand-built warranty circuit (14 gates) kept as a reference for the generic compiler.
 - `dist/` is the build output: `node scripts/bundle.mjs` inlines every script into one self-contained `dist/index.html` (about 220 KB including the embedded Inter typeface, which is open-licence; no external assets), plus `embed.js` and `embed-demo.html`. Any static host can serve it as is; that is also the shape DeWEB needs.
 - `docs/VERDICT.md` how another contract reads a case's verdict.
-- `docs/PASSKEYS.md` a design for parties who act with a passkey instead of a wallet: `PasskeyRegistry`, `AgreementRegistryV2` and `TiebreakCaseV4`, plus the pages `#join`, `#mine`, `#relay`, `#pk/agree`; built and tested end to end in a real browser on a fork, not deployed on mainnet (`scripts/deploy-v4.sh`), with the gate log.
+- `docs/PASSKEYS.md` a design for parties who act with a passkey instead of a wallet: `PasskeyRegistry`, `AgreementRegistryV2` and `TiebreakCaseV4`, plus the pages `#join`, `#mine`, `#relay`, `#pk/agree`; built and tested end to end in a real browser on a fork, deployed on mainnet on Nov 23 (`scripts/deploy-v4.sh`) but not yet used by the site's home flows, with the gate log.
 - `docs/SECURITY.md` a manual security review of the deployed contracts: what held up, six known limitations (each pinned by a test), and what a next version would change. `docs/VALIDATION.md` the questions to ask real users.
 - `docs/SUBMISSION.md` the hackathon submission text (with three `TODO` items to fill) and `docs/DEMO.md` a three-minute demo script.
 - `scripts/` `deploy.sh`, `deploy-case-v2.sh`, `deploy-v3.sh` and `publish-rules.sh` (each has a read-only `preflight` mode; you run the spending steps with your own Foundry keystore) and `compile.mjs`.

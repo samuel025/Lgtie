@@ -20,3 +20,5 @@ npm i puppeteer-core            # in any folder; then run: node <path>/checker.m
 | `cases.mjs` | agreements (propose, terms check, accept), a case under an agreement, evidence hashing of a real file, an agreed reviewer deciding at once, helpers acting only for their side, "no decision" after a deadline, and the reviewer and business records (it deploys `AgreementRegistry` and `TiebreakCaseV3` on the fork itself) | the same anvil fork, and `forge` |
 
 The simulated wallet signs with anvil's impersonated accounts, so these tests spend nothing. A real-wallet run (for example OKX Wallet on mainnet) has not been done.
+
+`passkeys.mjs` and `passkeys-frame.mjs` deploy fresh contracts to the fork by default. Run them with `USE_DEPLOYED=1` to use the contracts already deployed on mainnet (read from `site/config.js`).

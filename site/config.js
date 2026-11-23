@@ -13,6 +13,6 @@ window.TB_CONFIG = {
   caseContractV2: "0x0d45f65dC5C14cc4f4EE926e52979D3DcBd246B3",  // second case contract (deadlines, reviewer consent). It has a flaw (the person who opens a case can answer for both sides), so the site no longer uses it
   caseContractV1: "0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987",  // the first, simpler case contract (no deadlines); still on-chain
   showcase: {caseId: 1, agreementId: 1},                           // the real mainnet case shown on the home page (played by the team)
-  v4: {passkeys: "0x0000000000000000000000000000000000000000", agreements: "0x0000000000000000000000000000000000000000", cases: "0x0000000000000000000000000000000000000000"},   // passkey parties (PasskeyRegistry, AgreementRegistryV2, TiebreakCaseV4): zero until deployed
+  v4: {passkeys: "0xC3c0E2Fa6D8452A14063c01DC50159487E78522E", agreements: "0x802995325A576b69175DCE24e8D643553C9ba2ed", cases: "0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0"},   // passkey parties: PasskeyRegistry, AgreementRegistryV2, TiebreakCaseV4 (set by scripts/deploy-v4.sh)
   published: {warranty: {circuitId: 13, ruleSetId: 1}}
 };

@@ -8,7 +8,9 @@ const arpc = async (m, p) => { const r = await (await fetch(ANVIL, {method: "POS
 for (const a of [BUSINESS, REVIEWER, DEPLOYER]) { await arpc("anvil_setBalance", [a, "0x56bc75e2d63100000"]); await arpc("anvil_impersonateAccount", [a]); }
 const forge = args => execFileSync("forge", args, {cwd: "/home/samuel/Documents/tiebreak/contracts", encoding: "utf8"});
 const create = (name, ...args) => /Deployed to: (0x[0-9a-fA-F]{40})/.exec(forge(["create", name, "--rpc-url", ANVIL, "--unlocked", "--from", DEPLOYER, "--broadcast", ...(args.length ? ["--constructor-args", ...args] : [])]))[1];
-const PK = create("src/PasskeyRegistry.sol:PasskeyRegistry"), AG = create("src/AgreementRegistryV2.sol:AgreementRegistryV2", REG, PK), CS = create("src/TiebreakCaseV4.sol:TiebreakCaseV4", REG, AG, PK, PROC);
+// USE_DEPLOYED=1 runs the same story against the contracts already deployed on mainnet (they exist on the fork); otherwise it deploys fresh copies.
+const dep = process.env.USE_DEPLOYED ? /v4: \{passkeys: "(0x[0-9a-fA-F]{40})", agreements: "(0x[0-9a-fA-F]{40})", cases: "(0x[0-9a-fA-F]{40})"/.exec(fs.readFileSync(CFGP, "utf8")) : null;
+const PK = dep ? dep[1] : create("src/PasskeyRegistry.sol:PasskeyRegistry"), AG = dep ? dep[2] : create("src/AgreementRegistryV2.sol:AgreementRegistryV2", REG, PK), CS = dep ? dep[3] : create("src/TiebreakCaseV4.sol:TiebreakCaseV4", REG, AG, PK, PROC);
 // The fictional Acme site, on its own origin: the real embed-demo page, pointed at LGtie's embed script by absolute address.
 const demoHtml = fs.readFileSync(SITEDIR + "/embed-demo.html", "utf8").replaceAll('src="embed.js"', `src="${SITE}embed.js"`);
 const demo = http.createServer((q, r) => { r.setHeader("content-type", "text/html"); r.end(demoHtml); }).listen(8094, "127.0.0.1");
