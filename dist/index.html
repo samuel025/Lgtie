@@ -1761,18 +1761,18 @@ MY POLICY:
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="row"><button class="btn" data-act="accept" type="button">Accept with my passkey</button></div>` : ""}
       ${inForce ? `<div class="row"><button class="btn ghost" data-act="open" type="button">Start a dispute under this agreement</button></div>` : ""}<div class="act"></div>`;
     $("#ags").appendChild(div);
-    const box = div.querySelector(".act"), run = async (fn) => { try { box.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`; box.innerHTML = await fn(); const cp = box.querySelector("#cplink"); if (cp) cp.onclick = e => copy(cp.dataset.link, e.target); } catch (e) { box.innerHTML = `<p class="small err">${esc((e && e.message) || String(e))}</p>`; } };
+    const box = div.querySelector(".act"), run = async (fn, signedNote, btnEl) => { try { box.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`; box.innerHTML = await fn(); if (btnEl) { btnEl.hidden = true; const bd = div.querySelector(".badge"); if (bd && signedNote) { bd.className = "badge warn"; bd.textContent = signedNote; } } const cp = box.querySelector("#cplink"); if (cp) cp.onclick = e => copy(cp.dataset.link, e.target); } catch (e) { box.innerHTML = `<p class="small err">${esc((e && e.message) || String(e))}</p>`; } };
     const accept = div.querySelector('[data-act="accept"]'), open = div.querySelector('[data-act="open"]');
     if (accept) accept.onclick = () => run(async () => {
       const digest = K.payload.termsDigest({proposerWallet: a.proposer.wallet, proposerPasskey: a.proposer.passkey, counterpartyWallet: a.counterparty.wallet, counterpartyPasskey: a.counterparty.passkey, ruleSetId: a.ruleSetId, termsHash: a.termsHash, reviewer: a.reviewer, answerWindow: a.answerWindow, reviewWindow: a.reviewWindow});
       const s = await signAction({accountId, consumer: V4().agreements, payloadHash: K.payload.accept(a.id, digest), credentialId});
       return packBox(V4().agreements, enc("acceptSigned", ["uint256", K.SIGAUTH], [a.id, s]), "Accept agreement #" + a.id);
-    });
+    }, "Signed. Not final until someone submits the link", accept);
     if (open) open.onclick = () => run(async () => {
       const asProposer = a.proposer.passkey === BigInt(accountId), eh = "0x" + "0".repeat(64);
       const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.open(a.id, eh, asProposer), credentialId});
       return packBox(V4().cases, enc("openFromAgreementSigned", ["uint256", "bytes32", "bool", K.SIGAUTH], [a.id, eh, asProposer, s]), "Start a dispute under agreement #" + a.id);
-    });
+    }, "Signed. Not started until someone submits the link", open);
   }
   function caseCard(c, accountId, credentialId) {
     const P = policyOf(c.ruleSetId); if (!P) return;
