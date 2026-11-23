@@ -39,7 +39,7 @@ MY POLICY:
 
   function build() {
     let tryAns = [], S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
-    main.innerHTML = `<h1>Publish your policy as a checker</h1>
+    main.innerHTML = `<h1>Publish your policy as a checker</h1><p class="lede">Turn your policy into a claim check your customers can use. Four short steps: questions, rules, test, publish.</p>
       <ol class="stepper" id="stepper">${["Questions", "Rules", "Test", "Publish"].map((t, i) => `<li><button type="button" data-step-btn="${i + 1}"><span class="sn">${i + 1}</span><span class="st">${t}</span></button></li>`).join("")}</ol>
       <div class="row" data-s="1"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
       <details class="card" id="ai" data-s="1"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
@@ -180,17 +180,17 @@ MY POLICY:
       const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
       out.innerHTML = `<div class="sthead" data-s="3"><h2>Does it behave the way you mean?</h2><p class="lede">Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.</p></div>
         <div class="card" data-s="3"><h3>${esc(P.name)}</h3>
-        <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} circuit gates</span></div>
-        <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The circuit gives the same answer as your rules" : "✗ The circuit does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
+        <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} logic steps</span></div>
+        <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The finished checker gives the same answer as your rules" : "✗ The finished checker does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
         <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
         <div class="card" data-s="3"><h3>Try it</h3>
           <div class="tryit"><div class="qs" id="tq">${P.questions.map((q, i) => `<div class="qa"><span>${i + 1}. ${esc(q.text)}</span><span class="tg" data-i="${i}"><button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></span></div>`).join("")}</div>
             <div class="out"><div class="vsvg" id="tcirc"></div><div class="vres"><div class="vlab">Result</div><div class="big" id="tr"></div><div class="vwhy small" id="tw"></div></div><p class="small mute" id="tf"></p></div></div></div>
         <div class="sthead" data-s="4"><h2>Put it on X Layer</h2><p class="lede">Publishing records the circuit permanently, so anyone can re-run it. A change later means publishing a new version.</p></div>
         <div class="card" data-s="4"><h3>Publishing it on X Layer</h3>
-          <p class="small">Publishing records the circuit permanently, so the rules can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
-          <p class="small"><b>Definitions hash</b> (fingerprint of the rules text, published with the circuit): <code>${h}</code></p>
-          <details><summary>Circuit netlist (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
+          <p class="small">Publishing saves your rules permanently on the public network, so they can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (a free starter token: the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
+          <p class="small"><b>Rules fingerprint</b> (a short code that changes if the rules text changes): <code>${h}</code></p>
+          <details><summary>Technical detail: the checker program (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
           ${pubBox(h, C)}</div>`;
       bindPub(P, canon, h, C);
       const ans = tryAns.length === nQ ? tryAns : (tryAns = P.questions.map(() => true));

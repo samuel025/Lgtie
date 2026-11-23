@@ -12,7 +12,7 @@ const h0 = await p.$eval("iframe", e => e.getBoundingClientRect().height);
 await frame.evaluate(() => document.querySelectorAll(".q").forEach(d => d.querySelector('button[data-v="1"]').click())); await w(3000);
 const h1 = await p.$eval("iframe", e => e.getBoundingClientRect().height);
 ok("the frame grows when the result appears", h1 > h0 + 60, `${h0} -> ${h1}`);
-ok("result is Covered and confirmed on X Layer", /Covered/.test(await frame.$eval(".res .big", e => e.innerText)) && /Confirmed by the TapeOut processor/.test(await frame.$eval("#vbadge", e => e.innerText).catch(() => "")), await frame.$eval("#resbox", e => e.innerText).catch(() => ""));
+ok("result is Covered and confirmed on X Layer", /Covered/.test(await frame.$eval(".res .big", e => e.innerText)) && /Confirmed on the public network/.test(await frame.$eval("#vbadge", e => e.innerText).catch(() => "")), await frame.$eval("#resbox", e => e.innerText).catch(() => ""));
 ok("embedded result card is not sticky", (await frame.$eval(".res", e => getComputedStyle(e).position)) === "static");
 ok("the embed links to the full page", /#check\/warranty/.test(await frame.$eval(".embedfoot a", a => a.href)), await frame.$eval(".embedfoot a", a => a.href));
 await p.setViewport({width: 375, height: 800}); await p.goto(BASE + "embed-demo.html"); await w(1500);

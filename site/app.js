@@ -157,15 +157,15 @@
     if (!published && rsm && L.custom) {
       try {
         const rec = await fetchRuleSet(Number(rsm[1])), h = await sha256(TB.canonical(P));
-        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rule set #${rsm[1]} published on X Layer (circuit #${rec.circuitId}).</div>`; }
-        else banner = `<div class="note">These rules do <b>not</b> match rule set #${rsm[1]} on X Layer, so the result below is only a preview. Ask the business for the original link.</div>`;
+        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rules #${rsm[1]} published on X Layer.</div>`; }
+        else banner = `<div class="note">These rules do <b>not</b> match rules #${rsm[1]} on X Layer, so the result below is only a preview. Ask the business for the original link.</div>`;
       } catch { banner = `<div class="note">Could not reach X Layer to confirm that these rules were published, so the result below is only a preview.</div>`; }
     }
     let ans = Array(nQ).fill(null);
     const a = /(?:^|[/&])a=(\d+)/.exec(rest || ""); if (a) { const m = Number(a[1]); ans = TB.decodeAnswers(m, nQ); }
     main.innerHTML = `<h1>${esc(P.name)}</h1><p class="lede">${esc(P.about || "")}</p>${banner}
       <div class="prog"><i id="bar"></i></div><div class="small mute" id="count"></div>
-      ${embed ? "" : `<details class="card circ-card"><summary>Watch the circuit work</summary><p class="small mute">Each dot is a NAND gate. Dark is 1 and light is 0. Answer every question to light it up. This is a local simulation of the same ${C.gates.length} gates.</p><div id="circviz"></div></details>`}
+      ${embed ? "" : `<details class="card circ-card"><summary>See how the rules decide</summary><p class="small mute">Each dot is one small step in the checker. Dark means yes and light means no. Answer every question to watch the answer flow through. This runs on your device, using the same ${C.gates.length} steps that are stored on the public network.</p><div id="circviz"></div></details>`}
       <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>LGtie</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
     const qs = $("#qs");
     P.questions.forEach((q, i) => {
@@ -201,7 +201,7 @@
       }
       const vb = $("#vbadge");
       if (!published) { vb.className = "badge warn"; vb.textContent = "Preview: computed in your browser"; return; }
-      evalOnChain(published.circuitId, m, nQ, C.nOut).then(got => { if (mine !== seq) return; if (got === r.result) { vb.className = "badge ok"; vb.textContent = "✓ Confirmed by the TapeOut processor on X Layer"; } else { vb.className = "badge warn"; vb.textContent = "The chain gave a different result. Do not rely on this page."; } })
+      evalOnChain(published.circuitId, m, nQ, C.nOut).then(got => { if (mine !== seq) return; if (got === r.result) { vb.className = "badge ok"; vb.textContent = "✓ Confirmed on the public network (X Layer)"; } else { vb.className = "badge warn"; vb.textContent = "The chain gave a different result. Do not rely on this page."; } })
         .catch(() => { if (mine !== seq) return; vb.className = "badge warn"; vb.textContent = "Could not reach X Layer; showing the browser result"; });
     }
     paint(); report();

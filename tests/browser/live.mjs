@@ -29,7 +29,7 @@ await p.goto(LIVE + "#receipt/1");
 ok("the receipt for the real case loads and the rules re-run on mainnet", await until(async () => /same result/.test(await T("#rp")), 40000), await T("#rp"));
 await p.goto(LIVE + "#check/warranty"); await w(800);
 await p.evaluate(() => document.querySelectorAll(".q").forEach(d => d.querySelector('button[data-v="1"]').click()));
-ok("the checker answers Covered and the TapeOut processor confirms it", await until(async () => /Covered/.test(await T(".res .big")) && /Confirmed by the TapeOut processor/.test(await T("#vbadge")), 40000), await T("#vbadge"));
+ok("the checker answers Covered and the TapeOut processor confirms it", await until(async () => /Covered/.test(await T(".res .big")) && /Confirmed on the public network/.test(await T("#vbadge")), 40000), await T("#vbadge"));
 ok("the claim pack is produced for the live site", await until(async () => /LGTIE CLAIM PACK/.test(await p.$eval("#packtxt", e => e.textContent)) && new RegExp("Re-run these answers: " + LIVE.replace(/[.\/]/g, "\\$&") + "#check").test(await p.$eval("#packtxt", e => e.textContent))), await p.$eval("#packtxt", e => e.textContent).catch(() => ""));
 await p.goto(LIVE + "#about"); ok("the About page explains passkeys", /Customers without a wallet/.test(await p.$eval("main", e => e.textContent)));
 await p.goto(LIVE + "#build"); ok("the builder loads", await until(async () => /Publish your policy as a checker/.test(await T("h1"))));

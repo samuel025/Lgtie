@@ -909,7 +909,7 @@ MY POLICY:
 
   function build() {
     let tryAns = [], S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
-    main.innerHTML = `<h1>Publish your policy as a checker</h1>
+    main.innerHTML = `<h1>Publish your policy as a checker</h1><p class="lede">Turn your policy into a claim check your customers can use. Four short steps: questions, rules, test, publish.</p>
       <ol class="stepper" id="stepper">${["Questions", "Rules", "Test", "Publish"].map((t, i) => `<li><button type="button" data-step-btn="${i + 1}"><span class="sn">${i + 1}</span><span class="st">${t}</span></button></li>`).join("")}</ol>
       <div class="row" data-s="1"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
       <details class="card" id="ai" data-s="1"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
@@ -1050,17 +1050,17 @@ MY POLICY:
       const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
       out.innerHTML = `<div class="sthead" data-s="3"><h2>Does it behave the way you mean?</h2><p class="lede">Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.</p></div>
         <div class="card" data-s="3"><h3>${esc(P.name)}</h3>
-        <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} circuit gates</span></div>
-        <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The circuit gives the same answer as your rules" : "✗ The circuit does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
+        <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} logic steps</span></div>
+        <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The finished checker gives the same answer as your rules" : "✗ The finished checker does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
         <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
         <div class="card" data-s="3"><h3>Try it</h3>
           <div class="tryit"><div class="qs" id="tq">${P.questions.map((q, i) => `<div class="qa"><span>${i + 1}. ${esc(q.text)}</span><span class="tg" data-i="${i}"><button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></span></div>`).join("")}</div>
             <div class="out"><div class="vsvg" id="tcirc"></div><div class="vres"><div class="vlab">Result</div><div class="big" id="tr"></div><div class="vwhy small" id="tw"></div></div><p class="small mute" id="tf"></p></div></div></div>
         <div class="sthead" data-s="4"><h2>Put it on X Layer</h2><p class="lede">Publishing records the circuit permanently, so anyone can re-run it. A change later means publishing a new version.</p></div>
         <div class="card" data-s="4"><h3>Publishing it on X Layer</h3>
-          <p class="small">Publishing records the circuit permanently, so the rules can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
-          <p class="small"><b>Definitions hash</b> (fingerprint of the rules text, published with the circuit): <code>${h}</code></p>
-          <details><summary>Circuit netlist (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
+          <p class="small">Publishing saves your rules permanently on the public network, so they can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (a free starter token: the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
+          <p class="small"><b>Rules fingerprint</b> (a short code that changes if the rules text changes): <code>${h}</code></p>
+          <details><summary>Technical detail: the checker program (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
           ${pubBox(h, C)}</div>`;
       bindPub(P, canon, h, C);
       const ans = tryAns.length === nQ ? tryAns : (tryAns = P.questions.map(() => true));
@@ -1240,12 +1240,12 @@ MY POLICY:
     main.innerHTML = `<h1>Settle a disagreement</h1><p class="lede">Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer, and the published rules give the result. A case nobody finishes in time ends with no decision. Best of all, <a href="#agree">agree on the rules before there is a dispute</a>.</p>
       <div class="card"><h3>Under an agreement</h3><p class="small">If you both accepted an agreement, open the case from the agreement page: the rules, the reviewer and the time limits are already fixed.</p><div class="row"><input id="agn" type="number" min="1" placeholder="Agreement number" style="width:180px"><button class="btn ghost" id="aggo" type="button">Open the agreement</button></div></div>
       <div class="card"><h3>Without an agreement</h3>
-        <div class="row"><label>Rule set <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
-        <div class="wide"><label><span>Decider (the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
-        <div class="wide"><label><span>Proposed reviewer (the decider must accept)</span><input id="rev" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
+        <div class="wide"><label><span>The other side (for example the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="wide"><label><span>Neutral person who would decide (the other side must accept)</span><input id="rev" type="text" placeholder="0x…" autocomplete="off"></label></div>
         <div class="row"><label>Time to answer <select id="aw">${opts(days, 7)}</select></label><label>Time for the reviewer <select id="rw">${opts(days, 7)}</select></label></div>
         <div class="wide"><label><span>Evidence note, optional</span><input id="evd" type="text" placeholder="e.g. the repair centre report reference"></label></div>
-        <p class="small mute">Only a fingerprint of the evidence note goes on-chain. You are the filer, and your wallet accepts the reviewer by opening the case. The reviewer must be a different person from both sides.</p>
+        <p class="small mute">Only a short code (a digital fingerprint) of the note goes on the public network. You are opening the case, and by opening it you accept the neutral person. They must be someone other than the two of you.</p>
         <div class="row"><button class="btn" id="open" type="button">Open case</button><span id="msg" class="small"></span></div></div>
       <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div><p class="small"><a href="#reviewer">Reviewer records</a> · <a href="#agree">Agreements</a></p></div>`;
     $("#lk").onclick = () => { const n = Number($("#cn").value); if (n) location.hash = "#case/" + n; };
@@ -1267,7 +1267,7 @@ MY POLICY:
   async function agreements() {
     if (!deployed()) { upgrading("Agreements"); return; }
     const days = [[1, "1 day"], [3, "3 days"], [7, "7 days"], [14, "14 days"], [30, "30 days"]], opts = def => days.map(([d, l]) => `<option value="${d}"${d === def ? " selected" : ""}>${l}</option>`).join("");
-    main.innerHTML = `<h1>Agree on the rules before there is a dispute</h1><p class="lede">Two parties accept one published rule set, one neutral reviewer and the time limits, together with a fingerprint of their written terms. Once accepted it can never be changed or withdrawn, so neither side can swap the rules or the reviewer halfway through. If a disagreement comes, either side opens a case under the agreement.</p>
+    main.innerHTML = `<h1>Agree on the rules before there is a dispute</h1><p class="lede">Before any problem comes up, you and the other side agree on three things: the public rules, a neutral person who would decide any disagreement, and the time limits. Once both of you accept, none of it can be changed or withdrawn, so neither side can swap the rules or the neutral person halfway through. If you later disagree, either of you can open a case under this agreement.</p>
       <div class="card"><h3>Propose an agreement</h3>
         <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
         <div class="wide"><label><span>The other party</span><input id="cp" type="text" placeholder="0x…" autocomplete="off"></label></div>
@@ -1301,10 +1301,10 @@ MY POLICY:
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : a.cancelled ? " warn" : ""}">${esc(state)}</span></p>
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody>
         <tr><td>Proposed by</td><td><code>${a.proposer}</code>${isProp ? " (you)" : ""}</td></tr><tr><td>Other party</td><td><code>${a.counterparty}</code>${isCp ? " (you)" : ""}</td></tr>
-        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rule set #${a.ruleSetId})</td></tr>
+        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rules #${a.ruleSetId})</td></tr>
         <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance</td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
-        <tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
+        <tr><td>Terms fingerprint (a short code of the written terms)</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note${isCp ? " ok-note" : ""}">${isCp ? "<b>You have been invited to accept this agreement.</b> Read the terms below, then use the button at the bottom." : !me ? `If you were invited to accept this, connect the wallet for <code>${short(a.counterparty)}</code> at the bottom of the page.` : ""}</div>` : ""}
       ${!inForce && !a.cancelled && !isCp ? inviteCard("a" + id, `I have proposed an agreement on LGtie for you to accept: ${location.href.split("#")[0]}#agreement/${id}\nOpen it, connect the wallet ${a.counterparty} and click "Accept this agreement". Rules: ${K ? K.policy.name : "rule set " + a.ruleSetId}. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts. Nothing is held in escrow and accepting costs only a small network fee.`, "Send this to the other party. They open the link, connect their wallet and accept.") : ""}
       <div class="card"><h3>Check the written terms</h3><p class="small">Paste the terms text to see whether it is exactly what was agreed.</p><textarea id="tt" rows="3" placeholder="Paste the agreement text"></textarea><div class="row"><span id="tm" class="small"></span></div></div>
@@ -1342,10 +1342,10 @@ MY POLICY:
     const ok = v => v ? "accepted ✓" : "not yet", helper = a => /^0x0+$/.test(a) ? "none" : short(a);
     const qlabel = q => q === WHOLE ? "The whole case" : (q + 1) + ". " + (P.questions[q] ? P.questions[q].text.slice(0, 60) : "?");
     main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1>
-      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Filer ${short(c.filer)} · Decider ${short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + short(me) : ""}</span></p>
+      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Opened by ${short(c.filer)} · Other side ${short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + short(me) : ""}</span></p>
       ${live ? `<p class="small ${late ? "err" : "mute"}">${c.status === 0 ? "Answers due by " : "The reviewer has until "}${when(deadline)}${late ? ". That time has passed." : "."}</p>` : ""}
-      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Filer</th><th>Decider</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): filer ${ok(c.filerOk)}, decider ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
+      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Opened the case</th><th>Other side</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): opener ${ok(c.filerOk)}, other side ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
       <div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded here. Nothing is uploaded: the files stay with the people who share them, and the reviewer checks what they receive against the fingerprint. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.</p>
         ${ev.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left"><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabel(e.question))}</td><td>${short(e.by)}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No evidence recorded yet.</p>`}
         <div id="fchk"></div><div id="evform"></div></div>
@@ -1420,7 +1420,7 @@ MY POLICY:
         <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p></div>`;
       $("#cl").onclick = async e => { try { await navigator.clipboard.writeText(location.href); e.target.textContent = "Copied"; } catch { prompt("Copy:", location.href); } };
       call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
-        if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
+        if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-checked just now on the public network: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
         .catch(() => { const b = $("#rp"); b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; });
     }
   }
@@ -1449,10 +1449,10 @@ MY POLICY:
     main.innerHTML = `<article class="receipt" id="rc">
       <div class="rhead"><span class="rbrand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</span><span class="small mute">Result receipt · case #${esc(id)}</span></div>
       <p class="small mute rk">${esc(P.name)}</p><h1 class="rres">${esc(P.results[c.result])}</h1><p class="rwhy">${esc(r.why)}</p><p class="small mute">${esc(fired)}</p>
-      <table class="rt"><thead><tr><th>Question</th><th>Filer</th><th>Decider</th><th>Final</th><th>Settled by</th></tr></thead><tbody>${rows}</tbody></table>
+      <table class="rt"><thead><tr><th>Question</th><th>Opened the case</th><th>Other side</th><th>Final</th><th>Settled by</th></tr></thead><tbody>${rows}</tbody></table>
       <dl class="rd"><dt>Filer</dt><dd><code>${c.filer}</code></dd><dt>Decider</dt><dd><code>${c.decider}</code></dd><dt>Reviewer</dt><dd><code>${c.reviewer}</code></dd>
         <dt>Agreement</dt><dd>${c.agreementId ? "#" + c.agreementId + " (rules, reviewer and time limits fixed in advance)" : "none"}</dd><dt>Opened</dt><dd>${when(c.openedAt)}</dd>
-        <dt>Rule set</dt><dd>#${c.ruleSetId} · circuit #${CFG.published[K.key].circuitId} on the TapeOut processor</dd></dl>
+        <dt>Rule set</dt><dd>#${c.ruleSetId} · public logic #${CFG.published[K.key].circuitId} on X Layer</dd></dl>
       ${ev.length ? `<h4>Evidence fingerprints</h4><table class="rt"><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(e.question === WHOLE ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 50) : "?"))}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 18)}…</code></td></tr>`).join("")}</tbody></table><p class="small mute">The files are not stored by LGtie. Each fingerprint shows a file hasn't changed since it was recorded.</p>` : ""}
       <div id="fchk" class="noprint"></div>
       <div class="rver"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><p class="small">Check it yourself: open <a href="${link}">${link}</a> or read case ${esc(id)} on the <a href="${ex("address", CFG.caseContract)}" target="_blank" rel="noopener">case contract</a>. The re-run is a free read of the rules published on X Layer.</p></div>
@@ -1460,7 +1460,7 @@ MY POLICY:
       <div class="row noprint"><button class="btn" id="prt" type="button">Print or save as PDF</button><a class="btn ghost" href="#case/${esc(id)}">Back to the case</a></div>`;
     $("#prt").onclick = () => window.print(); mountFileCheck($("#fchk"), ev, q => q === WHOLE ? "the whole case" : "question " + (q + 1));
     call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
-      if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this receipt."; } })
+      if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-checked just now on the public network: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this receipt."; } })
       .catch(() => { const b = $("#rp"); if (b) { b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; } });
   }
 
@@ -1481,8 +1481,8 @@ MY POLICY:
     let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewers</h1><p class="err">X Layer could not be reached.</p>`; return; }
     const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
     const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
-    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each reviewer did on cases, read straight from X Layer. It shows who decided and who did not, not whether a decision was right. Nothing on-chain can tell that.</p>
-      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Never accepted</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
+    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that.</p>
+      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Not accepted by both sides</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
       <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
   }
   async function reviewer(addr) {
@@ -1768,8 +1768,8 @@ MY POLICY:
     const P = policyOf(c.ruleSetId); if (!P) { main.innerHTML = `<h1>Case #${esc(id)}</h1><p>This case uses a rule set this page does not know.</p>`; return; }
     const nQ = P.questions.length, fa = bits(c.filerAnswers, nQ), da = bits(c.deciderAnswers, nQ), dis = bits(c.disputed, nQ), fin = bits(c.finalAnswers, nQ), yn = v => v ? "Yes" : "No", live = c.status < 2;
     const who = p => p.passkey ? `passkey account #${p.passkey}` : `<code>${short(p.wallet)}</code>`;
-    main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">Filer ${who(c.filer)} · Decider ${who(c.decider)} · <a href="#pk/agreement/${c.agreementId}">Agreement #${c.agreementId}</a></span></p>
-      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Filer</th><th>Decider</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${c.filerIn && c.deciderIn ? (dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`) : ""}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`).join("")}</tbody></table></div>
+    main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">Opened by ${who(c.filer)} · Other side ${who(c.decider)} · <a href="#pk/agreement/${c.agreementId}">Agreement #${c.agreementId}</a></span></p>
+      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Opened the case</th><th>Other side</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${c.filerIn && c.deciderIn ? (dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`) : ""}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`).join("")}</tbody></table></div>
       ${c.status === 2 ? `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(TB.run(P, fin).why || "")}</div></div>` : ""}
       ${c.status === 0 ? `<p class="small mute">Answers due by ${when(c.answerBy)}.</p>` : c.status === 1 ? `<p class="small mute">The reviewer has until ${when(c.reviewBy)}. Reviewer ${c.reviewerAcked ? "has taken part" : "has not yet confirmed taking part"}.</p>` : ""}
       <div class="card" id="wal"></div><div id="cmsg" class="small"></div>`;
@@ -1966,15 +1966,15 @@ MY POLICY:
     if (!published && rsm && L.custom) {
       try {
         const rec = await fetchRuleSet(Number(rsm[1])), h = await sha256(TB.canonical(P));
-        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rule set #${rsm[1]} published on X Layer (circuit #${rec.circuitId}).</div>`; }
-        else banner = `<div class="note">These rules do <b>not</b> match rule set #${rsm[1]} on X Layer, so the result below is only a preview. Ask the business for the original link.</div>`;
+        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rules #${rsm[1]} published on X Layer.</div>`; }
+        else banner = `<div class="note">These rules do <b>not</b> match rules #${rsm[1]} on X Layer, so the result below is only a preview. Ask the business for the original link.</div>`;
       } catch { banner = `<div class="note">Could not reach X Layer to confirm that these rules were published, so the result below is only a preview.</div>`; }
     }
     let ans = Array(nQ).fill(null);
     const a = /(?:^|[/&])a=(\d+)/.exec(rest || ""); if (a) { const m = Number(a[1]); ans = TB.decodeAnswers(m, nQ); }
     main.innerHTML = `<h1>${esc(P.name)}</h1><p class="lede">${esc(P.about || "")}</p>${banner}
       <div class="prog"><i id="bar"></i></div><div class="small mute" id="count"></div>
-      ${embed ? "" : `<details class="card circ-card"><summary>Watch the circuit work</summary><p class="small mute">Each dot is a NAND gate. Dark is 1 and light is 0. Answer every question to light it up. This is a local simulation of the same ${C.gates.length} gates.</p><div id="circviz"></div></details>`}
+      ${embed ? "" : `<details class="card circ-card"><summary>See how the rules decide</summary><p class="small mute">Each dot is one small step in the checker. Dark means yes and light means no. Answer every question to watch the answer flow through. This runs on your device, using the same ${C.gates.length} steps that are stored on the public network.</p><div id="circviz"></div></details>`}
       <div id="qs"></div><div id="resbox"></div>${embed ? `<p class="small mute embedfoot">Checked with <b>LGtie</b> · <a href="${esc(location.href.split("#")[0] + fullPre.replace(/&$/, "").replace(/\/$/, ""))}" target="_blank" rel="noopener">Open the full page</a></p>` : embedBox(key, rsm, P)}`;
     const qs = $("#qs");
     P.questions.forEach((q, i) => {
@@ -2010,7 +2010,7 @@ MY POLICY:
       }
       const vb = $("#vbadge");
       if (!published) { vb.className = "badge warn"; vb.textContent = "Preview: computed in your browser"; return; }
-      evalOnChain(published.circuitId, m, nQ, C.nOut).then(got => { if (mine !== seq) return; if (got === r.result) { vb.className = "badge ok"; vb.textContent = "✓ Confirmed by the TapeOut processor on X Layer"; } else { vb.className = "badge warn"; vb.textContent = "The chain gave a different result. Do not rely on this page."; } })
+      evalOnChain(published.circuitId, m, nQ, C.nOut).then(got => { if (mine !== seq) return; if (got === r.result) { vb.className = "badge ok"; vb.textContent = "✓ Confirmed on the public network (X Layer)"; } else { vb.className = "badge warn"; vb.textContent = "The chain gave a different result. Do not rely on this page."; } })
         .catch(() => { if (mine !== seq) return; vb.className = "badge warn"; vb.textContent = "Could not reach X Layer; showing the browser result"; });
     }
     paint(); report();

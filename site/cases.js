@@ -71,12 +71,12 @@
     main.innerHTML = `<h1>Settle a disagreement</h1><p class="lede">Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer, and the published rules give the result. A case nobody finishes in time ends with no decision. Best of all, <a href="#agree">agree on the rules before there is a dispute</a>.</p>
       <div class="card"><h3>Under an agreement</h3><p class="small">If you both accepted an agreement, open the case from the agreement page: the rules, the reviewer and the time limits are already fixed.</p><div class="row"><input id="agn" type="number" min="1" placeholder="Agreement number" style="width:180px"><button class="btn ghost" id="aggo" type="button">Open the agreement</button></div></div>
       <div class="card"><h3>Without an agreement</h3>
-        <div class="row"><label>Rule set <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
-        <div class="wide"><label><span>Decider (the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
-        <div class="wide"><label><span>Proposed reviewer (the decider must accept)</span><input id="rev" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
+        <div class="wide"><label><span>The other side (for example the business or repair centre)</span><input id="dec" type="text" placeholder="0x…" autocomplete="off"></label></div>
+        <div class="wide"><label><span>Neutral person who would decide (the other side must accept)</span><input id="rev" type="text" placeholder="0x…" autocomplete="off"></label></div>
         <div class="row"><label>Time to answer <select id="aw">${opts(days, 7)}</select></label><label>Time for the reviewer <select id="rw">${opts(days, 7)}</select></label></div>
         <div class="wide"><label><span>Evidence note, optional</span><input id="evd" type="text" placeholder="e.g. the repair centre report reference"></label></div>
-        <p class="small mute">Only a fingerprint of the evidence note goes on-chain. You are the filer, and your wallet accepts the reviewer by opening the case. The reviewer must be a different person from both sides.</p>
+        <p class="small mute">Only a short code (a digital fingerprint) of the note goes on the public network. You are opening the case, and by opening it you accept the neutral person. They must be someone other than the two of you.</p>
         <div class="row"><button class="btn" id="open" type="button">Open case</button><span id="msg" class="small"></span></div></div>
       <div class="card"><h3>Look up a case</h3><div class="row"><input id="cn" type="number" min="1" placeholder="Case number" style="width:150px"><button class="btn ghost" id="lk" type="button">Open</button></div><div id="recent" class="small mute"></div><p class="small"><a href="#reviewer">Reviewer records</a> · <a href="#agree">Agreements</a></p></div>`;
     $("#lk").onclick = () => { const n = Number($("#cn").value); if (n) location.hash = "#case/" + n; };
@@ -98,7 +98,7 @@
   async function agreements() {
     if (!deployed()) { upgrading("Agreements"); return; }
     const days = [[1, "1 day"], [3, "3 days"], [7, "7 days"], [14, "14 days"], [30, "30 days"]], opts = def => days.map(([d, l]) => `<option value="${d}"${d === def ? " selected" : ""}>${l}</option>`).join("");
-    main.innerHTML = `<h1>Agree on the rules before there is a dispute</h1><p class="lede">Two parties accept one published rule set, one neutral reviewer and the time limits, together with a fingerprint of their written terms. Once accepted it can never be changed or withdrawn, so neither side can swap the rules or the reviewer halfway through. If a disagreement comes, either side opens a case under the agreement.</p>
+    main.innerHTML = `<h1>Agree on the rules before there is a dispute</h1><p class="lede">Before any problem comes up, you and the other side agree on three things: the public rules, a neutral person who would decide any disagreement, and the time limits. Once both of you accept, none of it can be changed or withdrawn, so neither side can swap the rules or the neutral person halfway through. If you later disagree, either of you can open a case under this agreement.</p>
       <div class="card"><h3>Propose an agreement</h3>
         <div class="row"><label>Rules <select id="rs"><option value="1">Warranty claims (published)</option></select></label></div>
         <div class="wide"><label><span>The other party</span><input id="cp" type="text" placeholder="0x…" autocomplete="off"></label></div>
@@ -132,10 +132,10 @@
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : a.cancelled ? " warn" : ""}">${esc(state)}</span></p>
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody>
         <tr><td>Proposed by</td><td><code>${a.proposer}</code>${isProp ? " (you)" : ""}</td></tr><tr><td>Other party</td><td><code>${a.counterparty}</code>${isCp ? " (you)" : ""}</td></tr>
-        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rule set #${a.ruleSetId})</td></tr>
+        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rules #${a.ruleSetId})</td></tr>
         <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance</td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
-        <tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
+        <tr><td>Terms fingerprint (a short code of the written terms)</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note${isCp ? " ok-note" : ""}">${isCp ? "<b>You have been invited to accept this agreement.</b> Read the terms below, then use the button at the bottom." : !me ? `If you were invited to accept this, connect the wallet for <code>${short(a.counterparty)}</code> at the bottom of the page.` : ""}</div>` : ""}
       ${!inForce && !a.cancelled && !isCp ? inviteCard("a" + id, `I have proposed an agreement on LGtie for you to accept: ${location.href.split("#")[0]}#agreement/${id}\nOpen it, connect the wallet ${a.counterparty} and click "Accept this agreement". Rules: ${K ? K.policy.name : "rule set " + a.ruleSetId}. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts. Nothing is held in escrow and accepting costs only a small network fee.`, "Send this to the other party. They open the link, connect their wallet and accept.") : ""}
       <div class="card"><h3>Check the written terms</h3><p class="small">Paste the terms text to see whether it is exactly what was agreed.</p><textarea id="tt" rows="3" placeholder="Paste the agreement text"></textarea><div class="row"><span id="tm" class="small"></span></div></div>
@@ -173,10 +173,10 @@
     const ok = v => v ? "accepted ✓" : "not yet", helper = a => /^0x0+$/.test(a) ? "none" : short(a);
     const qlabel = q => q === WHOLE ? "The whole case" : (q + 1) + ". " + (P.questions[q] ? P.questions[q].text.slice(0, 60) : "?");
     main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1>
-      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Filer ${short(c.filer)} · Decider ${short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + short(me) : ""}</span></p>
+      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Opened by ${short(c.filer)} · Other side ${short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + short(me) : ""}</span></p>
       ${live ? `<p class="small ${late ? "err" : "mute"}">${c.status === 0 ? "Answers due by " : "The reviewer has until "}${when(deadline)}${late ? ". That time has passed." : "."}</p>` : ""}
-      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Filer</th><th>Decider</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): filer ${ok(c.filerOk)}, decider ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
+      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Opened the case</th><th>Other side</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): opener ${ok(c.filerOk)}, other side ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
       <div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded here. Nothing is uploaded: the files stay with the people who share them, and the reviewer checks what they receive against the fingerprint. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.</p>
         ${ev.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left"><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabel(e.question))}</td><td>${short(e.by)}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No evidence recorded yet.</p>`}
         <div id="fchk"></div><div id="evform"></div></div>
@@ -251,7 +251,7 @@
         <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p></div>`;
       $("#cl").onclick = async e => { try { await navigator.clipboard.writeText(location.href); e.target.textContent = "Copied"; } catch { prompt("Copy:", location.href); } };
       call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
-        if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
+        if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-checked just now on the public network: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
         .catch(() => { const b = $("#rp"); b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; });
     }
   }
@@ -280,10 +280,10 @@
     main.innerHTML = `<article class="receipt" id="rc">
       <div class="rhead"><span class="rbrand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</span><span class="small mute">Result receipt · case #${esc(id)}</span></div>
       <p class="small mute rk">${esc(P.name)}</p><h1 class="rres">${esc(P.results[c.result])}</h1><p class="rwhy">${esc(r.why)}</p><p class="small mute">${esc(fired)}</p>
-      <table class="rt"><thead><tr><th>Question</th><th>Filer</th><th>Decider</th><th>Final</th><th>Settled by</th></tr></thead><tbody>${rows}</tbody></table>
+      <table class="rt"><thead><tr><th>Question</th><th>Opened the case</th><th>Other side</th><th>Final</th><th>Settled by</th></tr></thead><tbody>${rows}</tbody></table>
       <dl class="rd"><dt>Filer</dt><dd><code>${c.filer}</code></dd><dt>Decider</dt><dd><code>${c.decider}</code></dd><dt>Reviewer</dt><dd><code>${c.reviewer}</code></dd>
         <dt>Agreement</dt><dd>${c.agreementId ? "#" + c.agreementId + " (rules, reviewer and time limits fixed in advance)" : "none"}</dd><dt>Opened</dt><dd>${when(c.openedAt)}</dd>
-        <dt>Rule set</dt><dd>#${c.ruleSetId} · circuit #${CFG.published[K.key].circuitId} on the TapeOut processor</dd></dl>
+        <dt>Rule set</dt><dd>#${c.ruleSetId} · public logic #${CFG.published[K.key].circuitId} on X Layer</dd></dl>
       ${ev.length ? `<h4>Evidence fingerprints</h4><table class="rt"><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(e.question === WHOLE ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 50) : "?"))}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 18)}…</code></td></tr>`).join("")}</tbody></table><p class="small mute">The files are not stored by LGtie. Each fingerprint shows a file hasn't changed since it was recorded.</p>` : ""}
       <div id="fchk" class="noprint"></div>
       <div class="rver"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><p class="small">Check it yourself: open <a href="${link}">${link}</a> or read case ${esc(id)} on the <a href="${ex("address", CFG.caseContract)}" target="_blank" rel="noopener">case contract</a>. The re-run is a free read of the rules published on X Layer.</p></div>
@@ -291,7 +291,7 @@
       <div class="row noprint"><button class="btn" id="prt" type="button">Print or save as PDF</button><a class="btn ghost" href="#case/${esc(id)}">Back to the case</a></div>`;
     $("#prt").onclick = () => window.print(); mountFileCheck($("#fchk"), ev, q => q === WHOLE ? "the whole case" : "question " + (q + 1));
     call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
-      if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-run just now by the TapeOut processor: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this receipt."; } })
+      if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-checked just now on the public network: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this receipt."; } })
       .catch(() => { const b = $("#rp"); if (b) { b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; } });
   }
 
@@ -312,8 +312,8 @@
     let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewers</h1><p class="err">X Layer could not be reached.</p>`; return; }
     const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
     const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
-    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each reviewer did on cases, read straight from X Layer. It shows who decided and who did not, not whether a decision was right. Nothing on-chain can tell that.</p>
-      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Never accepted</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
+    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that.</p>
+      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Not accepted by both sides</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
       <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
   }
   async function reviewer(addr) {

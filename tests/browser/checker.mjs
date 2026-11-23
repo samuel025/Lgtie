@@ -18,12 +18,12 @@ for (let i = 0; i < 7; i++) await p.evaluate(i => document.querySelectorAll(".q"
 await new Promise(r => setTimeout(r, 300));
 ok("all yes -> Covered", /Covered/.test(await T(".res .big")) && !/Not covered/.test(await T(".res .big")), await T(".res .big"));
 for (let i = 0; i < 20 && /Checking/.test(await T("#vbadge")); i++) await new Promise(r => setTimeout(r, 500));
-ok("all yes is confirmed by the processor on X Layer", /Confirmed by the TapeOut processor/.test(await T("#vbadge")), await T("#vbadge"));
+ok("all yes is confirmed by the processor on X Layer", /Confirmed on the public network/.test(await T("#vbadge")), await T("#vbadge"));
 await p.evaluate(() => document.querySelectorAll(".q")[4].querySelector('button[data-v="0"]').click());
 await new Promise(r => setTimeout(r, 300));
 for (let i = 0; i < 20 && /Checking/.test(await T("#vbadge")); i++) await new Promise(r => setTimeout(r, 500));
 ok("Q5 no -> Not covered with the excluded-cause reason", /Not covered/.test(await T(".res .big")) && /excluded cause/.test(await T(".res .why")), await T(".res"));
-ok("Q5 no is also confirmed on chain", /Confirmed by the TapeOut processor/.test(await T("#vbadge")), await T("#vbadge"));
+ok("Q5 no is also confirmed on chain", /Confirmed on the public network/.test(await T("#vbadge")), await T("#vbadge"));
 // claim pack: a plain-text justification to attach to a report or claim
 await new Promise(r => setTimeout(r, 400));
 const pack = await p.$eval("#packtxt", e => e.textContent).catch(() => "");

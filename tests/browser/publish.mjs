@@ -50,9 +50,9 @@ ok("the transaction list includes claim, tapeout, register", /claim/.test(outTxt
 const link = await p.$eval(".note.ok-note a.btn", a => a.href);
 // ---- 2. open the published link as a customer: banner + on-chain confirmation
 await asUser(A2); await p.goto(link); await w(1500);
-ok("published link shows the rules match the registry", /match rule set #\d+ published on X Layer/.test(await T("main")), (await T("main")).slice(0, 300));
+ok("published link shows the rules match the registry", /match rules #\d+ published on X Layer/.test(await T("main")), (await T("main")).slice(0, 300));
 await p.evaluate(() => document.querySelectorAll(".q").forEach(d => d.querySelector('button[data-v="1"]').click()));
-ok("customer result is Accept and confirmed by the processor", await until(async () => /Confirmed by the TapeOut processor/.test(await T("#vbadge"))) && /Accept/.test(await T(".res .big")), await T(".res"));
+ok("customer result is Accept and confirmed by the processor", await until(async () => /Confirmed on the public network/.test(await T("#vbadge"))) && /Accept/.test(await T(".res .big")), await T(".res"));
 await p.evaluate(() => document.querySelectorAll(".q")[1].querySelector('button[data-v="0"]').click());
 ok("a no on question 2 gives Refuse with the reason", await until(async () => /Refuse/.test(await T(".res .big"))) && /30 days/.test(await T(".res .why")), await T(".res"));
 // ---- 3. tampered rules under the same rule set id are flagged

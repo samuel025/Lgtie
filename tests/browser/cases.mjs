@@ -45,7 +45,7 @@ ok("an accepted agreement offers no withdrawal and says it cannot change", !(awa
 // ---- B. a case under the agreement: reviewer agreed in advance
 await p.click("#odp"); ok("opening a dispute under the agreement leads to the case", await until(async () => /^#case\/\d+$/.test(await p.evaluate(() => location.hash))), await T("#am"));
 const hC = await p.evaluate(() => location.hash); await until(async () => /Waiting for answers/.test(await T("main")));
-ok("the case shows its agreement and an advance-agreed reviewer", new RegExp(`Agreement #${agId}`).test(await T("main")) && /Agreed in advance under the agreement/.test(await T("main")) && /filer accepted ✓, decider accepted ✓/.test(await T("main")), (await T("main")).slice(0, 400));
+ok("the case shows its agreement and an advance-agreed reviewer", new RegExp(`Agreement #${agId}`).test(await T("main")) && /Agreed in advance under the agreement/.test(await T("main")) && /opener accepted ✓, other side accepted ✓/.test(await T("main")), (await T("main")).slice(0, 400));
 ok("the filer sees only their own answer form, never the decider's", !!(await p.$('[data-form="filer"]')) && !(await p.$('[data-form="decider"]')));
 // ---- C. evidence: a real file is hashed in the browser
 const file = "/tmp/lgtie-evidence.bin"; fs.writeFileSync(file, "photo bytes of the damaged unit"); const want = crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex");
