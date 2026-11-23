@@ -2,4 +2,6 @@
 src = "src"
 test = "test"
 solc = "0.8.24"
+optimizer = true        # off by default here; without it TiebreakCaseV4 is over the 24,576-byte contract size limit
+optimizer_runs = 200
 libs = ["lib"]
