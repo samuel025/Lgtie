@@ -24,6 +24,16 @@
   function decodeAgreement(h) { const w = words(h); return {proposer: {wallet: addrOf(w[0]), passkey: w[1]}, counterparty: {wallet: addrOf(w[2]), passkey: w[3]}, ruleSetId: Number(w[4]), termsHash: "0x" + w[5].toString(16).padStart(64, "0"), reviewer: addrOf(w[6]), answerWindow: Number(w[7]), reviewWindow: Number(w[8]), proposedAt: Number(w[9]), acceptedAt: Number(w[10]), cancelled: w[11] === 1n}; }
   function decodeCase(h) { const w = words(h); return {ruleSetId: Number(w[0]), filer: {wallet: addrOf(w[1]), passkey: w[2]}, decider: {wallet: addrOf(w[3]), passkey: w[4]}, reviewer: addrOf(w[5]), filerOp: addrOf(w[6]), deciderOp: addrOf(w[7]), evidenceHash: w[8], agreementId: Number(w[9]), openedAt: Number(w[10]), answerBy: Number(w[11]), reviewWindow: Number(w[12]), reviewBy: Number(w[13]),
     filerAnswers: w[14], deciderAnswers: w[15], filerIn: w[16] === 1n, deciderIn: w[17] === 1n, disputed: w[18], finalAnswers: w[19], result: Number(w[20]), filerOk: w[21] === 1n, deciderOk: w[22] === 1n, reviewerAcked: w[23] === 1n, status: Number(w[24])}; }
+  const readEvidence = async id => {
+    const n = Number(words(await call(V4().cases, enc("evidenceCount", ["uint256"], [id])))[0]), out = [];
+    for (let i = 0; i < n; i++) {
+      const x = (await call(V4().cases, enc("evidenceAt", ["uint256", "uint256"], [id, i]))).replace(/^0x/, ""), wd = k => BigInt("0x" + x.slice(k * 64, k * 64 + 64)), ts = Number(wd(0)) / 32;
+      const base = ts * 64 + Number(wd(ts + 5)) * 2, len = Number(BigInt("0x" + x.slice(base, base + 64))), note = new TextDecoder().decode(Uint8Array.from(x.slice(base + 64, base + 64 + len * 2).match(/../g) || [], b => parseInt(b, 16)));
+      out.push({by: addrOf(wd(ts)), passkey: wd(ts + 1), question: Number(wd(ts + 2)), at: Number(wd(ts + 3)), hash: "0x" + wd(ts + 4).toString(16).padStart(64, "0"), note});
+    }
+    return out;
+  };
+  let namesFor2 = 0;
   const readAgreement = async id => decodeAgreement(await call(V4().agreements, enc("get", ["uint256"], [id])));
   const readCase = async id => decodeCase(await call(V4().cases, enc("get", ["uint256"], [id])));
   const count = async to => Number(words(await call(to, enc("count", [], [])))[0]);
@@ -233,27 +243,38 @@
     if (inForce) add("Open a dispute under this agreement", "", async () => { const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
     const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if (cs.length) $("#cases").innerHTML = `<h3>Cases</h3>` + cs.map(c => `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(STATUS[c.status])}</p>`).join("");
   }
-  async function pkCase(id) {
+  async function pkCase(id, opts) {
     if (!deployed()) { notDeployed("Case"); return; }
     main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
     let c; try { c = await readCase(id); } catch { main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="err">That case does not exist, or X Layer could not be reached.</p>`; return; }
     const P = policyOf(c.ruleSetId); if (!P) { main.innerHTML = `<h1>Case #${esc(id)}</h1><p>This case uses a rule set this page does not know.</p>`; return; }
+    let ev = []; try { ev = await readEvidence(id); } catch (e) { ev = []; }
     const nQ = P.questions.length, fa = bits(c.filerAnswers, nQ), da = bits(c.deciderAnswers, nQ), dis = bits(c.disputed, nQ), fin = bits(c.finalAnswers, nQ), yn = v => v ? "Yes" : "No", live = c.status < 2;
     const who = p => p.passkey ? `passkey account #${p.passkey}` : `<code>${short(p.wallet)}</code>`;
-    main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">Opened by ${who(c.filer)} · Other side ${who(c.decider)} · <a href="#pk/agreement/${c.agreementId}">Agreement #${c.agreementId}</a></span></p>
-      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Opened the case</th><th>Other side</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${c.filerIn && c.deciderIn ? (dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`) : ""}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`).join("")}</tbody></table></div>
-      ${c.status === 2 ? `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(TB.run(P, fin).why || "")}</div></div>` : ""}
+    const RV = window.TB_REVIEW, cc = {reviewer: c.reviewer, filer: c.filer.wallet, filerOp: c.filerOp, decider: c.decider.wallet, deciderOp: c.deciderOp};
+    const blind = RV.isReviewer(W().account(), cc) && namesFor2 !== Number(id), reasons = RV.reasonsOf(ev, cc);
+    const evWho = e => String(e.by).toLowerCase() === c.reviewer.toLowerCase() ? "Reviewer" : e.passkey ? (blind ? (e.passkey === c.filer.passkey ? "Side A" : "Side B") : `passkey account #${e.passkey}`) : (blind ? RV.sideOf(e.by, cc) : `<code>${short(e.by)}</code>`);
+    const qlabelV4 = q => q === 255 ? "The whole case" : (q + 1) + ". " + (P.questions[q] ? P.questions[q].text.slice(0, 60) : "?");
+    main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">${blind ? "Side A opened the case · Side B is the other side" : "Opened by " + who(c.filer) + " · Other side " + who(c.decider)} · <a href="#pk/agreement/${c.agreementId}">Agreement #${c.agreementId}</a></span></p>
+      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${c.filerIn && c.deciderIn ? (dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`) : ""}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`).join("")}</tbody></table></div>
+      ${c.status === 2 ? `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(TB.run(P, fin).why || "")}</div>${reasons.length ? `<p class="small">Reviewer's reason: “${esc(reasons[reasons.length - 1].note)}”</p>` : ""}${RV.isReviewer(W().account(), cc) && RV.saved(CFG.chainId, V4().cases, id) ? `<div class="row">${RV.downloadLink(RV.saved(CFG.chainId, V4().cases, id), id)}<span class="small">Send this file to both sides. They can drop it on this page to check it matches the recorded fingerprint.</span></div>` : ""}</div>` : ""}
       ${c.status === 0 ? `<p class="small mute">Answers due by ${when(c.answerBy)}.</p>` : c.status === 1 ? `<p class="small mute">The reviewer has until ${when(c.reviewBy)}. Reviewer ${c.reviewerAcked ? "has taken part" : "has not yet confirmed taking part"}.</p>` : ""}
+      ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
+      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
+      ${ev.length ? `<div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded. Nothing is uploaded: the files stay with the people who share them.</p><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left"><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabelV4(e.question))}</td><td>${evWho(e)}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table><div id="fchk"></div></div>` : ""}
       <div class="card" id="wal"></div><div id="cmsg" class="small"></div>`;
+    if ($("#shownames")) $("#shownames").onclick = () => { namesFor2 = Number(id); pkCase(id); };
+    if ($("#fchk") && window.TB_CASES && window.TB_CASES.mountFileCheck) window.TB_CASES.mountFileCheck($("#fchk"), ev, q => q === 255 ? "the whole case" : "question " + (q + 1));
     const wal = $("#wal"), msg = $("#cmsg"), act = (fn, rerender) => async () => { try { await needWallet(); msg.className = "small mute"; msg.textContent = rerender === false ? "" : "Confirm in your wallet…"; await fn(); if (rerender !== false) await pkCase(id); } catch (e) { msg.className = "small err"; msg.textContent = (e && e.message) || String(e); } };
     wal.innerHTML = `<h3>Actions for a wallet</h3><p class="small mute">If you are the business, the reviewer or anyone closing an expired case, connect your wallet. A customer with a passkey acts at <a href="#mine">My cases</a>.</p><div class="row" id="wacts"></div><div id="ans"></div>`;
     const wacts = $("#wacts"), btn = (label, cls, fn, rerender) => { const b = document.createElement("button"); b.className = "btn small " + cls; b.type = "button"; b.textContent = label; b.onclick = act(fn, rerender); wacts.appendChild(b); };
     if (live) btn("Answer as a wallet party…", "ghost", async () => { $("#ans").innerHTML = answerForm(P); bindAnswer(c, P, id); }, false);
-    if (c.status === 1) btn("I am the reviewer: decide…", "ghost", async () => { $("#ans").innerHTML = answerForm(P, dis); bindReview(P, dis, id); }, false);
+    if (c.status === 1) btn("I am the reviewer: decide…", "ghost", async () => { if (!blind && RV.isReviewer(W().account(), cc) && namesFor2 !== Number(id)) { await pkCase(id, {review: true}); return; } $("#ans").innerHTML = answerForm(P, dis, window.TB_REVIEW.fields()); window.TB_REVIEW.bind($("#ans")); bindReview(P, dis, id, ev, c); }, false);
     if (live) btn("I am the reviewer: confirm I am taking part", "ghost", async () => { await W().send(V4().cases, enc("acknowledgeReviewer", ["uint256"], [Number(id)])); });
+    if (opts && opts.review) setTimeout(() => { const b = [...wacts.children].find(x => /decide/.test(x.textContent)); if (b) b.click(); }, 0);
     if ((c.status === 0 && Date.now() / 1000 > c.answerBy) || (c.status === 1 && Date.now() / 1000 > c.reviewBy)) btn("Close this case (the time has passed)", "", async () => { await W().send(V4().cases, enc("expire", ["uint256"], [Number(id)])); });
   }
-  const answerForm = (P, only) => `<div class="qs">${P.questions.map((q, i) => (only && !only[i]) ? "" : `<div class="q"><div class="t">${i + 1}. ${esc(q.text)}</div><div class="yn" data-i="${i}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>`).join("")}</div><div class="row"><button class="btn" id="send" type="button">Send my answers</button></div>`;
+  const answerForm = (P, only, extra) => `<div class="qs">${P.questions.map((q, i) => (only && !only[i]) ? "" : `<div class="q"><div class="t">${i + 1}. ${esc(q.text)}</div><div class="yn" data-i="${i}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>`).join("")}</div>${extra || ""}<div class="row"><button class="btn" id="send" type="button">Send my answers</button></div>`;
   function collect(P, only) { const vals = {}; document.querySelectorAll("#ans .yn").forEach(g => { g.querySelectorAll("button").forEach(b => b.onclick = () => { vals[g.dataset.i] = b.dataset.v === "1"; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === vals[g.dataset.i]))); }); }); return vals; }
   function bindAnswer(c, P, id) {
     const vals = collect(P); $("#send").onclick = async () => {
@@ -265,11 +286,16 @@
       } catch (e) { msg.className = "small err"; msg.textContent = (e && e.message) || String(e); }
     };
   }
-  function bindReview(P, dis, id) {
+  function bindReview(P, dis, id, ev, c) {
     const vals = collect(P, dis); $("#send").onclick = async () => {
       const msg = $("#cmsg"); try {
+        const RV = window.TB_REVIEW, rd = RV.read($("#ans")); if (!rd.ok) throw new Error(rd.error);
         if (P.questions.some((_, i) => dis[i] && vals[i] === undefined)) throw new Error("Answer every disputed question.");
-        const mask = P.questions.reduce((m, _, i) => m + (dis[i] && vals[i] ? 1n << BigInt(i) : 0n), 0n); msg.textContent = "Confirm in your wallet…";
+        const me = W().account(), decisions = P.questions.map((q, i) => dis[i] ? {n: i + 1, text: q.text, yes: !!vals[i]} : null).filter(Boolean);
+        const text = RV.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10)}), hash = await RV.sha256Hex(text);
+        RV.save(CFG.chainId, V4().cases, id, text);                              // keep the statement on this device so it can be downloaded afterwards
+        if (!ev.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === hash.toLowerCase())) { msg.className = "small mute"; msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), 255, hash, rd.oneLine])); }
+        const mask = P.questions.reduce((m, _, i) => m + (dis[i] && vals[i] ? 1n << BigInt(i) : 0n), 0n); msg.className = "small mute"; msg.textContent = "Confirm 2 of 2 in your wallet: submit your decision…";
         await W().send(V4().cases, enc("review", ["uint256", "uint64"], [Number(id), mask])); pkCase(id);
       } catch (e) { msg.className = "small err"; msg.textContent = (e && e.message) || String(e); }
     };

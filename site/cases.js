@@ -9,7 +9,7 @@
   const SEL = {open: "0x59190257", openAg: "0x04a6019c", setOp: "0x62cb8c71", approve: "0xf32ece36", propose: "0x19d368d1", submit: "0x99467e00", evidence: "0x2fe8957a", review: "0x9e1e0b54", expire: "0xbf81bf43", get: "0x9507d39a", replay: "0x275fabd4", count: "0x06661abd", evCount: "0x30713886", evAt: "0x6ce7ff99"};
   const ASEL = {propose: "0x8f54bc26", accept: "0x19b05f49", cancel: "0x40e58ee5", get: "0x9507d39a", count: "0x06661abd"};
   const OPENED = "0x0dc88bdd001519e93d0371eefdcd9fa5aaba317a4824e61b83cac74cc95297cb", AG_PROPOSED = "0x7b294b07f9d490eeca886656d5d650ad7120a560405c55f47a5de7b3280cb8f7";
-  const ZERO = /^0x0+$/, ADDR = /^0x[0-9a-fA-F]{40}$/, short = a => a.slice(0, 6) + "…" + a.slice(-4), DAY = 86400, WHOLE = 255;
+  const ZERO = /^0x0+$/, ADDR = /^0x[0-9a-fA-F]{40}$/, short = a => a.slice(0, 6) + "…" + a.slice(-4), DAY = 86400, WHOLE = 255; let namesFor = 0;
   const STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const rpc = (method, params) => window.TB_WALLET.rpc(method, params);
   const callAt = (to, data) => rpc("eth_call", [{to, data}, "latest"]);
@@ -172,17 +172,20 @@
       const n = ev.filter(e => e.question === i).length; return `<tr><td>${i + 1}. ${esc(q.text)}${n ? ` <span class="badge">${n} evidence</span>` : ""}</td><td>${c.filerIn ? yn(fa[i]) : "…"}</td><td>${c.deciderIn ? yn(da[i]) : "…"}</td><td>${tag}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`; }).join("");
     const ok = v => v ? "accepted ✓" : "not yet", helper = a => /^0x0+$/.test(a) ? "none" : short(a);
     const qlabel = q => q === WHOLE ? "The whole case" : (q + 1) + ". " + (P.questions[q] ? P.questions[q].text.slice(0, 60) : "?");
+    const RV = window.TB_REVIEW, blind = RV.isReviewer(me, c) && namesFor !== Number(id), reasons = RV.reasonsOf(ev, c), who = a => String(a).toLowerCase() === c.reviewer.toLowerCase() ? "Reviewer" : blind ? RV.sideOf(a, c) : short(a);
     main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1>
-      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">Opened by ${short(c.filer)} · Other side ${short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + short(me) : ""}</span></p>
+      <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">${blind ? "Side A opened the case · Side B is the other side" : "Opened by " + short(c.filer) + " · Other side " + short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + (blind ? "the reviewer" : short(me)) : ""}</span></p>
       ${live ? `<p class="small ${late ? "err" : "mute"}">${c.status === 0 ? "Answers due by " : "The reviewer has until "}${when(deadline)}${late ? ". That time has passed." : "."}</p>` : ""}
-      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>Opened the case</th><th>Other side</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="card" style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): opener ${ok(c.filerOk)}, other side ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
+      ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
+      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       <div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded here. Nothing is uploaded: the files stay with the people who share them, and the reviewer checks what they receive against the fingerprint. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.</p>
-        ${ev.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left"><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabel(e.question))}</td><td>${short(e.by)}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No evidence recorded yet.</p>`}
+        ${ev.length ? `<table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left"><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabel(e.question))}</td><td>${who(e.by)}</td><td>${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No evidence recorded yet.</p>`}
         <div id="fchk"></div><div id="evform"></div></div>
       ${live && (isParty) ? inviteCard("c" + id, `Case #${id} on LGtie (${P.name}): ${location.href.split("#")[0]}#case/${id}\nOpen it, connect your wallet and answer the ${nQ} questions${deadline ? " before " + when(deadline) : ""}. Only the answers that differ go to the reviewer. Nothing is held in escrow.`, "Send this to the other side or the reviewer so they can open the case and connect their wallet.") : ""}
       <div id="helpers"></div><div id="act"></div><div id="final"></div>`;
-    mountFileCheck($("#fchk"), ev, qlabel); bindInvite();
+    mountFileCheck($("#fchk"), ev, qlabel); bindInvite(); if ($("#shownames")) $("#shownames").onclick = () => { namesFor = Number(id); view(id); };
     // ----- reviewer controls (cases without an agreement, or any case where a side wants to propose another reviewer)
     if (live && !late) {
       const rv = $("#rv");
@@ -229,15 +232,27 @@
     }
     function form(kind, title, only) {
       const items = P.questions.map((q, i) => (only && !only[i]) ? "" : `<div class="q"><div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn" data-i="${i}"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div></div>`).join("");
-      return `<div class="card" data-form="${kind}"><h3>${title}</h3>${items}<div class="row"><button class="btn" data-send="${kind}" type="button">Send to X Layer</button><span class="small err" data-msg></span></div></div>`;
+      return `<div class="card" data-form="${kind}"><h3>${title}</h3>${items}${kind === "review" ? window.TB_REVIEW.fields() : ""}<div class="row"><button class="btn" data-send="${kind}" type="button">${kind === "review" ? "Record my reasons and decide" : "Send to X Layer"}</button><span class="small err" data-msg></span></div></div>`;
+    }
+    async function recordReasons(f, rd, need, vals, msg) {
+      const RV2 = window.TB_REVIEW, decisions = need.map(i => ({n: i + 1, text: P.questions[i].text, yes: !!vals[i]}));
+      const text = RV2.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10)}), hash = await RV2.sha256Hex(text);
+      RV2.save(CFG.chainId, CFG.caseContract, id, text);                       // keep the statement on this device so it can be downloaded afterwards
+      if (f.dataset.attached === hash || ev.some(e => e.by.toLowerCase() === me && e.hash.toLowerCase() === hash)) return;
+      msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…";
+      const bytes = new TextEncoder().encode(rd.oneLine), nh = [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
+      await send(SEL.evidence + w(id) + w(WHOLE) + hash.slice(2) + w(128) + w(bytes.length) + nh.padEnd(Math.ceil(bytes.length / 32) * 64, "0")); f.dataset.attached = hash;
     }
     document.querySelectorAll("[data-form]").forEach(f => {
+      if (f.dataset.form === "review") window.TB_REVIEW.bind(f);
       const vals = {}; f.querySelectorAll(".yn").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => { vals[g.dataset.i] = b.dataset.v === "1"; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === vals[g.dataset.i]))); }));
       f.querySelector("[data-send]").onclick = async () => {
         const kind = f.dataset.form, need = [...f.querySelectorAll(".yn")].map(g => Number(g.dataset.i)), msg = f.querySelector("[data-msg]");
         if (need.some(i => vals[i] === undefined)) { msg.textContent = "Answer every question shown."; return; }
         const bits = need.reduce((acc, i) => acc + (vals[i] ? 1n << BigInt(i) : 0n), 0n);
+        let rd = null; if (kind === "review") { rd = window.TB_REVIEW.read(f); if (!rd.ok) { msg.className = "small err"; msg.textContent = rd.error; return; } }
         try { msg.textContent = "Confirm in your wallet…"; msg.className = "small mute";
+          if (rd) { await recordReasons(f, rd, need, vals, msg); msg.className = "small mute"; msg.textContent = "Confirm 2 of 2 in your wallet: submit your decision…"; }
           await send(kind === "review" ? SEL.review + w(id) + w(bits) : SEL.submit + w(id) + w(kind === "filer" ? 1 : 0) + w(bits)); view(id);
         } catch (e) { msg.className = "small err"; msg.textContent = friendly(e); }
       };
@@ -246,9 +261,9 @@
     if (c.status === 3) $("#final").innerHTML = `<div class="res nodec" role="status"><div class="big">No decision</div><div class="why">${c.filerIn && c.deciderIn ? "The reviewer did not decide in time." : "The answers were not all in on time."} Nobody wins by default. The two sides can open a new case.</div></div>`;
     if (c.status === 2) {
       const r = TB.run(P, fin);
-      $("#final").innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(r.why)}</div><div class="row"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><button class="btn small ghost" id="cl" type="button">Copy link</button><a class="btn small ghost" href="#receipt/${id}">Receipt</a></div>
+      $("#final").innerHTML = `<div class="res" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(r.why)}</div>${reasons.length ? `<p class="small">Reviewer's reason: “${esc(reasons[reasons.length - 1].note)}”</p>` : ""}<div class="row"><span class="badge" id="rp">Re-running the published rules on X Layer…</span><button class="btn small ghost" id="cl" type="button">Copy link</button><a class="btn small ghost" href="#receipt/${id}">Receipt</a></div>
         <p class="small">Final answers: ${P.questions.map((q, i) => (i + 1) + "=" + (fin[i] ? "yes" : "no")).join(", ")}. Rule set ${c.ruleSetId}, circuit #${CFG.published[K.key].circuitId}. ${c.disputed ? "The reviewer decided " + bitsToArr(c.disputed, nQ).filter(Boolean).length + " disputed question(s); everything else was agreed." : "Both sides agreed on every question."}</p>
-        <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p></div>`;
+        <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p>${RV.isReviewer(me, c) && RV.saved(CFG.chainId, CFG.caseContract, id) ? `<div class="row">${RV.downloadLink(RV.saved(CFG.chainId, CFG.caseContract, id), id)}<span class="small">Send this file to both sides. They can drop it on this page to check it matches the recorded fingerprint.</span></div>` : ""}</div>`;
       $("#cl").onclick = async e => { try { await navigator.clipboard.writeText(location.href); e.target.textContent = "Copied"; } catch { prompt("Copy:", location.href); } };
       call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
         if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-checked just now on the public network: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
@@ -276,10 +291,10 @@
     const P = K.policy, nQ = P.questions.length, fa = bitsToArr(c.filerAnswers, nQ), da = bitsToArr(c.deciderAnswers, nQ), dis = bitsToArr(c.disputed, nQ), fin = bitsToArr(c.finalAnswers, nQ), yn = v => v ? "Yes" : "No";
     const r = TB.run(P, fin), cond = k => `question ${k.q + 1} is ${k.yes ? "yes" : "no"}`, fired = r.ruleIndex >= 0 ? `Rule ${r.ruleIndex + 1} decided it: ${P.rules[r.ruleIndex].conds.map(cond).join(" and ")}.` : "No rule matched, so the default result applied.";
     const rows = P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td>${yn(fa[i])}</td><td>${yn(da[i])}</td><td><b>${yn(fin[i])}</b></td><td>${dis[i] ? "Reviewer" : "Both agreed"}</td></tr>`).join("");
-    const ex = (kind, a) => `${CFG.explorer}/${kind}/${a}`, link = location.href.split("#")[0] + "#case/" + id;
+    const rr = window.TB_REVIEW.reasonsOf(ev, c), ex = (kind, a) => `${CFG.explorer}/${kind}/${a}`, link = location.href.split("#")[0] + "#case/" + id;
     main.innerHTML = `<article class="receipt" id="rc">
       <div class="rhead"><span class="rbrand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</span><span class="small mute">Result receipt · case #${esc(id)}</span></div>
-      <p class="small mute rk">${esc(P.name)}</p><h1 class="rres">${esc(P.results[c.result])}</h1><p class="rwhy">${esc(r.why)}</p><p class="small mute">${esc(fired)}</p>
+      <p class="small mute rk">${esc(P.name)}</p><h1 class="rres">${esc(P.results[c.result])}</h1><p class="rwhy">${esc(r.why)}</p><p class="small mute">${esc(fired)}</p>${rr.length ? `<p class="rreason">Reviewer's reason: “${esc(rr[rr.length - 1].note)}” <span class="small mute">(written statement fingerprint <code>${rr[rr.length - 1].hash.slice(0, 14)}…</code>)</span></p>` : ""}
       <table class="rt"><thead><tr><th>Question</th><th>Opened the case</th><th>Other side</th><th>Final</th><th>Settled by</th></tr></thead><tbody>${rows}</tbody></table>
       <dl class="rd"><dt>Filer</dt><dd><code>${c.filer}</code></dd><dt>Decider</dt><dd><code>${c.decider}</code></dd><dt>Reviewer</dt><dd><code>${c.reviewer}</code></dd>
         <dt>Agreement</dt><dd>${c.agreementId ? "#" + c.agreementId + " (rules, reviewer and time limits fixed in advance)" : "none"}</dd><dt>Opened</dt><dd>${when(c.openedAt)}</dd>
@@ -353,5 +368,5 @@
       <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
   }
 
-  window.TB_CASES = {summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
+  window.TB_CASES = {mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
 })();

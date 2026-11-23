@@ -72,10 +72,33 @@ await as(SHOP, hC); await connect(); await p.waitForSelector('[data-form="decide
 ok("a dispute waits for the reviewer", await until(async () => /Waiting for the reviewer/.test(await T("main"))));
 await as(REV, hC); await connect(); await p.waitForSelector('[data-form="review"]');
 ok("the agreed reviewer can decide at once, and sees only the disputed question", (await p.$$('[data-form="review"] .yn')).length === 1 && !!(await p.$("#evf")));
+// blind review: the reviewer sees Side A and Side B, not who they are
+ok("the reviewer sees Side A and Side B instead of the two addresses, and is told why", /Side A opened the case/.test(await T("main")) && /names are hidden/.test(await T("main")) && !/0x7e57…0f01|0x7e57…0d01/.test(await T("main")), await T("main"));
+ok("the decision form asks for reasons and a conflict declaration", !!(await p.$("#rv-one")) && !!(await p.$("#rv-full")) && !!(await p.$("#rv-coi")));
 await p.evaluate(() => document.querySelector('[data-form="review"] .yn button[data-v="0"]').click()); await p.click('[data-send="review"]');
+ok("a decision without reasons is refused", /one-line reason/.test(await T('[data-form="review"] [data-msg]')), await T('[data-form="review"] [data-msg]'));
+await p.type("#rv-one", "Report shows impact damage"); await p.type("#rv-full", "The repair centre report names impact damage around the casing, which the warranty excludes. I could not verify who wrote the report."); await p.click('[data-send="review"]');
+ok("a decision without the conflict declaration is refused", /conflict of interest/.test(await T('[data-form="review"] [data-msg]')), await T('[data-form="review"] [data-msg]'));
+ok("nothing was sent while the form was incomplete", /Waiting for the reviewer/.test(await T("main")));
+await p.click("#rv-coi"); await p.click('[data-send="review"]');
 ok("the case is decided: Not covered", await until(async () => /Decided/.test(await T("main"))) && /Not covered/.test(await T(".res .big")), await T("main"));
 await until(async () => /Re-run just now|different result|Could not/.test(await T("#rp")));
 ok("replay matches", /same result/.test(await T("#rp")), await T("#rp"));
+// the reviewer's reasons are on the record and the statement file matches its fingerprint
+ok("the case page shows the reviewer's one-line reason", /Report shows impact damage/.test(await T("#rvreasons")) && /Reviewer's reason: “Report shows impact damage”/.test(await T(".res")), await T("#rvreasons"));
+ok("the evidence table credits the reviewer by role", /Reviewer/.test(await T("tr.evrow:last-child")) || (await p.$$eval("tr.evrow", rs => rs.some(r => /Reviewer/.test(r.innerText)))));
+const stmtHref = await p.$eval("#stmtdl", a => a.href).catch(() => ""), stmtText = decodeURIComponent(stmtHref.split(",").slice(1).join(","));
+ok("the reviewer can download their written statement", /^data:text\/plain/.test(stmtHref) && /LGTIE REVIEWER STATEMENT/.test(stmtText) && /Report shows impact damage/.test(stmtText) && /Conflict-of-interest declaration/.test(stmtText), stmtText.slice(0, 200));
+const stmtHash = "0x" + crypto.createHash("sha256").update(stmtText, "utf8").digest("hex");
+ok("the recorded fingerprint is the SHA-256 of that statement", (await T("#rvreasons")).includes(stmtHash.slice(0, 18)), stmtHash + " vs " + await T("#rvreasons"));
+fs.writeFileSync("/tmp/lgtie-reviewer-statement.txt", stmtText); await (await p.$("#dzf")).uploadFile("/tmp/lgtie-reviewer-statement.txt");
+ok("dropping the statement on the case page confirms it matches", await until(async () => /Same file as recorded/.test(await T("#dzr"))), await T("#dzr"));
+await p.click("#shownames");
+ok("the reviewer can choose to show the addresses", await until(async () => /Opened by 0x7e57…0f01 · Other side 0x7e57…0d01/.test(await T("main"))), await T("main"));
+await as(OTHER, hC); await connect();
+ok("a stranger sees the addresses, not Side A and Side B, and the reasons", /Opened by 0x7e57…0f01/.test(await T("main")) && !/names are hidden/.test(await T("main")) && /Report shows impact damage/.test(await T("#rvreasons")), await T("main"));
+await as(OTHER, "#receipt/" + hC.split("/")[1]);
+ok("the receipt carries the reviewer's reason and the statement fingerprint", await until(async () => /Reviewer's reason: “Report shows impact damage”/.test(await T("#rc")) && (await T("#rc")).includes(stmtHash.slice(0, 14))), await T("#rc"));
 // ---- E. helpers act only for the side that named them
 await as(BUYER, "#case"); await p.type("#dec", SHOP); await p.type("#rev", REV2); await p.click("#open"); await until(async () => /^#case\/\d+$/.test(await p.evaluate(() => location.hash)));
 const hD = await p.evaluate(() => location.hash); await until(async () => /Waiting for answers/.test(await T("main")));

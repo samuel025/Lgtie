@@ -96,10 +96,19 @@ await as(RELAYER, "#relay/" + pack);
 ok("submitting the same signed answers again fails (no replay)", await until(async () => /would fail/.test(await T("#sim"))), await T("#sim"));
 await as(REVIEWER, "#pk/case/1");
 ok("the case now waits for the reviewer and question 5 is disputed", /Waiting for the reviewer/.test(await T("main")) && /Disputed/.test(await T("tbody")), await T("main"));
-await clickText("#wacts button", "I am the reviewer: decide"); await w(300);
+await clickText("#wacts button", "I am the reviewer: decide"); await w(1500);
+ok("the reviewer sees Side A and Side B instead of the parties", /names are hidden/.test(await T("main")) && /Side A opened the case/.test(await T("main")) && !(await p.$$eval("main tbody th, main .small", e => e.some(x => /Opened by/.test(x.innerText)))), await T("main"));
+ok("the decision form opened by itself after connecting", !!(await p.$("#rv-one")));
 await p.evaluate(() => document.querySelectorAll("#ans .yn").forEach(g => g.querySelector('button[data-v="1"]').click())); await p.click("#send");
+ok("a decision without reasons is refused", await until(async () => /one-line reason/.test(await T("#cmsg"))), await T("#cmsg"));
+await p.type("#rv-one", "Report shows no excluded cause"); await p.type("#rv-full", "The repair centre report shows no excluded cause, so I answered yes to the disputed question. I could not verify who wrote the report."); await p.click("#send");
+ok("a decision without the conflict declaration is refused", await until(async () => /conflict of interest/.test(await T("#cmsg"))), await T("#cmsg"));
+await p.click("#rv-coi"); await p.click("#send");
 ok("the reviewer decides only the disputed question and the real circuit gives the result", await until(async () => /Covered/.test(await T(".res .big"))), await T("main"));
 
+ok("the reviewer's reason is recorded on the passkey case page", await until(async () => /Report shows no excluded cause/.test(await T("#rvreasons")) && /Reviewer's reason/.test(await T(".res"))), await T("main"));
+const stHref = await p.$eval("#stmtdl", a => a.href).catch(() => ""), stText = decodeURIComponent(stHref.split(",").slice(1).join(",")), stHash = "0x" + crypto.createHash("sha256").update(stText, "utf8").digest("hex");
+ok("the recorded fingerprint is the SHA-256 of the reviewer's statement", /LGTIE REVIEWER STATEMENT/.test(stText) && (await T("#rvreasons")).includes(stHash.slice(0, 18)), stHash + " " + await T("#rvreasons"));
 // ---- 8. The other attacks, with a second customer ("Sam") on a new device.
 await cdp.send("WebAuthn.removeVirtualAuthenticator", {authenticatorId: mayaDevice}); await authn();
 await p.evaluate(() => localStorage.removeItem("lgtie.passkey"));
