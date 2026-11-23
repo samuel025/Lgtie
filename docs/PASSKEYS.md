@@ -2,7 +2,7 @@
 
 Goal: let a party act without installing a wallet or paying gas, with high-stakes assurance and recoverable identity. A party's identity is a **passkey** (Face ID, fingerprint or PIN). Their device makes a P-256 signature; anyone can submit it; the contract verifies it. The business that needs the case pays the fee.
 
-Status: **Gates 1 and 2 passed. The contracts are written and tested but NOT deployed, and the site does not use them yet.** Unaudited.
+Status: **Gates 1, 2 and 3 passed. The contracts and the pages are built and tested end to end in a real browser on a fork, but NOT deployed on mainnet (`scripts/deploy-v4.sh`).** Unaudited.
 
 ## Design in short
 
@@ -56,9 +56,31 @@ a passkey customer settles a dispute without a wallet, including against the rea
 - Signing shows the person whatever the page displays; WebAuthn cannot show the hash. The page must display exactly what the payload encodes.
 - A passkey is bound to the site's domain (the relying-party id). A key made on `localhost` will not work on the final domain; the key set lets a person add a second key for the new domain.
 
+## Gate 3: the pages (built and tested; not deployed)
+
+| Page | What it does |
+| --- | --- |
+| `#join` | A customer creates a passkey. The page shows a **claim code** (public key, relying-party hash and a handle hash; nothing secret) and a short read-back code for a phone or chat check. When embedded, it also posts the claim code to the host page. |
+| `#pk/agree` | The business pastes the claim code, registers the customer's passkey (small fee, paid by the business) and proposes an agreement. It refuses a handle already registered to a different key. |
+| `#mine` | The customer finds her agreements and cases with her passkey. The page first proves, on-chain, that **her passkey controls the account** it found by handle, and warns her not to use an account it does not control. She accepts, opens a dispute, answers questions and signs. Nothing is sent from her device. |
+| `#relay/<pack>` | Anyone with a wallet submits a signed action and pays the fee. The page refuses links to any contract other than the three LGtie passkey contracts or for another chain, shows whether the call would succeed right now, and the contract rejects altered or replayed actions. |
+| `#pk/agreement/<id>`, `#pk/case/<id>` | The business and the reviewer act with wallets: open a dispute, answer, decide, confirm taking part, close an expired case. |
+
+Built on `site/pkcore.js`: keccak256, ABI encoding, the payload hashes and the WebAuthn challenge are computed **in the browser**, not asked of an RPC node, and checked byte for byte against Foundry's `cast` (`node tests/pkcore.test.mjs`, 10 checks). `PasskeyRegistry` gained a read-only `isControlledBy` check so a device can confirm it controls an account it found by handle.
+
+**What the end-to-end test proves** (`tests/browser/passkeys.mjs`, real pages, a Chrome virtual authenticator, the three contracts deployed on a fork, the real TapeOut circuit #13): a customer with no wallet creates a passkey, is registered and invited, accepts and answers by signature, a stranger's wallet relays both, the reviewer decides only the disputed question, and the circuit gives the result. It also checks that a link to another contract or chain is refused, that altered answers and replays fail, that a stranger's passkey finds no account, and that an account registered under someone's handle with another key is flagged to that person.
+
+**Found while testing:** signature deadlines were first set from the browser clock. A chain clock ahead of the browser could make a fresh signature look expired. They now use the latest block's timestamp.
+
+**Still open**
+- Passkeys inside an embedded frame or pop-up, and on real phones, have not been tested. The virtual authenticator behaves like a platform passkey but is not a phone.
+- The final public domain is not chosen; a passkey made on `localhost` will not work there.
+- Evidence signing is built into the contract but has no page yet.
+- Gate 4 (assisted recovery) is not built.
+
 ## Next gates
 
-- Gate 3: the widget, the postMessage hand-off to a host page, the "your cases" lookup, and a demo on the Acme page.
+- Gate 3 follow-ups: a demo on the Acme page, evidence signing in the UI, and frame and phone tests on the real domain.
 - Gate 4: assisted recovery with reviewer countersignature and delay, and a written security review.
 
 Stop rule: if any gate goes badly, fall back to crypto-native users plus the no-wallet demo.

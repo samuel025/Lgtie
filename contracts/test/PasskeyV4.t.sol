@@ -155,6 +155,42 @@ contract PasskeyRegistryTest is V4Base {
     }
 }
 
+contract PasskeyControlCheckTest is V4Base {
+    function test_a_device_can_confirm_it_controls_an_account() public {
+        uint256 id = _account(MAYA1, "maya"); bytes32 ch = keccak256("any challenge the page chose");
+        (bool ok, uint8 idx) = pk.isControlledBy(id, ch, _assertion(MAYA1, RP, ch));
+        assertTrue(ok); assertEq(idx, 0);
+    }
+
+    function test_the_check_finds_the_right_key_among_several() public {
+        uint256 id = _account(MAYA1, "maya"); PasskeyRegistry.Key memory second = _key(MAYA2, RP2);
+        pk.addKey(id, second, _sig(MAYA1, RP, 0, id, address(pk), keccak256(abi.encode("ADD_KEY", second.x, second.y, second.rpIdHash))));
+        bytes32 ch = keccak256("c");
+        (bool ok, uint8 idx) = pk.isControlledBy(id, ch, _assertion(MAYA2, RP2, ch));
+        assertTrue(ok); assertEq(idx, 1);
+    }
+
+    /// The attack this closes: a business registers an account under Maya's handle but with ITS OWN key. Maya's device finds the account by
+    /// her handle, and without this check would believe it is hers.
+    function test_an_account_registered_with_someone_elses_key_is_not_controlled_by_her_passkey() public {
+        vm.prank(relayer); uint256 fake = pk.create(keccak256("maya-handle"), _key(EVE, RP));        // the business's own key under Maya's handle
+        bytes32 ch = keccak256("c");
+        (bool ok,) = pk.isControlledBy(fake, ch, _assertion(MAYA1, RP, ch));                          // Maya signs with her real passkey
+        assertFalse(ok);
+        (bool ok2,) = pk.isControlledBy(fake, ch, _assertion(EVE, RP, ch));
+        assertTrue(ok2);                                                                              // only the business's key is accepted
+    }
+
+    function test_the_check_rejects_other_challenges_unknown_accounts_and_missing_verification() public {
+        uint256 id = _account(MAYA1, "maya"); bytes32 ch = keccak256("c");
+        WebAuthnP256.Assertion memory a = _assertion(MAYA1, RP, ch);
+        (bool ok,) = pk.isControlledBy(id, keccak256("another challenge"), a); assertFalse(ok);
+        (ok,) = pk.isControlledBy(99, ch, a); assertFalse(ok);
+        (ok,) = pk.isControlledBy(0, ch, a); assertFalse(ok);
+        assertEq(pk.nonceOf(id), 0);                                                                  // a read: nothing consumed
+    }
+}
+
 contract AgreementV2Test is V4Base {
     function test_a_wallet_counterparty_accepts_as_before() public {
         vm.prank(business); uint256 aid = ag.propose(Party(stranger, 0), 1, bytes32(0), reviewer, DAY, DAY);

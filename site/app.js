@@ -270,6 +270,10 @@
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
+    if (view === "join") return window.TB_PASSKEYS.join();
+    if (view === "mine") return window.TB_PASSKEYS.mine();
+    if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree() : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();

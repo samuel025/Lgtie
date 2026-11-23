@@ -66,6 +66,19 @@ contract PasskeyRegistry {
         return keccak256(abi.encode(DOMAIN, block.chainid, address(this), consumer, id, nonce, deadline, payloadHash));
     }
 
+    /// @notice Read-only. Does any passkey of this account validate `a` as a signature over `challenge`? Lets a device confirm that an account it
+    ///         found by handle is really controlled by the passkey in its hand (a business could register an account with someone's
+    ///         handle but its own key). Consumes nothing; `challenge` is whatever the page asked the authenticator to sign.
+    function isControlledBy(uint256 id, bytes32 challenge, WebAuthnP256.Assertion calldata a) external view returns (bool ok, uint8 keyIndex) {
+        if (id < 1 || id > count) return (false, 0);
+        Key[] storage ks = _keys[id];
+        for (uint8 i = 0; i < ks.length; i++) {
+            Key memory k = ks[i];
+            if (WebAuthnP256.verify(challenge, a, k.rpIdHash, k.x, k.y, true)) return (true, i);
+        }
+        return (false, 0);
+    }
+
     function exists(uint256 id) external view returns (bool) { return id >= 1 && id <= count; }
     function keyCount(uint256 id) external view returns (uint256) { return _keys[id].length; }
     function keyAt(uint256 id, uint256 i) external view returns (Key memory) { return _keys[id][i]; }
