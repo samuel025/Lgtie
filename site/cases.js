@@ -302,7 +302,7 @@
     return {total: n, cases: out, truncated: n > limit};
   }
   function classify(c) { if (c.status === 2) return c.disputed !== 0n ? "decided" : "notNeeded"; if (c.status === 3) return (c.filerIn && c.deciderIn) ? ((c.filerOk && c.deciderOk) ? "ghosted" : "neverAccepted") : "beforeReview"; return "pending"; }
-  const LABEL = {decided: "Decided the disputed questions", ghosted: "Accepted, but did not decide in time", neverAccepted: "Not accepted by both sides before time ran out", pending: "Still open", notNeeded: "Not needed (both sides agreed)", beforeReview: "Case expired before it reached the reviewer"};
+  const LABEL = {decided: "Decided the disputed questions", ghosted: "Named by both sides; no decision in time (the reviewer's own consent is not recorded)", neverAccepted: "Not accepted by both sides before time ran out", pending: "Still open", notNeeded: "Not needed (both sides agreed)", beforeReview: "Case expired before it reached the reviewer"};
   const tally = cs => { const t = {decided: 0, ghosted: 0, neverAccepted: 0, pending: 0, notNeeded: 0, beforeReview: 0}; cs.forEach(c => t[classify(c)]++); return t; };
 
   async function reviewers() {
@@ -312,7 +312,7 @@
     const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
     const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
     main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each reviewer did on cases, read straight from X Layer. It shows who decided and who did not, not whether a decision was right. Nothing on-chain can tell that.</p>
-      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>Missed deadline</th><th>Never accepted</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
+      <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Never accepted</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
       <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
   }
   async function reviewer(addr) {
@@ -323,9 +323,9 @@
     const mine = sc.cases.filter(c => c.reviewer.toLowerCase() === addr.toLowerCase()).sort((a, b) => b.id - a.id), t = tally(mine);
     const rows = mine.map(c => { const k = classify(c), P = (policyOf(c.ruleSetId) || {}).policy; return `<tr><td><a href="#case/${c.id}">#${c.id}</a></td><td>${esc(P ? P.name : "Rule set " + c.ruleSetId)}</td><td>${LABEL[k]}</td><td>${c.status === 2 && P ? esc(P.results[c.result]) : ""}</td></tr>`; }).join("");
     main.innerHTML = `<h1>Reviewer ${short(addr)}</h1><p class="small mute"><code>${addr}</code> · <a href="#reviewer">All reviewers</a></p>
-      <div class="stats"><span>${mine.length} case${mine.length === 1 ? "" : "s"}</span><span>${t.decided} decided</span><span>${t.ghosted} missed the deadline</span><span>${t.neverAccepted} never accepted</span><span>${t.pending} open</span></div>
+      <div class="stats"><span>${mine.length} case${mine.length === 1 ? "" : "s"}</span><span>${t.decided} decided</span><span>${t.ghosted} no decision in time</span><span>${t.neverAccepted} never accepted</span><span>${t.pending} open</span></div>
       <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Case</th><th>Rule set</th><th>What happened</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">This address has not been named reviewer on any case yet.</p>`}</div>
-      <div class="note">This is a record of activity. It cannot show whether a decision was right: only the people involved can judge that. Both sides should still decide for themselves whether to accept a reviewer.</div>
+      <div class="note">This is a record of activity. It cannot show whether a decision was right: only the people involved can judge that. A reviewer does not have to confirm anything on-chain before being named, so "no decision in time" can mean the reviewer was named without knowing. Both sides should still decide for themselves whether to accept a reviewer, and ask them first.</div>
       <p class="small mute">${sc.truncated ? `Based on the latest 200 of ${sc.total} cases.` : `Based on all ${sc.total} case${sc.total === 1 ? "" : "s"}.`}</p>`;
   }
 

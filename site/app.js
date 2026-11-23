@@ -134,6 +134,16 @@
     return `<details class="card" id="embedbox"><summary>Put this checker on your own website</summary><p class="small">Paste this where you want the checker to appear. It resizes itself and needs nothing else.</p><pre id="snip1">${esc(script)}</pre><div class="row"><button class="btn small ghost" id="cps1" type="button">Copy</button></div>
       <p class="small">Or use a plain frame:</p><pre id="snip2">${esc(frame)}</pre><div class="row"><button class="btn small ghost" id="cps2" type="button">Copy</button></div></details>`;
   }
+  // A plain-text summary of one checker run, to paste under a bug report or into a support claim. Built in the browser; nothing is sent anywhere.
+  async function claimPack({P, C, ans, r, rule, published, link, hexIn}) {
+    const hash = await sha256(TB.canonical(P)), yn = v => v ? "Yes" : "No", where = published ? `rule set #${published.ruleSetId}, circuit #${published.circuitId} on X Layer (processor ${CFG.processor})` : "not published on X Layer yet (result computed in the browser)";
+    const lines = ["LGTIE CLAIM PACK", "", "Checker: " + P.name, "Rules: " + where, "Result: " + P.results[r.result], "Reason: " + (r.why || "(none given)"), "Decided by: " + rule, "", "Answers"];
+    P.questions.forEach((q, i) => { lines.push(` ${i + 1}. ${q.text}  ${yn(ans[i])}`); if (q.hint) lines.push(`    Evidence to attach: ${q.hint}`); });
+    lines.push("", "Re-run these answers: " + link);
+    if (published) lines.push("Check on-chain (free):", `  cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}`);
+    lines.push("Rules fingerprint (SHA-256 of the rules text): " + hash, "Made on " + new Date().toISOString().slice(0, 10), "", "This shows how the published rules apply to the answers given. It does not prove the answers are true, and it is not legal advice.");
+    return lines.join("\n");
+  }
   async function check(key, rest, embed) {
     const L = loadPolicy(key); if (!L) { main.innerHTML = `<h1>We could not open that checker</h1><p>The link may be incomplete. <a href="#check/warranty">Open the warranty example</a>.</p>`; return; }
     const P = L.policy, C = TB.compile(P), nQ = P.questions.length, rsm = /(?:^|[/&])rs=(\d+)/.exec(rest || ""), tail = (rsm ? "rs=" + rsm[1] + "&" : ""), pre = "#" + (embed ? "embed" : "check") + "/" + key + "/" + tail, fullPre = "#check/" + key + "/" + tail;
@@ -175,9 +185,14 @@
           <p class="small">${esc(rule)}. The same answers go into the published rules, and anyone can run them.</p>
           ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
             : `<p class="small">This checker has not been published on X Layer yet, so the result above is computed in your browser from the same rules. Once published, the page asks the TapeOut processor and shows a confirmation.</p>`}
-          <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre></details></div>`;
+          <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre></details>
+        ${embed ? "" : `<details id="packbox"><summary>Claim pack to attach to your report or claim</summary><p class="small">Plain text you can paste into an email, a support ticket or a bug report. It lists your answers, the rule that decided the result, and a link anyone can use to re-run it.</p><pre id="packtxt">Preparing…</pre><div class="row"><button class="btn small ghost" id="cpk" type="button">Copy claim pack</button></div></details>`}</div>`;
       $("#cp").onclick = e => copy(link, e.target); $("#rs").onclick = () => { ans = Array(nQ).fill(null); history.replaceState(null, "", pre.replace(/[/&]$/, "")); paint(); window.scrollTo({top: 0, behavior: "smooth"}); };
       history.replaceState(null, "", pre + "a=" + m);
+      if (!embed && $("#packtxt")) {
+        claimPack({P, C, ans, r, rule, published, link, hexIn}).then(t => { if (mine === seq && $("#packtxt")) $("#packtxt").textContent = t; });
+        $("#cpk").onclick = e => copy($("#packtxt").textContent, e.target);
+      }
       const vb = $("#vbadge");
       if (!published) { vb.className = "badge warn"; vb.textContent = "Preview: computed in your browser"; return; }
       evalOnChain(published.circuitId, m, nQ, C.nOut).then(got => { if (mine !== seq) return; if (got === r.result) { vb.className = "badge ok"; vb.textContent = "✓ Confirmed by the TapeOut processor on X Layer"; } else { vb.className = "badge warn"; vb.textContent = "The chain gave a different result. Do not rely on this page."; } })
@@ -209,6 +224,18 @@
     <h2>What it does not do</h2>
     <div class="note">It does not check that the answers are true. If someone gives a false answer, the result will follow the false answer. The reviewer decides disputed facts, and a reviewer can be wrong. The circuit shows the rules were applied consistently, nothing more.</div>
     <div class="note">A person is not a wallet. Where an operator submits answers for someone without a wallet, that is recorded, and you are trusting the operator to pass them on unchanged.</div>
+    <h2>What can go wrong, and what happens</h2>
+    <div class="card"><table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>If this happens</th><th>What LGtie does</th><th>What it can't do</th></tr></thead><tbody>
+      <tr><td>A party gives a false answer</td><td>The result follows it. If the other side answers differently, the question goes to the reviewer.</td><td>Know the truth. If both sides agree on the same false answer, nobody checks.</td></tr>
+      <tr><td>The reviewer is biased or wrong</td><td>Both sides had to accept them first, and their record is public.</td><td>Make them right. There is no appeal, jury or penalty.</td></tr>
+      <tr><td>Nobody answers or decides in time</td><td>Anyone can close the case. It ends as "no decision"; nobody wins by default.</td><td>Force an outcome. The sides must open a new case.</td></tr>
+      <tr><td>A side tries to stall by naming another reviewer</td><td>The other side must accept the new one, or the case ends as "no decision". The site hides this option for cases under an agreement.</td><td>Stop a direct contract call. The deployed contract still allows it (known limitation F1).</td></tr>
+      <tr><td>Someone is named reviewer without knowing</td><td>The record says "no decision in time" and notes that the reviewer's consent is not recorded.</td><td>Prove the reviewer agreed (known limitation F2). Ask them first.</td></tr>
+      <tr><td>A file or note is leaked</td><td>Files are never uploaded. Only a fingerprint and a short note go on-chain.</td><td>Delete what is on-chain. Keep names and personal details out of notes.</td></tr>
+      <tr><td>A photo or file is faked</td><td>A fingerprint shows the file is unchanged since it was recorded.</td><td>Show the file is genuine.</td></tr>
+      <tr><td>A rule set points at a fake processor</td><td>The site only shows rule sets it knows and checks custom ones against the official processor.</td><td>Protect someone calling the contract directly (known limitation F4).</td></tr>
+    </tbody></table></div>
+    <p class="small mute">The full list, with tests, is in <a href="https://github.com/samuel025/Lgtie/blob/main/docs/SECURITY.md" target="_blank" rel="noopener">docs/SECURITY.md</a>. The contracts are unaudited, hold no funds, and cannot be changed once deployed.</p>
     <h2>Status</h2><p>Prototype built for the X Layer TapeOut Accelerate hackathon. The contracts are unaudited and hold no funds. This page currently computes checkers in your browser and confirms against the chain once a checker has been published.</p>`;
   }
 

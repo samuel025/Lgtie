@@ -10,6 +10,16 @@ LGtie is the dispute layer for published rules: both sides answer the same quest
 
 Rules are easy to publish and hard to apply when two people disagree about the facts. A customer says the product was bought from an authorised seller, the business says it wasn't. A researcher says a bug is critical, the protocol says it is low. Today the whole outcome is argued, usually inside one side's own process, and nobody can later show the rule was applied consistently.
 
+## What it costs when disputes go the heavy route (sourced, not ours)
+
+Most disputes turn on one or two facts, yet the usual process treats the whole case as one big argument. The cost of that is visible in public numbers:
+
+- **Card chargebacks:** Mastercard puts the average cost to a merchant at about **$128 per chargeback** (fees plus internal costs), about 45% of chargeback volume is fraud, and global losses are forecast to rise from about $34B (2025) to about $42B (2028).
+- **Bug-bounty arbitration:** Immunefi's legally binding arbitration has a **floor of £7,500** (for claims up to £1M) and takes weeks to months. Researchers and projects also use free mediation first.
+- **Freelance platforms:** escalation fees are reported as a few hundred dollars per side on one major platform, and 5% or $5 per side on another (third-party comparison, November 2026).
+
+LGtie is not a replacement for any of these. It targets the stage before them: agree the rules in advance, have both sides answer the same questions, and send only the facts they disagree on to a person.
+
 ## What LGtie does
 
 1. **Publish the rules.** A business writes its policy as yes or no questions and rules in a guided builder. The page compiles it into a NAND circuit and proves in the browser that the circuit gives the same answer as the rules on every combination of answers. One click tapes it out on the TapeOut processor and registers it, with a fingerprint of the rules text, in a registry.
@@ -41,7 +51,7 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 
 ## What we tested and fixed
 
-66 contract tests plus browser end-to-end tests (checker, builder, embed, publish, the whole case flow, receipt). While building, we found a flaw in our own earlier case contract (the opener could answer for both sides). We fixed it in `TiebreakCaseV3`, disclosed it in the README, and the site no longer uses the flawed contract.
+72 contract tests plus browser end-to-end tests (checker, builder, embed, publish, the whole case flow, receipt). While building, we found a flaw in our own earlier case contract (the opener could answer for both sides). We fixed it in `TiebreakCaseV3`, disclosed it in the README, and the site no longer uses the flawed contract. A later manual review of the deployed V3 contracts (`docs/SECURITY.md`) found six more limitations, none of which can lose funds; each is pinned by a test and listed with what a next version would change.
 
 ## Honest limits
 
@@ -53,9 +63,10 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 
 ## Who would use it, and who might pay (hypotheses, not facts)
 
-- Businesses that want a clear, replayable way to settle warranty, return or eligibility disputes, and a record they can show afterwards.
-- Protocols and researchers who dispute bug severity, with a mediator both accept.
-- A possible model is a small fee for the reviewer's work or for a permanent receipt. We have not tested whether anyone would pay.
+- **Businesses with recurring claim or return disputes** that want a clear, replayable rule and a record they can show afterwards. A possible price is a per-seat or per-checker fee for tooling, which we have not tested.
+- **Protocols and security researchers** disputing bug severity, using a mediator both accept before anyone pays for arbitration. A possible price is a small fee for a reviewer's work or a permanent receipt.
+- **Reviewers** who earn a fee from the parties for settling disputed facts. LGtie takes no cut today and holds no funds.
+- We have not interviewed buyers yet. `docs/VALIDATION.md` has the questions we plan to ask. Until someone says they would use or pay for it, treat all of this as a guess.
 
 ## How it maps to the judging criteria
 

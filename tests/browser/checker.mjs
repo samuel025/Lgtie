@@ -8,6 +8,9 @@ let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL "
 const T = sel => p.$eval(sel, e => e.textContent).catch(() => "");
 await p.setViewport({width: 1000, height: 900});
 await p.goto(BASE); await new Promise(r => setTimeout(r, 300));
+await p.goto(BASE + "#about"); await new Promise(r => setTimeout(r, 400));
+ok("the how-it-works page lists what can go wrong, including the known limitations", /What can go wrong/.test(await T("main")) && /known limitation F1/.test(await T("main")) && /SECURITY\.md/.test(await p.$eval("main", e => e.innerHTML)), (await T("main")).slice(0, 200));
+await p.goto(BASE); await new Promise(r => setTimeout(r, 600));
 ok("home headline", /settle only what they disagree on/.test(await T("h1")), await T("h1"));
 await p.goto(BASE + "#check/warranty"); await new Promise(r => setTimeout(r, 300));
 ok("warranty page has 7 questions", (await p.$$(".q")).length === 7);
@@ -21,6 +24,13 @@ await new Promise(r => setTimeout(r, 300));
 for (let i = 0; i < 20 && /Checking/.test(await T("#vbadge")); i++) await new Promise(r => setTimeout(r, 500));
 ok("Q5 no -> Not covered with the excluded-cause reason", /Not covered/.test(await T(".res .big")) && /excluded cause/.test(await T(".res .why")), await T(".res"));
 ok("Q5 no is also confirmed on chain", /Confirmed by the TapeOut processor/.test(await T("#vbadge")), await T("#vbadge"));
+// claim pack: a plain-text justification to attach to a report or claim
+await new Promise(r => setTimeout(r, 400));
+const pack = await p.$eval("#packtxt", e => e.textContent).catch(() => "");
+ok("the claim pack names the checker, the result and the rule that decided it", /LGTIE CLAIM PACK/.test(pack) && /Checker: Warranty claims/.test(pack) && /Result: Not covered/.test(pack) && /Decided by: Rule \d+/.test(pack), pack.slice(0, 300));
+ok("the claim pack lists all seven answers and the evidence to attach", (pack.match(/^ \d+\. /gm) || []).length === 7 && /Evidence to attach: /.test(pack) && /5\. .*  No/.test(pack), pack);
+ok("the claim pack carries the replay link, the on-chain command and the rules fingerprint", /Re-run these answers: .*#check\/warranty\/a=\d+/.test(pack) && /cast call 0x9e2849c04a513fe64db07521cbe52d078d905c0e "eval\(uint256,bytes\)\(bytes\)" 13 0x/.test(pack) && /\(SHA-256 of the rules text\): 0x[0-9a-f]{64}/.test(pack), pack);
+ok("the claim pack says it does not prove the answers are true", /does not prove the answers are true/.test(pack));
 const hashNow = await p.evaluate(() => location.hash);
 ok("answers are in the link (a=...)", /a=\d+/.test(hashNow), hashNow);
 await p.goto(BASE + "#check/warranty/a=111"); await new Promise(r => setTimeout(r, 300));
