@@ -11,7 +11,7 @@ await p.goto(BASE); await new Promise(r => setTimeout(r, 300));
 await p.goto(BASE + "#about"); await new Promise(r => setTimeout(r, 400));
 ok("the how-it-works page lists what can go wrong, including the known limitations", /What can go wrong/.test(await T("main")) && /known limitation F1/.test(await T("main")) && /SECURITY\.md/.test(await p.$eval("main", e => e.innerHTML)), (await T("main")).slice(0, 200));
 await p.goto(BASE); await new Promise(r => setTimeout(r, 600));
-ok("home headline", /settle only what they disagree on/.test(await T("h1")), await T("h1"));
+ok("home headline", /Settle disputes fairly/.test(await T("h1")), await T("h1"));
 await p.goto(BASE + "#check/warranty"); await new Promise(r => setTimeout(r, 300));
 ok("warranty page has 7 questions", (await p.$$(".q")).length === 7);
 for (let i = 0; i < 7; i++) await p.evaluate(i => document.querySelectorAll(".q")[i].querySelector('button[data-v="1"]').click(), i);

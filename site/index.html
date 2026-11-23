@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><script>document.documentElement.classList.add("js")</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>LGtie: the dispute layer for published rules</title>
+<title>LGtie: settle disputes fairly, with rules everyone can see first</title>
 <meta name="theme-color" content="#ffffff">
-<meta name="description" content="When two sides disagree, settle only what they disagree on. Rules are published on X Layer, a reviewer both sides accepted decides only the differences, and anyone can re-run the result for free.">
-<meta property="og:title" content="LGtie: the dispute layer for published rules">
-<meta property="og:description" content="Both sides answer the same questions under rules published on X Layer. Only the differences go to a reviewer they both accepted. Customers can act with a fingerprint instead of a wallet.">
+<meta name="description" content="A business publishes its rules before anything goes wrong. Both sides answer the same yes or no questions. Only the answers they disagree on go to a neutral person, and anyone can check the result.">
+<meta property="og:title" content="LGtie: settle disputes fairly, with rules everyone can see first">
+<meta property="og:description" content="Rules are public before anything goes wrong. Both sides answer the same simple questions, a neutral person decides only the differences, and customers can use a fingerprint instead of a wallet.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23111'/%3E%3Cpath d='M6.5 6.5h5a5.5 5.5 0 010 11h-5z' fill='none' stroke='white' stroke-width='1.8' stroke-linejoin='round'/%3E%3Ccircle cx='19.2' cy='12' r='1.5' fill='none' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E">
 <style>
@@ -370,11 +370,20 @@ main.about{max-width:1100px}
   .nocard .nicon svg{transition:transform .6s var(--ease)}.nocard:hover .nicon svg{transform:rotate(-8deg) scale(1.1)}.nicon .bub{animation:blink 2s ease-in-out infinite}.nicon .b2{animation-delay:.7s}
 }
 @media (prefers-reduced-motion:reduce){.travel{display:none}}
+
+/* ---------- "where do I start" cards ---------- */
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:36px}
+.path{display:flex;flex-direction:column;gap:6px;background:var(--paper);border-radius:28px;padding:28px;color:var(--ink);text-decoration:none;transition:transform .5s var(--ease)}
+.path:hover{transform:translateY(-6px)}.path h3{font-size:24px;margin:2px 0 4px}.path p{margin:0;font-size:15px;line-height:1.45;color:var(--stone);flex:1}
+.path .go{margin-top:14px;font-size:14px;display:inline-flex;gap:6px;align-items:center}.path .arr{transition:transform .35s var(--ease)}.path:hover .arr{transform:translateX(5px)}
+.path .nicon{margin-bottom:14px}.path .nicon .ac{stroke:var(--accent)}.path .nicon .acf{fill:var(--accent);stroke:none}.path:hover .nicon svg{transform:rotate(-6deg) scale(1.08)}.path .nicon svg{transition:transform .5s var(--ease)}
+.startsec{padding:64px 0 0}.startsec .sechead{text-align:center;margin:0 auto}.startsec .sechead .lede{margin:8px auto 0;text-align:center}
+main.hub{max-width:1100px}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
-<nav id="nav"><a href="#check/warranty" data-k="check">Check a claim</a><a href="#agree" data-k="agree">Agreements</a><a href="#case" data-k="case">Settle a dispute</a><a href="#mine" data-k="mine">My cases</a><a href="#build" data-k="build">For businesses</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#about" data-k="about">How it works</a><a class="pill" href="#check/warranty">Try the checker</a></nav></div></header>
+<nav id="nav"><a href="#about" data-k="about">How it works</a><a href="#check/warranty" data-k="check">Try a claim check</a><a href="#for-business" data-k="for-business">For businesses</a><a href="#mine" data-k="mine">My cases</a><a class="pill" href="#case/1">See a real case</a></nav></div></header>
 <main id="main"></main>
-<footer><div class="wrap"><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div><div style="margin-top:10px"><a href="#about">How it works</a> · <a href="#verify">Verify a circuit</a> · <a href="#reviewer">Reviewer records</a> · <a href="#agree">Agreements</a> · <a href="#join">Get a passkey</a> · <a href="#mine">My cases</a></div></div></footer>
+<footer><div class="wrap"><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div><div style="margin-top:10px"><a href="#about">How it works</a> · <a href="#verify">Verify a circuit</a> · <a href="#reviewer">Reviewer records</a> · <a href="#for-business">For businesses</a> · <a href="#join">Get a passkey</a> · <a href="#mine">My cases</a> · <a href="#verify">For developers: verify a circuit</a></div></div></footer>
 <script src="rules.js"></script><script src="pkcore.js"></script><script src="hero.js"></script><script src="config.js"></script><script src="wallet.js"></script><script src="publish.js"></script><script src="builder.js"></script><script src="graphics.js"></script><script src="cases.js"></script><script src="passkeys.js"></script><script src="app.js"></script>
 </body></html>

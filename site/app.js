@@ -48,41 +48,43 @@
     main.innerHTML = `
     <section class="hero3"><div class="wrap hgrid">${tie()}
       <div class="hcopy">
-        <span class="tag"><i class="dot"></i>The dispute layer for published rules</span>
-        <h1>When two sides disagree, settle only what they disagree on.</h1>
-        <p class="sub">Both sides answer the same yes or no questions under rules published on X Layer. Where they agree, it is settled. Only the differences go to a reviewer they both accepted, and anyone can re-run the result for free.</p>
-        <div class="cta"><a class="btn" href="#case/1">See a real case <span class="arr">→</span></a><a class="btn ghost" href="#check/warranty">Try the warranty check</a></div>
-        <p class="small mute fine">Checking a claim needs no account and no wallet. Nothing is ever held in escrow.</p>
+        <span class="tag"><i class="dot"></i>Fair claims and disputes</span>
+        <h1>Settle disputes fairly, with rules everyone can see first.</h1>
+        <p class="sub">A business publishes its rules before anything goes wrong. You both answer the same yes or no questions. Only the answers you disagree on go to a neutral person, and anyone can check the result.</p>
+        <div class="cta"><a class="btn" href="#check/warranty">Try a claim check <span class="arr">→</span></a><a class="btn ghost" href="#case/1">See a real case</a></div>
+        <p class="small mute fine">Checking a claim needs no account and no wallet. LGtie never holds anyone's money.</p>
       </div>
       <div class="panel stage">${art("ember")}<div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div></div>
     </div></section>
     <div class="runs wrap"><span class="lbl">Built with</span><span>X Layer</span><span>TapeOut circuits</span><span>Solidity</span><span>One static file</span></div>
+    <section class="startsec"><div class="wrap"><div class="sechead"><h2>Where do you want to start?</h2><p class="lede">Pick the one that sounds like you.</p></div>
+      ${window.TB_GFX.paths([["customer", "I have a claim or a complaint", "Find out whether you are covered, and keep a clear record of how it was decided.", "#check/warranty", "Check a claim"], ["business", "I run a business", "Publish clear rules, invite customers, and settle disagreements fairly.", "#for-business", "See what you can do"], ["reviewer", "I was asked to review a case", "A neutral person decides only the questions the two sides disagree on.", "#about", "How reviewing works"]])}</div></section>
     <section class="flowsec"><div class="wrap"><div class="sechead"><h2>From rules to result</h2><p class="lede">One idea: settle only what the two sides disagree on.</p></div>${window.TB_GFX.flow()}</div></section>
     <div class="wrap"><div class="stats3 facts">
-      <div class="stat fact"><b><span data-count="39">0</span></b><span>NAND gates in the live warranty circuit (#13)</span></div>
-      <div class="stat fact"><b><span data-count="128">0</span></b><span>of 128 answer combinations checked on mainnet</span></div>
-      <div class="quote fact">A rules engine with a dispute process, not a truth oracle. If someone lies, the result follows the lie, so a reviewer both sides accepted decides the disputed facts.<div class="by"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z"/><circle cx="19" cy="12" r="1.5"/></svg></span><span>How LGtie describes itself<br>Prototype, unaudited, holds no funds</span></div></div>
+      <div class="stat fact"><b><span data-count="7">0</span></b><span>yes or no questions decide a warranty claim</span></div>
+      <div class="stat fact"><b><span data-count="128">0</span></b><span>of 128 possible situations checked against the written rules, all matching</span></div>
+      <div class="quote fact">LGtie checks that the rules are applied the same way every time. It cannot tell whether someone is telling the truth, so a neutral person settles the facts the two sides disagree on.<div class="by"><span class="av"><svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="1.5"><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z"/><circle cx="19" cy="12" r="1.5"/></svg></span><span>How LGtie describes itself<br>Early prototype, unaudited, holds no money</span></div></div>
     </div></div>
     <section class="sec"><div class="wrap">
-      <div class="sechead"><h2>Not a mock-up.</h2><p class="lede">We ran a complete case on X Layer mainnet: an agreement, a case, answers from both sides and a free re-run. All three roles were wallets we controlled, so treat it as a demonstration, not a customer.</p></div>
+      <div class="sechead"><h2>Not a mock-up.</h2><p class="lede">We ran a complete case on the live network: an agreement, answers from both sides, a decision and a free re-check. All three roles were wallets we controlled, so treat it as a demonstration, not a customer.</p></div>
       <div class="card realcase" id="realcase" style="margin-top:28px"><p class="mute small">Reading the case from X Layer…</p></div>
     </div></section>
     <section class="sec"><div class="wrap">
       <div class="sechead"><h2>Dispute the facts, not the verdict.</h2><p class="lede">Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.</p></div>
       ${feat(false, "sand", "When you disagree", "Only the disputed answers go to a person", [
-        ["Both sides answer the same questions", "The filer and the other side each answer in their own wallet, before a deadline, under the rules they agreed."],
+        ["Both sides answer the same questions", "Each side answers on its own, before a deadline, under the rules you both agreed to."],
         ["Agreed answers stand", "Where the two sides give the same answer, nobody needs to decide anything."],
-        ["A reviewer settles only the differences", "A neutral reviewer both sides accepted answers just the questions they disagree on, and the published rules give the result."]],
+        ["A neutral person settles only the differences", "Someone you both accepted answers just the questions you disagree on. The agreed rules then give the result."]],
         `<div class="mini"><div class="ln"><span class="k">1. Registered?</span><span>Yes · No → <b>Reviewer: Yes</b></span></div><div class="ln"><span class="k">2. In warranty?</span><span>Yes · Yes → agreed</span></div><div class="ln"><span class="k">3. Authorised seller?</span><span>Yes · Yes → agreed</span></div><div class="ln"><span class="k">Result</span><span class="chip">Covered</span></div></div>`)}
       ${feat(true, "ink", "Agree first", "Fix the terms before any dispute", [
-        ["The rules, locked in", "An agreement names the published rule set. Once both sides accept, it can't change."],
-        ["A reviewer both sides accept", "Disputed questions go to a neutral person each side has approved."],
+        ["The rules, locked in", "The agreement points to the public rules. Once both sides accept, it can't change."],
+        ["A neutral person you both accept", "Disputed questions go to someone each side approved in advance."],
         ["Deadlines that settle themselves", "If nobody decides in time, the case ends as no decision. Nobody wins by default."]],
         `<div class="mini"><div class="ln"><span class="k">Rule set</span><span>Warranty claims</span></div><div class="ln"><span class="k">Reviewer</span><span>Accepted by both</span></div><div class="ln"><span class="k">Time to decide</span><span>7 days</span></div><div class="ln"><span class="k">Status</span><span class="chip">Accepted</span></div></div>`)}
       ${feat(false, "ember", "Verify", "Check it yourself, free", [
-        ["Re-run any published rule set", "Paste a circuit id and the answers. The chain returns the result."],
+        ["Anyone can re-run it", "Enter the answers and the public network gives the same result, for free."],
         ["Reviewer records are public", "See who decided, how often, and who missed a deadline."],
-        ["No money moves", "The contracts record decisions only. A separate contract can read a verdict and pay out."]],
+        ["No money is held", "LGtie only records decisions. Another system could read a decision and pay out."]],
         `<div class="mini"><div class="ln"><span class="k">Circuit</span><span>#13 on X Layer</span></div><div class="ln"><span class="k">Answers</span><span><code>1111101</code></span></div><div class="ln"><span class="k">Result</span><span>Covered</span></div><div class="ln"><span class="k">Cost</span><span class="chip">Free read</span></div></div>`)}
       ${feat(true, "sand", "No wallet needed", "Customers approve with their fingerprint or face", [
         ["A passkey instead of a wallet", "The same fingerprint or face scan that unlocks their phone. No app, no seed phrase and no crypto to buy."],
@@ -95,7 +97,7 @@
       <div class="sechead"><h2>Get started in minutes</h2></div>
       <div class="steps3"><div class="lst">
         <div class="s3"><span class="n">1.</span><p>Write your policy as questions and rules</p></div>
-        <div class="s3"><span class="n">2.</span><p>Prove the circuit matches, then publish it on X Layer</p></div>
+        <div class="s3"><span class="n">2.</span><p>Check it, then publish it on the public network</p></div>
         <div class="s3"><span class="n">3.</span><p>Share the link or paste one snippet into your support page</p></div>
         <div><a class="btn" href="#build">Build a checker <span class="arr">→</span></a></div>
       </div>
@@ -222,6 +224,18 @@
     };
   }
 
+  function forBusiness() {
+    main.innerHTML = `<h1>For businesses</h1><p class="lede">Publish clear rules, invite your customers, and settle disagreements fairly. Pick what you need.</p>
+    ${window.TB_GFX.paths([
+      ["publish", "Publish your rules", "Turn your policy into a claim check your customers can use.", "#build", "Open the builder"],
+      ["invite", "Invite a customer with no wallet", "They approve with their fingerprint or face. You send it in and pay the tiny fee.", "#pk/agree", "Invite by fingerprint"],
+      ["wallet", "Invite a customer with a wallet", "Propose an agreement that fixes the rules, the neutral person and the time limits.", "#agree", "Make an agreement"],
+      ["cases", "Handle a case", "Open a dispute, answer the questions, or look one up by number.", "#case", "Go to cases"],
+      ["embed", "Put it on your website", "Add the claim check or the fingerprint sign-up with one line of code.", "embed-demo.html", "See a demo page"],
+      ["records", "Reviewer records", "See who decided cases, and who did not decide in time.", "#reviewer", "See the records"],
+      ["dev", "For developers", "Re-run any published rules on the public network, or read a case's decision from another contract.", "#verify", "Verify a circuit"]
+    ])}`;
+  }
   function about() {
     const G = window.TB_GFX, steps = [
       ["Publish the rules", "A business writes its policy as yes or no questions. It becomes a small circuit on X Layer that nobody can quietly change.", ""],
@@ -260,7 +274,7 @@
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
   const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
-  const REVEAL = ".flow,.ill,.howtxt,.nocard,.hcopy>*,.stage,.realcase,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish,.card,.q";
+  const REVEAL = ".flow,.ill,.howtxt,.nocard,.path,.hcopy>*,.stage,.realcase,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish";
   let armed = false, armTimer = 0;
   function scan() {
     if (!armed || !io) return;
@@ -280,7 +294,7 @@
     window.TB_HERO.stop();
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
     document.body.classList.toggle("embed", view === "embed");
-    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.toggle("about", view === "about"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
+    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.toggle("about", view === "about"); main.classList.toggle("hub", view === "for-business"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
     if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
     armReveal(view === "embed");
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));
@@ -294,6 +308,7 @@
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
+    if (view === "for-business") return forBusiness();
     if (view === "join") return window.TB_PASSKEYS.join();
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");

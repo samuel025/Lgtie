@@ -16,8 +16,16 @@ ok("flipping 'in warranty' to No gives Not covered with the reason", (await T("#
 ok("the output node lights for a covered result and the wires change", (await p.$$eval("#heroviz .g.out.on", e => e.length)) >= 0);
 // autoplay moves on by itself after the pause
 const before = await T("#heroviz .vres .big"); await w(9800 + 3800); ok("autoplay resumes and changes the scenario", (await T("#heroviz .vres .big")) !== "" , before);
-ok("counters count up to their values", await (async () => { await p.evaluate(() => document.querySelector(".facts").scrollIntoView()); await w(1800); return (await T(".fact:nth-child(1) b")).trim() === "39" && /128/.test(await T(".fact:nth-child(2) b")); })(), await T(".facts"));
+ok("counters count up to their values", await (async () => { await p.evaluate(() => document.querySelector(".facts").scrollIntoView()); await w(1800); return (await T(".fact:nth-child(1) b")).trim() === "7" && /128/.test(await T(".fact:nth-child(2) b")); })(), await T(".facts"));
 ok("four feature rows, each with a grainy gradient panel", (await p.$$(".row2 .pnl .art")).length === 4);
+// ---- orientation: a short nav, a "where do I start" chooser, a hub for businesses
+ok("the nav is four plain links and one button", (await p.$$eval("#nav a", a => a.map(x => x.textContent.trim()))).join("|") === "How it works|Try a claim check|For businesses|My cases|See a real case");
+ok("the home page asks where to start and offers three doors", /Where do you want to start/.test(await p.$eval("main", e => e.textContent)) && (await p.$$(".startsec .path")).length === 3);
+ok("the hero says what the product is for without jargon", !/X Layer|circuit|NAND|reviewer/.test(await p.$eval(".hcopy", e => e.textContent)), await p.$eval(".hcopy", e => e.textContent));
+await p.goto(BASE + "#for-business"); await w(800);
+const hubLinks = await p.$$eval(".paths .path", a => a.map(x => x.getAttribute("href")));
+ok("the For businesses page lists every business task as a card that links somewhere real", hubLinks.length === 7 && ["#build", "#pk/agree", "#agree", "#case", "#reviewer", "#verify", "embed-demo.html"].every(h => hubLinks.includes(h)), hubLinks.join(","));
+await p.goto(BASE); await w(1200);
 // ---- graphics: the flow diagram, the illustrated How-it-works page, and reduced motion
 ok("the home page has the animated flow diagram with five stages", (await p.$$(".flowsec .fnode")).length === 5 && (await p.$$(".flowsec .flab")).length === 5);
 ok("the home page shows icon cards for what it does not do", (await p.$$(".nocards .nocard")).length === 3);

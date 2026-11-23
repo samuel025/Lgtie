@@ -60,7 +60,7 @@
     let answers = SCENARIOS[1].map(Boolean), idx = 1, pausedUntil = 0, visible = true, timer = 0, io = null;
     root.innerHTML = `<div class="vqs" role="group" aria-label="Answers"></div><div class="vsvg"></div>
       <div class="vres" aria-live="off"><div class="vlab">Result</div><div class="big"></div><div class="vwhy small"></div></div>
-      <p class="vnote small mute">A live simulation of the ${C.gates.length} NAND gates published as circuit #13 on X Layer. Tap an answer to change it. <a href="#verify">Run the real one</a></p>`;
+      <p class="vnote small mute">This is a real warranty rule set running live. Tap an answer to see how the result changes. <a href="#verify">Run it on the public network</a></p>`;
     const qs = root.querySelector(".vqs"), res = root.querySelector(".vres"), big = res.querySelector(".big"), why = res.querySelector(".vwhy");
     const pills = P.questions.map((q, i) => { const b = document.createElement("button"); b.type = "button"; b.className = "vq"; b.innerHTML = `<span class="vn">${i + 1}</span><span class="vl">${LABELS[i] || "Question " + (i + 1)}</span><span class="vy"></span>`;
       b.onclick = () => { answers[i] = !answers[i]; pausedUntil = Date.now() + 9000; paint(true); }; qs.appendChild(b); return b; });

@@ -21,8 +21,8 @@ const cdp = await p.target().createCDPSession(); await cdp.send("WebAuthn.enable
 await cdp.send("WebAuthn.addVirtualAuthenticator", {options: {protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}});
 
 await p.goto(LIVE); await w(1500);
-ok("home headline is the dispute-layer pitch", /settle only what they disagree on/.test(await T("h1")), await T("h1"));
-ok("the nav links to the passkey pages", !!(await p.$('nav a[href="#mine"]')));
+ok("home headline says what it is for, in plain words", /Settle disputes fairly/.test(await T("h1")), await T("h1"));
+ok("the nav is four plain links and one button", (await p.$$("#nav a")).length === 5 && !!(await p.$('nav a[href="#mine"]')) && !!(await p.$('nav a[href="#for-business"]')));
 ok("the home page reads the real mainnet case and shows it decided", await until(async () => /Covered/.test(await T("#realcase")) && /Decided/.test(await T("#realcase"))), await T("#realcase"));
 ok("the home page has the no-wallet row", /Customers approve with their fingerprint or face/.test(await p.$eval("main", e => e.textContent)));
 await p.goto(LIVE + "#receipt/1");

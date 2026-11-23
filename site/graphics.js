@@ -5,16 +5,16 @@
   const attr = (o) => Object.entries(o).map(([k, v]) => `${k}="${v}"`).join(" ");
   // ---------- the flow: Publish -> Agree -> Answer -> Review -> Result, with a dot travelling along it ----------
   const NODES = [
-    {x: 90, label: "Publish", sub: "rules on X Layer", icon: '<rect x="-12" y="-16" width="24" height="32" rx="4"/><path d="M-6-6h12M-6 0h12M-6 6h7"/>'},
-    {x: 290, label: "Agree", sub: "reviewer + time limits", icon: '<circle cx="-7" cy="0" r="10"/><circle cx="7" cy="0" r="10"/>'},
+    {x: 90, label: "Publish", sub: "public rules", icon: '<rect x="-12" y="-16" width="24" height="32" rx="4"/><path d="M-6-6h12M-6 0h12M-6 6h7"/>'},
+    {x: 290, label: "Agree", sub: "who decides, and when", icon: '<circle cx="-7" cy="0" r="10"/><circle cx="7" cy="0" r="10"/>'},
     {x: 500, label: "Answer", sub: "same questions", icon: '<path d="M-14-6h12v12h-12z"/><path d="M2-6h12v12H2z"/><path d="M-11 0l3 3 5-6" class="tick"/>'},
     {x: 710, label: "Review", sub: "only the differences", icon: '<path d="M0-16v28M-9 14h18M-16-8h32"/><path d="M-16-8l-6 12h12zM16-8l-6 12h12z"/>'},
-    {x: 910, label: "Result", sub: "anyone can re-run", icon: '<circle r="14"/><path d="M-6 0l4 5 8-10"/>'}
+    {x: 910, label: "Result", sub: "anyone can check", icon: '<circle r="14"/><path d="M-6 0l4 5 8-10"/>'}
   ];
   function flow(compact) {
     const line = NODES.slice(0, -1).map((n, i) => `<line class="fl" style="--i:${i}" x1="${n.x + 40}" y1="100" x2="${NODES[i + 1].x - 40}" y2="100"/>`).join("");
     const nodes = NODES.map((n, i) => `<g transform="translate(${n.x} 100)"><g class="fnode" style="--d:${Math.max(0, (n.x - 90) / 820 * 6.4 - 0.25).toFixed(2)}s"><circle class="fring" r="40"/><g class="ficon">${n.icon}</g></g></g><text class="flab" x="${n.x}" y="172" text-anchor="middle">${n.label}</text>${compact ? "" : `<text class="fsub" x="${n.x}" y="192" text-anchor="middle">${n.sub}</text>`}`).join("");
-    return `<div class="flow${compact ? " compact" : ""}" role="img" aria-label="How a dispute settles: publish the rules, agree, both answer, a reviewer decides only the differences, the circuit gives a result anyone can re-run."><svg viewBox="0 0 1000 ${compact ? 190 : 210}" preserveAspectRatio="xMidYMid meet">${line}<circle class="travel" r="7"/>${nodes}</svg></div>`;
+    return `<div class="flow${compact ? " compact" : ""}" role="img" aria-label="How a dispute settles: publish the rules, agree, both answer, a neutral person decides only the differences, and the result can be checked by anyone."><svg viewBox="0 0 1000 ${compact ? 190 : 210}" preserveAspectRatio="xMidYMid meet">${line}<circle class="travel" r="7"/>${nodes}</svg></div>`;
   }
 
   // ---------- six illustrations ----------
@@ -65,5 +65,23 @@
     const c = [["truth", "It can't tell what is true", "If someone lies, the result follows the lie. A reviewer settles disputed facts, and can be wrong."], ["money", "It holds no money", "The contracts record decisions only. Another contract may read a verdict and pay."], ["early", "It is an early prototype", "Unaudited, with no customers yet. Recovery for a lost device is still being built."]];
     return `<div class="nocards">${c.map(([k, h, p]) => `<div class="nocard"><div class="nicon">${icons[k]}</div><h3>${h}</h3><p>${p}</p></div>`).join("")}</div>`;
   }
-  window.TB_GFX = {flow, ill, notCards};
+
+  // ---------- "where do I start" cards ----------
+  const pi = {
+    customer: '<svg viewBox="0 0 64 64"><circle cx="30" cy="22" r="10"/><path d="M12 54a18 18 0 0 1 36 0"/><path class="ac" d="M42 40l5 5 9-10"/></svg>',
+    business: '<svg viewBox="0 0 64 64"><rect x="14" y="12" width="36" height="42" rx="4"/><path d="M22 22h6M36 22h6M22 32h6M36 32h6"/><path class="ac" d="M28 54v-10h8v10"/></svg>',
+    reviewer: '<svg viewBox="0 0 64 64"><path d="M32 12v38M20 52h24M14 22h36"/><path class="ac" d="M14 22l-8 16h16zM50 22l-8 16h16z"/></svg>',
+    publish: '<svg viewBox="0 0 64 64"><rect x="14" y="10" width="30" height="40" rx="4"/><path d="M21 20h16M21 28h16M21 36h10"/><path class="ac" d="M50 54V32M42 40l8-8 8 8"/></svg>',
+    invite: '<svg viewBox="0 0 64 64"><circle cx="28" cy="22" r="10"/><path d="M10 54a18 18 0 0 1 36 0"/><path class="ac" d="M50 20v16M42 28h16"/></svg>',
+    wallet: '<svg viewBox="0 0 64 64"><rect x="10" y="18" width="44" height="32" rx="6"/><path d="M10 28h44"/><circle class="acf" cx="44" cy="40" r="3"/></svg>',
+    cases: '<svg viewBox="0 0 64 64"><rect x="10" y="20" width="44" height="32" rx="5"/><path d="M24 20v-6h16v6M10 34h44"/><path class="ac" d="M28 34v6h8v-6"/></svg>',
+    embed: '<svg viewBox="0 0 64 64"><path d="M22 20L10 32l12 12M42 20l12 12-12 12"/><path class="ac" d="M36 14L28 50"/></svg>',
+    records: '<svg viewBox="0 0 64 64"><path d="M14 50V30M28 50V16M42 50V36M56 50H8"/><path class="ac" d="M14 24l14-8 14 14 14-12"/></svg>',
+    dev: '<svg viewBox="0 0 64 64"><circle cx="28" cy="28" r="14"/><path d="M38 38l14 14"/><path class="ac" d="M22 28h12M28 22v12"/></svg>'
+  };
+  // items: [icon, heading, text, href, link label]
+  function paths(items) {
+    return `<div class="paths">${items.map(([k, h, p, href, go]) => `<a class="path" href="${href}"><div class="nicon">${pi[k]}</div><h3>${h}</h3><p>${p}</p><span class="go">${go} <span class="arr">→</span></span></a>`).join("")}</div>`;
+  }
+  window.TB_GFX = {flow, ill, notCards, paths};
 })();
