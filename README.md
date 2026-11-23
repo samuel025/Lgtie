@@ -1,5 +1,7 @@
 # LGtie
 
+**Live:** https://lgtie.vercel.app/ · [fictional support page with the passkey flow](https://lgtie.vercel.app/embed-demo.html)
+
 A business publishes its policy as a checker. Customers answer plain yes/no questions and see the result and the reason. If a customer and the business answer a question differently, only that question goes to a neutral reviewer. The rules are stored on X Layer as a TapeOut circuit, so they can't be changed after a case starts, and anyone can re-run the same answers through the same circuit and get the same result, for free.
 
 Prototype for the X Layer TapeOut Accelerate hackathon. The project was first called Tiebreak; it is now **LGtie**. The deployed contracts keep their original names (`RuleSetRegistry`, `TiebreakCase`, `TiebreakCaseV2`, `TiebreakCaseV3`) because renaming them in the source would no longer match the bytecode on-chain.
@@ -70,6 +72,8 @@ Two examples are built in: `warranty` and `bounty` (bug-bounty severity, not yet
 ## Deploy
 
 Any static host works; the site is one file plus `embed.js` and `embed-demo.html`. On Vercel: import the repository, leave the Framework Preset as **Other**, leave the root directory as `./`, and deploy. `vercel.json` already sets the output directory to `dist` and turns off the install and build steps, because `dist/` is committed. After changing anything in `site/`, run `node scripts/bundle.mjs` and commit `dist/`. A passkey is tied to the site's exact address, so decide the final address before anyone creates real passkeys.
+
+`node tests/browser/live.mjs` (or `LIVE_URL=... node tests/browser/live.mjs`) smoke-tests the deployed site: it only reads from mainnet and writes nothing.
 
 ## Run and test
 

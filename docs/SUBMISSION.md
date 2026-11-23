@@ -1,6 +1,6 @@
 # LGtie: submission text
 
-Draft for the X Layer TapeOut Accelerate form. Fill the three `TODO` items before sending. Everything else is true as of this commit; re-check the numbers if anything changes.
+Draft for the X Layer TapeOut Accelerate form. Fill the two remaining `TODO` items (demo video, team) before sending. Everything else is true as of this commit; re-check the numbers if anything changes.
 
 ## One line
 
@@ -46,7 +46,7 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 
 ## Try it
 
-- Live site: `TODO: public URL`
+- Live site: https://lgtie.vercel.app/ (the fictional support page with the passkey flow is at https://lgtie.vercel.app/embed-demo.html)
 - Demo video: `TODO: link`
 - Source: https://github.com/samuel025/Lgtie
 - No wallet is needed to check a claim, watch the circuit, or read the real case and its receipt. Publishing and answering as a party need a wallet and cost a few millionths of an OKB in gas, plus the circuit fee for publishing.

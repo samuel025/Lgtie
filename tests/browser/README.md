@@ -13,6 +13,7 @@ npm i puppeteer-core            # in any folder; then run: node <path>/checker.m
 | `receipt.mjs` | the home page's real-case card and the printable receipt (read live from mainnet case #1; print layout hides the site chrome) | network |
 | `passkeys.mjs` | a customer with no wallet settles a dispute with a passkey: real pages, a Chrome virtual authenticator, V4 contracts on a fork, the real circuit; plus relay-link and fake-account attacks | anvil fork, forge |
 | `passkeys-frame.mjs` | passkeys inside a cross-site frame: a fictional Acme page embeds LGtie, creates and uses a passkey, receives the claim code by checked postMessage | anvil fork, forge |
+| `live.mjs` | the deployed site: home and the real case, receipt, checker with on-chain confirmation, claim pack, passkey creation on the live domain, and a cross-site frame embedding the live site. Read-only | network, Chrome |
 | `hero.mjs` | the home hero draws the real 39-gate circuit, tapping an answer changes the result, autoplay, the count-up facts, the card icons, and the circuit on checker pages | network |
 | `builder.mjs` | the visual rule builder: forms, text view, spreadsheet paste, AI-reply loading | none |
 | `embed.mjs` | the embeddable checker and its demo page | network |
