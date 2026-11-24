@@ -17,6 +17,7 @@ npm i puppeteer-core            # in any folder; then run: node <path>/checker.m
 | `hero.mjs` | the home hero draws the real 39-gate circuit, tapping an answer changes the result, autoplay, the count-up facts, the card icons, and the circuit on checker pages | network |
 | `builder.mjs` | the visual rule builder: forms, text view, spreadsheet paste, AI-reply loading | none |
 | `embed.mjs` | the embeddable checker and its demo page | network |
+| `bridge.mjs` | the optional bridge (`bridge/`): notify-only mode, auto-submit and ordering, reviewer pings, garbage ignored, daily cap; starts a local relay and webhook receiver and needs `npm install` inside `bridge/` | anvil fork, forge |
 | `publish.mjs` | one-click publish with a simulated wallet (claim, mint, tape-out, register) and the verified published link | `anvil --fork-url https://rpc.xlayer.tech --port 8547` |
 | `cases.mjs` | agreements (propose, terms check, accept), a case under an agreement, evidence hashing of a real file, an agreed reviewer deciding at once, helpers acting only for their side, "no decision" after a deadline, and the reviewer and business records (it deploys `AgreementRegistry` and `TiebreakCaseV3` on the fork itself) | the same anvil fork, and `forge` |
 

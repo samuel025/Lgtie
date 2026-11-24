@@ -1,0 +1,10 @@
+{
+  "name": "lgtie-bridge",
+  "version": "0.1.0",
+  "description": "Optional self-hosted helper for LGtie: relay inbox to webhook, optional auto-submit, reviewer pings",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": { "start": "node lgtie-bridge.mjs" },
+  "dependencies": { "ethers": "6.13.4" }
+}

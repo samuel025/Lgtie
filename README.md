@@ -113,7 +113,9 @@ Taken from the live site, except the four marked "test environment", which come 
 
 A customer creates a **passkey** (the same thing that unlocks their phone) and gets a public claim code. The business registers it and proposes an agreement. The customer approves the agreement and their answers on their own device. Each approval covers the exact action, the case, a one-time number and a deadline, so it cannot be altered, replayed or moved. Anyone with a wallet, usually the business, submits it and pays the tiny network fee. X Layer verifies the passkey signature with its built-in P-256 check. The customer's own page first proves on-chain that the account is controlled by their passkey. Details and tests are in `docs/PASSKEYS.md`.
 
-**The inbox.** A passkey can sign but cannot pay network fees, so someone with a wallet has to submit what the customer signed. After signing, the customer's page posts the signed action to a few public message relays (Nostr), addressed to the business's wallet address. The business opens `#inbox`, sees what is waiting, and submits it with one click. A relay cannot change a signed action (the contract rejects any change) and learns nothing that is not already public on-chain; it can drop a message, so a copy-link fallback is always shown. The business has to open the inbox; there are no notifications because there is no server. The same page lists cases waiting for the signed-in wallet's decision when that wallet is the neutral reviewer (found by reading the chain, not through the relays), and the agreement and case pages give the business a ready-made message to send the reviewer, with a link that opens the decision form directly. A reviewer still needs a wallet and pays the fee, and nothing reminds them.
+**The inbox.** A passkey can sign but cannot pay network fees, so someone with a wallet has to submit what the customer signed. After signing, the customer's page posts the signed action to a few public message relays (Nostr), addressed to the business's wallet address. The business opens `#inbox`, sees what is waiting, and submits it with one click. A relay cannot change a signed action (the contract rejects any change) and learns nothing that is not already public on-chain; it can drop a message, so a copy-link fallback is always shown. The business has to open the inbox; there are no notifications because there is no server. The same page lists cases waiting for the signed-in wallet's decision when that wallet is the neutral reviewer (found by reading the chain, not through the relays), and the agreement and case pages give the business a ready-made message to send the reviewer, with a link that opens the decision form directly. A reviewer still needs a wallet and pays the fee, and nothing reminds them unless the business runs the optional bridge below.
+
+**The optional bridge.** `bridge/` holds a small Node script that a business can run itself (LGtie runs no server). It listens for the same relay messages, posts a notice to a webhook (Slack, Discord, Zapier, Make or any URL), can submit each signed action with a gas-only relayer key so nobody opens the inbox, and can tell a reviewer by webhook when a case is waiting, with a link that opens the decision form. It simulates every action first, only sends to the LGtie contracts and has a daily cap. See `bridge/README.md`.
 
 ### Writing rules
 
@@ -171,6 +173,7 @@ Browser tests (checker, builder, embed, receipt, publishing, the full case flow,
 
 | Path | What is in it |
 | --- | --- |
+| `bridge/` | The optional self-hosted bridge: relay messages to a webhook, optional auto-submit, reviewer pings |
 | `site/` | The web app, with no server: rule engine and compiler (`rules.js`), guided rule builder (`builder.js`), case, agreement, receipt and reviewer pages (`cases.js`, `reviewer.js`), passkey pages and inbox (`passkeys.js`, `nostr.js`, `pkcore.js`), one-click publishing (`publish.js`, `wallet.js`), animated graphics (`graphics.js`, `hero.js`), embed script (`embed.js`), addresses (`config.js`) |
 | `contracts/` | Foundry project with the contracts above and their tests |
 | `dist/` | The built site, a single self-contained page (about 300 KB including the embedded Inter typeface; no external assets) |
@@ -197,6 +200,6 @@ What comes after the hackathon, in rough order:
 2. **A first pilot with a real business**, to learn what it would pay for and which disputes matter. Today the pricing ideas in `docs/SUBMISSION.md` are guesses.
 3. **More published rule sets**, starting with bug-bounty severity (only the warranty rules are published on mainnet).
 4. **An independent security review** before any real customer relies on it.
-5. **Optional notifications and reminders** for businesses and reviewers. This needs a small hosted service, which would end the current no-server design, so it would be an add-on, not the core.
+5. **Hosted notifications and reminders.** A self-hosted bridge exists (see above). A hosted version for businesses that will not run anything themselves would end the no-server design, so it would be an add-on, not the core.
 6. **A copy hosted on TapeOut's DeWEB**, if the passkey and relay features work there.
 
