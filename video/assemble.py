@@ -11,7 +11,7 @@ def run(cmd): subprocess.run(cmd, check=True)
 sentences = json.load(open(OUT + "/sentences.json")); scenes = json.load(open(OUT + "/scenes.json")); durs = json.load(open(CLIPS + "/durations.json"))
 marks = json.load(open(CLIPS + "/marks.json")) if os.path.exists(CLIPS + "/marks.json") else {}
 audio_len = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", OUT + "/narration.mp3"]).strip())
-TAIL = 1.2; MIN_SPEED, MAX_SPEED = 0.92, 1.08
+TAIL = 1.2; MIN_SPEED, MAX_SPEED = 1.0, 1.08
 
 # 1. one video segment per scene, as long as its narration (the next scene starts where this one's words begin)
 starts = [0.0] + [s["start"] for s in scenes[1:]]; ends = starts[1:] + [audio_len + TAIL]

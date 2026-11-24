@@ -3,6 +3,8 @@
 // What is here: a large visible cursor with a halo and click ripples, an orange "spotlight" that highlights what is being talked about,
 // a label pill, smooth scrolling, and a timeline so every action waits for the sentence it illustrates (no speeding up).
 import puppeteer from "puppeteer-core"; import fs from "node:fs";
+// every cursor move, scroll, click and typing delay is multiplied by PACE (1 = the slow first cut, 0.7 = brisk)
+export const PACE = 0.72;
 export const W = 1120, H = 630, SCALE = 1280 / 1120, sleep = ms => new Promise(r => setTimeout(r, ms));
 export async function launch(extraArgs = []) {
   const exe = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(p => fs.existsSync(p));
@@ -39,17 +41,17 @@ export const label = (page, text, test = false) => page.evaluate((t, test) => { 
 
 // ----- the cursor -----
 let mx = 560, my = 300;
-export async function moveTo(page, x, y, ms = 900) { const steps = Math.max(10, Math.round(ms / 16)); for (let i = 1; i <= steps; i++) { const t = i / steps, e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; await page.mouse.move(mx + (x - mx) * e, my + (y - my) * e); await sleep(ms / steps); } mx = x; my = y; }
+export async function moveTo(page, x, y, ms = 900) { ms = ms * PACE; const steps = Math.max(10, Math.round(ms / 16)); for (let i = 1; i <= steps; i++) { const t = i / steps, e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; await page.mouse.move(mx + (x - mx) * e, my + (y - my) * e); await sleep(ms / steps); } mx = x; my = y; }
 export const restoreCursor = async page => { await page.mouse.move(mx, my); await sleep(60); await page.mouse.move(mx + 1, my + 1); };
 const needsScroll = e => { const r = e.getBoundingClientRect(); return r.top < 70 || r.bottom > innerHeight - 24; };
 export async function boxOf(page, sel, nth = 0, scroll = true) { const hs = await page.$$(sel); const h = hs[nth]; if (!h) throw new Error("no element " + sel + "[" + nth + "]"); if (scroll && await h.evaluate(needsScroll)) await h.evaluate(e => e.scrollIntoView({ block: "center", behavior: "instant" })); const b = await h.boundingBox(); return { h, ...b }; }
 export async function pointAt(page, sel, ms = 900, nth = 0, fx = 0.5, fy = 0.5) { const b = await boxOf(page, sel, nth); await moveTo(page, b.x + b.width * fx, b.y + b.height * fy, ms); return b; }
 // moves the visible cursor to the element, then clicks it where it is NOW (the layout can shift while the cursor travels)
-export async function clickOn(page, sel, ms = 900, nth = 0) { const b = await pointAt(page, sel, ms, nth); await sleep(200); const now = await b.h.boundingBox(); if (now && (Math.abs(now.x - b.x) > 3 || Math.abs(now.y - b.y) > 3)) { await moveTo(page, now.x + now.width / 2, now.y + now.height / 2, 250); } await b.h.click({ delay: 90 }); await sleep(250); return b; }
-export async function typeIn(page, sel, text, perChar = 55) { await clickOn(page, sel, 520); await page.type(sel, text, { delay: perChar }); }
+export async function clickOn(page, sel, ms = 900, nth = 0) { const b = await pointAt(page, sel, ms, nth); await sleep(200 * PACE); const now = await b.h.boundingBox(); if (now && (Math.abs(now.x - b.x) > 3 || Math.abs(now.y - b.y) > 3)) { await moveTo(page, now.x + now.width / 2, now.y + now.height / 2, 250); } await b.h.click({ delay: 90 }); await sleep(250 * PACE); return b; }
+export async function typeIn(page, sel, text, perChar = 55) { await clickOn(page, sel, 520); await page.type(sel, text, { delay: perChar * PACE }); }
 // highlight an element (does not wait): everything else dims for `ms`
 export async function spot(page, sel, ms = 3000, { nth = 0, pad = 10, scroll = true } = {}) { const hs = await page.$$(sel); const h = hs[nth]; if (!h) return null; if (scroll && await h.evaluate(needsScroll)) await h.evaluate(e => e.scrollIntoView({ block: "center", behavior: "instant" })); const b = await h.boundingBox(); await page.evaluate((r, ms, pad) => window.__spot && window.__spot(r, ms, pad), { x: b.x, y: b.y, width: b.width, height: b.height }, ms, pad); return b; }
-export async function scrollTo(page, y, ms = 2500) { await page.evaluate((y, ms) => new Promise(res => { const y0 = scrollY, t0 = performance.now(); const f = n => { const t = Math.min(1, (n - t0) / ms), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; scrollTo(0, y0 + (y - y0) * e); t < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); }), y, ms); }
+export async function scrollTo(page, y, ms = 2500) { ms = ms * PACE; await page.evaluate((y, ms) => new Promise(res => { const y0 = scrollY, t0 = performance.now(); const f = n => { const t = Math.min(1, (n - t0) / ms), e = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; scrollTo(0, y0 + (y - y0) * e); t < 1 ? requestAnimationFrame(f) : res(); }; requestAnimationFrame(f); }), y, ms); }
 export async function scrollToEl(page, sel, ms = 2500, nth = 0, align = 0.38) { const y = await page.evaluate((sel, nth, align) => { const e = document.querySelectorAll(sel)[nth]; if (!e) return null; const r = e.getBoundingClientRect(); return Math.max(0, scrollY + r.top - innerHeight * align); }, sel, nth, align); if (y !== null) await scrollTo(page, y, ms); }
 export async function waitText(page, re, ms = 30000, sel = "body") { const t = Date.now(); while (Date.now() - t < ms) { const s = await page.$eval(sel, e => e.innerText).catch(() => ""); if (re.test(s)) return true; await sleep(250); } return false; }
 

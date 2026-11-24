@@ -1,6 +1,6 @@
 {
   "voice": "en-US-AndrewNeural",
-  "rate": "-18%",
+  "rate": "-12%",
   "scenes": [
     { "id": "problem", "text": "Imagine you buy a laptop, and it breaks. You say the warranty covers it. The business says it does not. Today, the rules live inside the business's own process, and the person who decides is often on their side. LGtie is built to fix that." },
     { "id": "rules", "text": "Here is how. The business publishes its rules first, as simple yes or no questions. This is a real warranty policy, running as a small circuit on X Layer through TapeOut, so nobody can quietly change it. Tap an answer, and the result and the reason change. Anyone can check it, for free." },

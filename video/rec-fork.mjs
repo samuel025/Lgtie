@@ -58,17 +58,17 @@ if (want("nowallet")) {
   await page.evaluate(() => document.querySelectorAll("#cs .qs .yn").forEach((g, i) => g.querySelector(`button[data-v="${i === 4 ? 0 : 1}"]`).click()));   // her answers are chosen; the signing is on camera
   await page.evaluate(() => document.querySelector("#cs h3").scrollIntoView({ block: "start" })); await page.evaluate(() => scrollBy(0, -70)); await sleep(500); await moveTo(page, 560, 300, 10);
   await scene(page, "nowallet", tl, async ({ at, S }) => {
-    await at(0.3); await spot(page, "#cs .card", 2400, { pad: 8, scroll: false }); await moveTo(page, 420, 190, 1300);                                 // Customers do not need a crypto wallet.
+    await at(0.2); await spot(page, "#cs .card", 2400, { pad: 8, scroll: false }); await moveTo(page, 420, 190, 1300);                                 // Customers do not need a crypto wallet.
     await at(S[1].t0 + 0.1); await scrollToEl(page, '[data-act="answer"]', 1000, 0, 0.55); await clickOn(page, '[data-act="answer"]', 1000);   // They approve with the fingerprint or face scan...
     await dead(() => until(async () => /Sent to the other side's inbox/.test(await T("#inboxst")), 15000)); await spot(page, "#packbox", 1700, { pad: 8 });
-    await at(S[2].t0 - 0.4); await hashNav(BUSINESS, "#inbox"); await clickOn(page, "#ibc", 600);                                                    // That lands in the business's inbox...
+    await at(S[2].t0 - 0.3); await hashNav(BUSINESS, "#inbox"); await clickOn(page, "#ibc", 600);                                                    // That lands in the business's inbox...
     await dead(() => until(async () => !!(await page.$("[data-go]")), 15000)); await spot(page, ".card[data-k]", 1600, { pad: 10 });
-    await at(S[2].t0 + 2.4); await clickOn(page, "[data-go]", 600); await sleep(400);             // ... where one click submits it.
+    await at(S[2].t0 + 1.9); await clickOn(page, "[data-go]", 600); await sleep(400);             // ... where one click submits it.
     await at(S[3].t0 - 0.2); await hashNav("", "#mine"); await clickOn(page, "#find", 550); await dead(() => until(async () => !!(await page.$('[data-act="evidence"]')), 15000));   // Evidence works the same way.
-    await at(S[4].t0 - 0.3); await clickOn(page, '[data-act="evidence"]', 600); await (await page.$("#evf")).uploadFile("/tmp/lgtie-video-photo.txt");   // A photo, or a written note...
+    await at(S[4].t0 - 0.2); await clickOn(page, '[data-act="evidence"]', 600); await (await page.$("#evf")).uploadFile("/tmp/lgtie-video-photo.txt");   // A photo, or a written note...
     await spot(page, ".evbox", 1800, { pad: 8 }); await typeIn(page, "#evn", "Photo of the receipt", 38); await clickOn(page, "#evgo", 500);
     await dead(() => until(async () => /Sent to the other side's inbox/.test(await T("#inboxst")), 15000)); await spot(page, "#packbox", 1400, { pad: 8 });
-    await at(S[5].t0 - 0.4); await hashNav("", "#for-business"); await sleep(400); await spot(page, ".paths .path", 2200, { nth: 5, pad: 10 }); await pointAt(page, ".paths .path", 1100, 5, 0.5, 0.55);   // And an optional helper can ping Slack for you.
+    await at(S[5].t0 - 0.3); await hashNav("", "#for-business"); await sleep(400); await spot(page, ".paths .path", 2200, { nth: 5, pad: 10 }); await pointAt(page, ".paths .path", 1100, 5, 0.5, 0.55);   // And an optional helper can ping Slack for you.
   });
 }
 
@@ -82,12 +82,12 @@ if (want("reviewer")) {
   }
   await as(REVIEWER, "#pk/case/1/decide"); need(await until(async () => !!(await page.$("#rv-one")), 25000), "decision form"); await page.evaluate(() => scrollTo(0, 0)); await sleep(500); await moveTo(page, 560, 300, 10);
   await scene(page, "reviewer", tl, async ({ at, S }) => {
-    await at(0.3); await spot(page, ".card thead", 2800, { pad: 10, scroll: false }); await pointAt(page, ".card thead th:nth-child(2)", 1100, 0, 0.5, 0.5);    // side A and side B instead of names
-    await at(2.6); await scrollToEl(page, "#ans", 900, 0, 0.12);
-    await at(3.6); await clickOn(page, '#ans .yn button[data-v="1"]', 600);
-    await at(4.6); await typeIn(page, "#rv-one", "Report shows no excluded cause", 30);                                                                 // ... has to write down their reasons
-    await at(6.4); await clickOn(page, "#rv-full", 500); await page.type("#rv-full", "No excluded cause appears in the report.", { delay: 10 });
-    await at(7.6); await clickOn(page, "#rv-coi", 500); await clickOn(page, "#send", 500);
+    await at(0.2); await spot(page, ".card thead", 2800, { pad: 10, scroll: false }); await pointAt(page, ".card thead th:nth-child(2)", 1100, 0, 0.5, 0.5);    // side A and side B instead of names
+    await at(2.1); await scrollToEl(page, "#ans", 900, 0, 0.12);
+    await at(2.9); await clickOn(page, '#ans .yn button[data-v="1"]', 600);
+    await at(3.7); await typeIn(page, "#rv-one", "Report shows no excluded cause", 30);                                                                 // ... has to write down their reasons
+    await at(5.1); await clickOn(page, "#rv-full", 500); await page.type("#rv-full", "No excluded cause appears in the report.", { delay: 10 });
+    await at(6.1); await clickOn(page, "#rv-coi", 500); await clickOn(page, "#send", 500);
     await dead(() => until(async () => /Decided/.test(await T("main")), 40000)); await sleep(500);
     await page.evaluate(() => { const r = document.querySelector(".res"); r && r.scrollIntoView({ block: "center", behavior: "smooth" }); }); await sleep(1100); await spot(page, ".res", 2000, { pad: 10, scroll: false });   // Those show on the case, and on the receipt.
   });
