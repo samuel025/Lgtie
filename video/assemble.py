@@ -15,17 +15,19 @@ marks = json.load(open(CLIPS + "/marks.json")) if os.path.exists(CLIPS + "/marks
 beats = json.load(open(CLIPS + "/beats.json")) if os.path.exists(CLIPS + "/beats.json") else {}
 probe = lambda f, k: float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", k, "-of", "csv=p=0", f]).strip().splitlines()[0])
 audio_len = probe(OUT + "/narration.mp3", "format=duration"); rate = int(probe(OUT + "/narration.mp3", "stream=sample_rate"))
-LEAD, TAIL, MAX_PAUSE = 0.6, 1.2, 3.0
+nar = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "narration.json")))["scenes"]
+LEADS = [n.get("lead", 0.6) for n in nar]; LEAD = LEADS[0]   # LEAD: the first scene is on screen this long before the voice starts
+TAIL = 1.2
 starts = [0.0] + [s["start"] for s in scenes[1:]]; ends = starts[1:] + [audio_len]
 
 # 1. which sentences belong to which scene, and how far the screen is behind the narration at each one (the voice waits for it)
 plan = []; cum = 0.0   # cum: seconds of pause added in earlier scenes
 for i, sc in enumerate(scenes):
     ss = [x for x in sentences if starts[i] - 1e-6 <= x["start"] < ends[i] - 1e-6]
-    b = beats.get(sc["id"], {}); run_max = 0.0; shifts = []
+    b = beats.get(sc["id"], {}); prev = 0.0; shifts = []          # shifts: how long the voice waits before each sentence (cumulative within the scene)
     for k in range(len(ss)):
-        run_max = max(run_max, min(MAX_PAUSE, b.get(str(k), 0.0)) if str(k) in b else 0.0); shifts.append(run_max)
-    end_shift = max(run_max, min(MAX_PAUSE * 2, b.get("end", 0.0)))
+        prev = max(prev, b.get(str(k), prev)); shifts.append(prev)
+    end_shift = max(prev, b.get("end", 0.0))
     plan.append({"id": sc["id"], "ss": ss, "shifts": shifts, "cum": cum, "end_shift": end_shift})
     cum += end_shift
 total_pause = cum
@@ -36,7 +38,7 @@ for i, sc in enumerate(scenes):
     clip = f"{CLIPS}/{sc['id']}.mp4"; src = durs[sc["id"]]
     cuts = [(a + 0.5, b - 0.2) for a, b in marks.get(sc["id"], []) if b - a > 0.9]          # real waiting: keep half a second, drop the rest
     kept = src - sum(b - a for a, b in cuts)
-    D = (ends[i] - starts[i]) + (TAIL + LEAD if i == len(scenes) - 1 else 0) + plan[i]["end_shift"]
+    D = ((ends[i] - starts[i]) + LEADS[i] + TAIL if i == len(scenes) - 1 else (starts[i + 1] - starts[i]) + LEADS[i] - LEADS[i + 1]) + plan[i]["end_shift"]
     vf = ["fps=24"]
     if cuts: vf += ["select='not(" + "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in cuts) + ")'", "setpts=N/(24*TB)"]
     vf += ["scale=1280:720:flags=bicubic", "setsar=1"]
