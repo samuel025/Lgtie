@@ -2,7 +2,7 @@
 
 **Settle disputes fairly, with rules everyone can see first.**
 
-**Live:** https://lgtie.vercel.app/ · [Try the fictional support page](https://lgtie.vercel.app/embed-demo.html) · [See a real case on X Layer](https://lgtie.vercel.app/#case/1)
+> **Start here:** **[Open the live app](https://lgtie.vercel.app/)** · **[See a real case settled on X Layer](https://lgtie.vercel.app/#case/1)** · [Try the fictional support page](https://lgtie.vercel.app/embed-demo.html)
 
 LGtie is a prototype for the **X Layer TapeOut Accelerate** hackathon. It is early software: the contracts are unaudited and it has no customers yet.
 
@@ -184,7 +184,19 @@ Browser tests (checker, builder, embed, receipt, publishing, the full case flow,
 - **A neutral reviewer can still be biased.** Both sides accept the reviewer, but nothing stops them agreeing on a bad one, or on the same false answers. There is no staking, jury or penalty. Written reasons make a bad decision visible, they do not prevent it.
 - **A case nobody finishes ends as "no decision".** That is safe, but the sides then have to open a new case.
 - **The inbox depends on public relays, and actions go in order.** They are run by other people, may be slow or drop messages, and nothing tells the business to look; messages older than three days are not shown. The customer's page says when relays could not be reached, and the copy-link fallback still works.
-- **Passkeys prove a device, not a person.** The business ties a passkey to a customer through its own login. If someone loses every device with their passkey, recovery is not built yet (a second device or a synced passkey is the fallback). The passkey flows are tested in Chrome and have not been tried on real phones, Safari or Firefox.
+- **Passkeys prove a device, not a person.** The business ties a passkey to a customer through its own login. If someone loses every device with their passkey, recovery is not built yet (a second device or a synced passkey is the fallback). The passkey flows are tested in Chrome with a virtual authenticator, and the whole flow was tried once by the builder on a real phone; Safari and Firefox are untested.
 - **A normal smart contract could hold the same decision table.** What TapeOut adds is a rule published as data, so it cannot hold hidden state or an admin key, and anyone can re-run it for free.
 - **No escrow, on purpose.** Another system can read a decision and pay out; see `docs/VERDICT.md`.
-- **Early prototype.** The contracts are unaudited and hold no funds. There are no customers, no revenue and no validated prices; any pricing ideas are hypotheses. Not built yet: assisted passkey recovery, and more than one published rule set.
+- **Early prototype.** The contracts are unaudited and hold no funds. There are no customers, no revenue and no validated prices; any pricing ideas are hypotheses.
+
+## Roadmap and next steps
+
+What comes after the hackathon, in rough order:
+
+1. **Assisted passkey recovery.** The contract already lets an account add a second device; the pages for it, and a recovery path with a reviewer's countersignature and a delay, are not built.
+2. **A first pilot with a real business**, to learn what it would pay for and which disputes matter. Today the pricing ideas in `docs/SUBMISSION.md` are guesses.
+3. **More published rule sets**, starting with bug-bounty severity (only the warranty rules are published on mainnet).
+4. **An independent security review** before any real customer relies on it.
+5. **Optional notifications and reminders** for businesses and reviewers. This needs a small hosted service, which would end the current no-server design, so it would be an add-on, not the core.
+6. **A copy hosted on TapeOut's DeWEB**, if the passkey and relay features work there.
+
