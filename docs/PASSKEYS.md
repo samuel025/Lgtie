@@ -38,7 +38,7 @@ Reproduce: `node prototypes/passkey/gen-vector.mjs > contracts/test/WebAuthnVect
 
 - **A signature is not unique.** `(r, s)` and `(r, N - s)` both verify (tested). Replay protection must come from a nonce or a one-time state change in the signed challenge, never from the signature.
 - **A passkey is bound to the site's domain** (the relying-party id). We need the final public domain before real enrollment, and changing it later means re-enrolling everyone.
-- **Tested by hand once:** the team ran the whole flow (passkey, agreement, evidence, inbox) on a real phone and it worked. **Not yet tested:** many devices and browsers, passkeys inside an embedded frame on a real phone, and cross-ecosystem sync (Apple to Google is not automatic).
+- **Tested by hand once:** the builder ran the whole flow (passkey, agreement, evidence, inbox) on a real phone and it worked. **Not yet tested:** many devices and browsers, passkeys inside an embedded frame on a real phone, and cross-ecosystem sync (Apple to Google is not automatic).
 
 ## Gate 2: the contracts (written, tested, not deployed)
 

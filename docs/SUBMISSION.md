@@ -1,6 +1,6 @@
 # LGtie: submission text
 
-Draft for the X Layer TapeOut Accelerate form. Fill the two remaining `TODO` items (demo video, team) before sending. Everything else is true as of this commit; re-check the numbers if anything changes.
+Draft for the X Layer TapeOut Accelerate form. Fill the one remaining `TODO` (the demo video link) before sending. Everything else is true as of this commit; re-check the numbers if anything changes.
 
 ## One line
 
@@ -44,7 +44,7 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 - `AgreementRegistry`: `0xC3e61E38d977Be9e9B4649e5965892bF6f675180`
 - `TiebreakCaseV3`: `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67`
 - Passkey system (deployed Nov 23, 2026; no real cases yet): `PasskeyRegistry` `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E`, `AgreementRegistryV2` `0x802995325A576b69175DCE24e8D643553C9ba2ed`, `TiebreakCaseV4` `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (trusts only the official TapeOut processor)
-- One real run, played by the team with three wallets it controls: agreement #1 and case #1, decided "Covered" with one question settled by the reviewer. It is a demonstration, not a customer. The home page reads it live.
+- One real run, played by the builder with three wallets they control: agreement #1 and case #1, decided "Covered" with one question settled by the reviewer. It is a demonstration, not a customer. The home page reads it live.
 
 ## Try it
 
@@ -62,7 +62,7 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 - It does not check that answers are true. The result follows the answers given; a reviewer decides disputed facts and can be wrong. The circuit shows the rules were applied consistently, nothing more.
 - A reviewer both sides accepted can still be biased, and two parties can agree on the same false answer. There is no staking, jury or slashing. Required written reasons and the Side A / Side B view make a bad decision visible and harder, not impossible.
 - The inbox depends on public relays run by others, which can be slow or drop messages, and nothing notifies the business: it has to open the inbox. The copy-link fallback always works.
-- The contracts are unaudited and hold no funds. The passkey system is new: recovery after losing every device is not built, and it was tried end to end once by the team on a real phone and worked, but it is untested in Safari and Firefox (it was also tested in Chrome with a virtual authenticator, including inside a cross-site frame). There are no customers, no revenue and no validated price.
+- The contracts are unaudited and hold no funds. The passkey system is new: recovery after losing every device is not built, and it was tried end to end once by the builder on a real phone and worked, but it is untested in Safari and Firefox (it was also tested in Chrome with a virtual authenticator, including inside a cross-site frame). There are no customers, no revenue and no validated price.
 - Only one rule set is published on mainnet so far.
 - Other entries also compile rules to TapeOut circuits. We do not claim to be first at that. What we built that we have not seen elsewhere is the dispute process around the rules.
 
@@ -82,4 +82,4 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 
 ## Team
 
-`TODO: names and roles`
+**LGtie**, a solo project: one builder, who designed, wrote and tested everything (contracts, web app, tests and docs).

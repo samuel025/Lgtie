@@ -27,7 +27,7 @@ LGtie never holds anyone's money. It records decisions and checks that rules wer
 | What | Where |
 | --- | --- |
 | Check a warranty claim and see the result and the reason | https://lgtie.vercel.app/#check/warranty |
-| Read a real case that was settled on X Layer (played by the team, so a demonstration, not a customer) | https://lgtie.vercel.app/#case/1 |
+| Read a real case that was settled on X Layer (played by the project's builder, so a demonstration, not a customer) | https://lgtie.vercel.app/#case/1 |
 | Its one-page receipt, which you can print or save as a PDF | https://lgtie.vercel.app/#receipt/1 |
 | A fictional support page with the fingerprint (passkey) flow embedded | https://lgtie.vercel.app/embed-demo.html |
 | How it works, as a short animated story | https://lgtie.vercel.app/#about |
@@ -47,7 +47,7 @@ Taken from the live site, except the four marked "test environment", which come 
 <td width="50%"><img src="docs/img/builder.png" alt="Rule builder"><br><sub>The guided builder: questions, a click-to-cycle rule grid, a test, then publish.</sub></td>
 </tr></table>
 
-**A real case on X Layer** (played by the team, so a demonstration, not a customer)
+**A real case on X Layer** (played by the project's builder, so a demonstration, not a customer)
 
 <table><tr>
 <td width="50%"><img src="docs/img/case.png" alt="Decided case page"><br><sub>Six answers matched. One differed, so only that question went to the reviewer.</sub></td>
@@ -151,7 +151,7 @@ Add `data-flow="join"` to let customers create a passkey on your page (your page
 | `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` (the other party can be a passkey account) |
 | `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey parties; accepts only the official processor) |
 
-The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the team; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
+The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the project's builder; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
 
 ## Run it yourself
 
