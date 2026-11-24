@@ -70,6 +70,8 @@ await as(BUYER, hC); await connect(); await p.waitForSelector('[data-form="filer
 await until(async () => /Nothing for your wallet/.test(await T("main")));
 await as(SHOP, hC); await connect(); await p.waitForSelector('[data-form="decider"]'); await answerAll("decider", 4);
 ok("a dispute waits for the reviewer", await until(async () => /Waiting for the reviewer/.test(await T("main"))));
+await as(REV, "#inbox"); await p.click("#ibc").catch(() => {});
+ok("the reviewer's inbox also lists wallet cases waiting for their decision", await until(async () => /Waiting for your decision/.test(await T("#ibl")) && /wallet case/.test(await T("#ibl")) && !!(await p.$('#ibl a[href^="#case/"]'))), await T("#ibl"));
 await as(REV, hC); await connect(); await p.waitForSelector('[data-form="review"]');
 ok("the agreed reviewer can decide at once, and sees only the disputed question", (await p.$$('[data-form="review"] .yn')).length === 1 && !!(await p.$("#evf")));
 // blind review: the reviewer sees Side A and Side B, not who they are

@@ -141,6 +141,15 @@ await as(REVIEWER, "#pk/cases"); ok("the passkey list page links to the agreemen
 await as(REVIEWER, "#case"); ok("the normal case page points to the passkey list", !!(await p.$('a[href="#pk/cases"]')));
 await as(REVIEWER, "#pk/case/1");
 ok("the case now waits for the reviewer and question 5 is disputed", /Waiting for the reviewer/.test(await T("main")) && /Disputed/.test(await T("tbody")), await T("main"));
+await as(BUSINESS, "#pk/case/1"); ok("the business is given a message to send the reviewer, with a direct link", await until(async () => /#pk\/case\/1\/decide/.test(await p.$eval("#rvtxt", e => e.value).catch(() => ""))) && /named|neutral reviewer/.test(await p.$eval("#rvtxt", e => e.value).catch(() => "")), await T("main"));
+await as(BUSINESS, "#pk/agreement/1"); ok("the agreement page has a message for the reviewer too", await until(async () => /#inbox/.test(await p.$eval("#rvtxt", e => e.value).catch(() => ""))), await T("main"));
+await as(RELAYER, "#inbox"); await p.click("#ibc").catch(() => {}); await w(2500);
+ok("someone who is not the reviewer sees no decision waiting", !/Waiting for your decision/.test(await T("#ibl")), await T("#ibl"));
+await as(REVIEWER, "#inbox"); await p.click("#ibc").catch(() => {});
+ok("the reviewer's inbox lists the case waiting for their decision, with a button", await until(async () => /Waiting for your decision \(1\)/.test(await T("#ibl")) && !!(await p.$('a[href="#pk/case/1/decide"]'))), await T("#ibl"));
+await as(REVIEWER, "#pk/case/1/decide");
+ok("the decide link connects and opens the decision form by itself, in the blind view", await until(async () => !!(await p.$("#rv-one"))) && /names are hidden/.test(await T("main")), await T("main"));
+await as(REVIEWER, "#pk/case/1");
 await clickText("#wacts button", "Decide as the reviewer"); await w(1500);
 ok("the reviewer sees Side A and Side B instead of the parties", /names are hidden/.test(await T("main")) && /Side A opened the case/.test(await T("main")) && !(await p.$$eval("main tbody th, main .small", e => e.some(x => /Opened by/.test(x.innerText)))), await T("main"));
 ok("the decision form opened by itself after connecting", !!(await p.$("#rv-one")));

@@ -1630,7 +1630,7 @@ MY POLICY:
       <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
   }
 
-  window.TB_CASES = {mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
+  window.TB_CASES = {scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
 })();
 
 </script><script>/* nostr.js */
@@ -1986,18 +1986,24 @@ MY POLICY:
     };
   }
 
+  // ---------- telling the reviewer ----------
+  const reviewerInviteCard = (text, note) => `<div class="card invite" id="rvinv"><h3>Tell your reviewer</h3><p class="small mute">${note}</p><textarea id="rvtxt" rows="5" readonly>${esc(text)}</textarea><div class="row"><button class="btn small" id="rvcp" type="button">Copy message</button></div></div>`;
+  const bindReviewerInvite = () => { const b = $("#rvcp"); if (b) b.onclick = () => copy($("#rvtxt").value, b); };
+  const siteBase = () => location.href.split("#")[0];
+
   // ---------- #inbox: signed actions customers have posted for this wallet ----------
   let stopInbox = null;
   async function inbox() {
     if (!deployed()) { notDeployed("Inbox"); return; }
     if (stopInbox) { stopInbox(); stopInbox = null; }
-    main.innerHTML = `<h1>Inbox</h1><p class="lede">When a customer approves something with their passkey, it lands here, addressed to your wallet. Open it, check it, and submit it. You pay the small network fee and the customer never needs a wallet.</p>
+    main.innerHTML = `<h1>Inbox</h1><p class="lede">When a customer approves something with their passkey, it lands here, addressed to your wallet. Open it, check it, and submit it. You pay the small network fee and the customer never needs a wallet. If you are a neutral reviewer, cases waiting for your decision are listed here too.</p>
       <div class="card"><ol class="ibsteps"><li><b>The customer signs</b> with their fingerprint or face.</li><li><b>It appears here</b>, addressed to your wallet. Nothing to copy or paste.</li><li><b>You submit it</b> and pay the small network fee.</li></ol><div class="row"><button class="btn" id="ibc" type="button">Connect my wallet</button></div><p id="ibs" class="small mute"></p></div><div id="ibl"></div>`;
     const start = async () => {
       const me = W().account(); if (!me) return; $("#ibc").hidden = true;
-      const items = new Map(), seenPacks = new Set(), render = () => {
+      let tasks = {wait: [], soon: []}; const items = new Map(), seenPacks = new Set(), render = () => {
         const all = [...items.values()].sort((a, b) => b.at - a.at), later = all.filter(i => i.state === "later"), ready = all.filter(i => i.state === "ready"), checking = all.filter(i => i.state === "checking"), old = all.filter(i => i.state === "old");
-        $("#ibl").innerHTML = `<h2>Waiting for you (${ready.length})</h2>${ready.length ? ready.map(i => `<div class="card" data-k="${i.key}"><p><b>${esc(String(i.o.summary || "A signed action").slice(0, 200))}</b></p><p class="small mute">Sent ${ago(i.at)} · to <code>${short(i.o.to)}</code>. The description comes from the sender; check the result on the case page afterwards.</p><div class="row"><button class="btn" data-go="${i.key}" type="button">Submit with my wallet</button><a class="btn small ghost" href="#relay/${i.pack}">Open on its own page</a><span class="small" data-m></span></div></div>`).join("") : `<p class="mute">${checking.length ? "Checking…" : "Nothing waiting. This page keeps listening while it is open."}</p>`}
+        const taskRow = c => { const P = policyOf(c.ruleSetId), late = Date.now() / 1000 > c.reviewBy; return `<div class="card"><p><b>Case #${c.id}${P ? ": " + esc(P.name) : ""}</b> <span class="badge">${c.v3 ? "wallet case" : "passkey case"}</span></p><p class="small mute">${late ? "The time to decide has passed." : "You have until " + when(c.reviewBy) + "."} Only the questions the two sides disagree on need your answer.</p><div class="row"><a class="btn" href="${c.v3 ? "#case/" + c.id : "#pk/case/" + c.id + "/decide"}">Decide this case</a></div></div>`; };
+        $("#ibl").innerHTML = `${tasks.wait.length ? `<h2>Waiting for your decision (${tasks.wait.length})</h2>${tasks.wait.map(taskRow).join("")}` : ""}${tasks.soon.length ? `<details><summary class="small">Cases that may come to you (${tasks.soon.length})</summary>${tasks.soon.map(c => `<p class="small mute"><a href="${c.v3 ? "#case/" + c.id : "#pk/case/" + c.id}">Case #${c.id}</a>: the two sides are still answering.</p>`).join("")}</details>` : ""}<h2>Waiting for you (${ready.length})</h2>${ready.length ? ready.map(i => `<div class="card" data-k="${i.key}"><p><b>${esc(String(i.o.summary || "A signed action").slice(0, 200))}</b></p><p class="small mute">Sent ${ago(i.at)} · to <code>${short(i.o.to)}</code>. The description comes from the sender; check the result on the case page afterwards.</p><div class="row"><button class="btn" data-go="${i.key}" type="button">Submit with my wallet</button><a class="btn small ghost" href="#relay/${i.pack}">Open on its own page</a><span class="small" data-m></span></div></div>`).join("") : `<p class="mute">${checking.length ? "Checking…" : "Nothing waiting. This page keeps listening while it is open."}</p>`}
           ${later.length ? `<h3>Waiting for an earlier action (${later.length})</h3>${later.map(i => `<p class="small mute">${esc(String(i.o.summary || "A signed action").slice(0, 120))} · ${ago(i.at)}. The customer signed something earlier that has to be submitted first.</p>`).join("")}` : ""}
           ${old.length ? `<details><summary class="small">Done or expired (${old.length})</summary>${old.map(i => `<p class="small mute">${esc(String(i.o.summary || "A signed action").slice(0, 120))} · ${ago(i.at)}</p>`).join("")}</details>` : ""}`;
         document.querySelectorAll("[data-go]").forEach(b => b.onclick = async () => {
@@ -2017,7 +2023,14 @@ MY POLICY:
         const pp = parsePack(msg.pack); if (!pp.o || seenPacks.has(msg.pack)) return; seenPacks.add(msg.pack);
         const i = {key: "k" + items.size, pack: msg.pack, o: pp.o, at: ev.created_at, state: "checking"}; items.set(i.key, i); render(); check(i);
       }, s => { $("#ibs").className = "small mute"; $("#ibs").textContent = `Listening on ${s.open} of ${s.total} relays for ${short(me)}`; });
-      render();
+      const loadTasks = async () => {
+        try {
+          const lc = me.toLowerCase(), [a, b] = await Promise.all([scan(V4().cases, readCase).catch(() => []), (window.TB_CASES && window.TB_CASES.scanCases ? window.TB_CASES.scanCases(60).then(r => r.cases) : Promise.resolve([])).catch(() => [])]);
+          const mineC = [...a.map(c => ({...c, v3: false})), ...b.map(c => ({...c, v3: true}))].filter(c => c.reviewer && c.reviewer.toLowerCase() === lc);
+          tasks = {wait: mineC.filter(c => c.status === 1 && Date.now() / 1000 < c.reviewBy + 30 * 86400), soon: mineC.filter(c => c.status === 0)}; render();
+        } catch (e) {}
+      };
+      render(); loadTasks();
     };
     $("#ibc").onclick = async () => { try { await W().connect(); await start(); } catch (e) { $("#ibs").className = "small err"; $("#ibs").textContent = (e && e.message) || String(e); } };
     if (W().account()) start();
@@ -2067,7 +2080,9 @@ MY POLICY:
         <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)}</td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance</td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr><tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code></td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</div>` : ""}
+      ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
       <div class="row" id="acts"></div><div id="amsg" class="small"></div><div id="cases"></div>`;
+    bindReviewerInvite();
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
@@ -2084,6 +2099,7 @@ MY POLICY:
     } catch (e) { $("#pkl").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkCase(id, opts) {
+    if (opts === true) opts = {review: true};
     if (!deployed()) { notDeployed("Case"); return; }
     main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
     let c; try { c = await readCase(id); } catch { main.innerHTML = `<h1>Case #${esc(id)}</h1><p class="err">That case does not exist, or X Layer could not be reached.</p>`; return; }
@@ -2102,7 +2118,9 @@ MY POLICY:
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
       ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       ${ev.length ? `<div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded. Nothing is uploaded: the files stay with the people who share them.</p><table class="ctab"><thead><tr><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabelV4(e.question))}</td><td data-l="By">${evWho(e)}</td><td data-l="Note">${esc(e.note)}</td><td data-l="Fingerprint"><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table><div id="fchk"></div></div>` : ""}
+      ${live && !blind && !RV.isReviewer(W().account(), cc) ? reviewerInviteCard(`You are the neutral reviewer for case #${id} (${P.name}) on LGtie. ${c.status === 1 ? "The two sides disagree on some answers and the case is waiting for you." : "The two sides are still answering. If they disagree, the case will wait for you."} Open ${siteBase()}#pk/case/${id}/decide, connect your wallet and decide only the questions they disagree on. You will write your reasons and confirm you have no conflict of interest. You pay a small network fee. Nothing is held in escrow.`, c.status === 1 ? "The case is waiting for the reviewer. They get no notification, so send them this." : "Send this so the reviewer is ready if the sides disagree.") : ""}
       <div class="card" id="wal"></div><div id="cmsg" class="small"></div>`;
+    bindReviewerInvite();
     if ($("#shownames")) $("#shownames").onclick = () => { namesFor2 = Number(id); pkCase(id); };
     if ($("#fchk") && window.TB_CASES && window.TB_CASES.mountFileCheck) window.TB_CASES.mountFileCheck($("#fchk"), ev, q => q === 255 ? "the whole case" : "question " + (q + 1));
     const wal = $("#wal"), msg = $("#cmsg"), act = (fn, rerender) => async () => { try { await needWallet(); msg.className = "small mute"; msg.textContent = rerender === false ? "" : "Confirm in your wallet…"; await fn(); if (rerender !== false) await pkCase(id); } catch (e) { msg.className = "small err"; msg.textContent = (e && e.message) || String(e); } };
@@ -2463,7 +2481,7 @@ MY POLICY:
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1) : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build();
     if (view === "verify") return verify();
