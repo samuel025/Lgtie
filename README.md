@@ -31,6 +31,7 @@ LGtie never holds anyone's money. It records decisions and checks that rules wer
 | Its one-page receipt, which you can print or save as a PDF | https://lgtie.vercel.app/#receipt/1 |
 | A fictional support page with the fingerprint (passkey) flow embedded | https://lgtie.vercel.app/embed-demo.html |
 | How it works, as a short animated story | https://lgtie.vercel.app/#about |
+| Everything a business can do, including its inbox for customers' signed actions and the passkey cases | https://lgtie.vercel.app/#for-business |
 
 ## How it works
 
@@ -60,7 +61,7 @@ LGtie never holds anyone's money. It records decisions and checks that rules wer
 - **Cases.** Each side answers before a deadline. Equal answers finish the case at once. Different answers go to the reviewer both sides accepted, who answers only the disputed questions. A case nobody finishes in time ends as **no decision**; nobody wins by default.
 - **Result and replay.** The processor computes the result. Anyone can recompute it, and other contracts can read the decision with `verdict(id)` (see `docs/VERDICT.md`).
 - **Reviewer accountability.** A reviewer has to write reasons and tick a conflict-of-interest declaration before deciding. The page saves the written statement as a file for the reviewer to send to both sides and records only its fingerprint on X Layer, with a one-line public reason that shows on the case page and receipt. While the reviewer decides, the page shows "Side A" and "Side B" instead of addresses (addresses are still public on-chain, so this reduces bias but is not true blind review).
-- **Evidence.** Files are never uploaded. A party records a digital fingerprint of a file plus a short note. A reviewer can drop the file they were sent into the case page, and the browser says whether it is identical to the recorded one. A fingerprint shows a file is unchanged, not that it is genuine.
+- **Evidence.** Files are never uploaded. A party (including a customer with a passkey, who signs it) records a digital fingerprint of a file, or of a written explanation they download, plus a short note. A reviewer can drop the file they were sent into the case page, and the browser says whether it is identical to the recorded one. A fingerprint shows a file is unchanged, not that it is genuine.
 - **Receipts.** Any decided case has a one-page receipt (`#receipt/<case id>`) with who answered what, who settled each question, and a live re-check of the rules.
 
 ### Customers without a wallet (passkeys)
