@@ -275,12 +275,12 @@
   // ---------- motion: frosted header on scroll, scroll reveal, page entrance (all transform and opacity) ----------
   const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches, hdr = document.querySelector("header");
   const onScroll = () => hdr.classList.toggle("scrolled", window.scrollY > 8); window.addEventListener("scroll", onScroll, {passive: true}); onScroll();
-  const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), {threshold: .12, rootMargin: "0px 0px -6% 0px"}) : null;
+  const io = "IntersectionObserver" in window ? new IntersectionObserver(es => { let k = 0; es.forEach(e => { if (e.isIntersecting) { e.target.style.setProperty("--d", Math.min(k++, 4) * 0.05 + "s"); e.target.classList.add("in"); io.unobserve(e.target); } }); }, {threshold: 0, rootMargin: "0px 0px 18% 0px"}) : null;   // start just before an element scrolls into view; stagger only items that appear together
   const REVEAL = ".flow,.ill,.howtxt,.nocard,.path,.hcopy>*,.stage,.realcase,.stat,.quote,.sechead,.row2,.s3,.snippet,.make,.trio>div,.faq,.finish";
   let armed = false, armTimer = 0;
   function scan() {
     if (!armed || !io) return;
-    main.querySelectorAll(REVEAL).forEach((el, i) => { if (el.dataset.r || el.parentElement === main) return; el.dataset.r = "1"; el.classList.add("rv"); el.style.setProperty("--d", Math.min(i, 9) * 0.06 + "s"); io.observe(el); });
+    main.querySelectorAll(REVEAL).forEach((el, i) => { if (el.dataset.r || el.parentElement === main) return; el.dataset.r = "1"; el.classList.add("rv"); io.observe(el); });
   }
   if (!reduce) new MutationObserver(scan).observe(main, {childList: true, subtree: true});
   function armReveal(embed) { armed = !embed && !reduce; clearTimeout(armTimer); armTimer = setTimeout(() => { armed = false; }, 2500); scan(); }
