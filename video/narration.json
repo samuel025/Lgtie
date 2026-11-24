@@ -1,0 +1,13 @@
+{
+  "voice": "en-US-AndrewNeural",
+  "rate": "-2%",
+  "scenes": [
+    { "id": "problem", "text": "When a customer and a business disagree about a warranty claim, a refund, or a bug report, the rules usually live inside one side's own process. Nobody can show afterwards that they were applied the same way every time, and the person who decides is often one of the people involved. LGtie is built to fix that." },
+    { "id": "rules", "text": "Here is the idea. A business publishes its rules in advance, as simple yes or no questions. This is a real warranty policy, running as a small circuit on X Layer through TapeOut, so nobody can quietly change it. Tap an answer, and the result and the reason change. Anyone can re-check the result for free, on the public network." },
+    { "id": "case", "text": "When there is a dispute, both sides answer the same seven questions. Where they match, it is settled. Only the questions they disagree on go to a neutral reviewer, someone both sides accepted in advance. This is a real case I ran on X Layer. Six answers matched, one differed, so only that question went to the reviewer, and the published rules produced the result: covered. The receipt shows who said what, and re-runs the rules live. I played every role myself, so this is a demonstration, not a customer." },
+    { "id": "nowallet", "text": "Customers do not need a crypto wallet. They approve with the fingerprint or face scan that unlocks their phone, and the phone signs the exact action, so it cannot be changed on the way. It lands in the business's inbox, where one click submits it. Evidence works the same way: a photo, or a written explanation, becomes a fingerprint, and nothing is uploaded. A business can also run an optional helper of its own, that pings Slack and submits for it." },
+    { "id": "reviewer", "text": "The reviewer sees side A and side B instead of names, has to write their reasons, and confirms they have no conflict of interest. Those reasons show on the case and the receipt. That makes a bad decision visible. It does not stop one." },
+    { "id": "users", "text": "Who would use this? Businesses that handle warranty claims, refunds, or bug bounty severity, and want a process both sides can trust. How could it earn money? Maybe a small fee for a reviewed decision, or a permanent receipt, but that is a guess. I have not tested it with real customers, and I am not claiming any." },
+    { "id": "close", "text": "To be honest about the limits: LGtie cannot tell whether an answer is true, a reviewer can still be wrong, and the contracts are unaudited. What it does is make the process around published rules clear, and replayable by anyone. It is live on X Layer today. Thanks for watching." }
+  ]
+}
