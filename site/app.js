@@ -232,6 +232,7 @@
       ["wallet", "Invite a customer with a wallet", "Propose an agreement that fixes the rules, the neutral person and the time limits.", "#agree", "Make an agreement"],
       ["cases", "Handle a case", "Open a dispute, answer the questions, or look one up by number.", "#case", "Go to cases"],
       ["records", "Inbox", "Fingerprint customers send you their signed answers here. You review and submit them with one click.", "#inbox", "Open my inbox"],
+      ["dev", "Skip the inbox (optional)", "Run a small script of your own that sends a notice to Slack, Discord or Zapier and can submit for you.", "https://github.com/samuel025/Lgtie/tree/main/bridge", "See the bridge"],
       ["cases", "Cases with fingerprint customers", "See the agreements and cases you opened with customers who use a passkey, and answer them.", "#pk/cases", "See passkey cases"],
       ["embed", "Put it on your website", "Add the claim check or the fingerprint sign-up with one line of code.", "embed-demo.html", "See a demo page"],
       ["records", "Reviewer records", "See who decided cases, and who did not decide in time.", "#reviewer", "See the records"],

@@ -1998,7 +1998,7 @@ MY POLICY:
     if (!deployed()) { notDeployed("Inbox"); return; }
     if (stopInbox) { stopInbox(); stopInbox = null; }
     main.innerHTML = `<h1>Inbox</h1><p class="lede">When a customer approves something with their passkey, it lands here, addressed to your wallet. Open it, check it, and submit it. You pay the small network fee and the customer never needs a wallet. If you are a neutral reviewer, cases waiting for your decision are listed here too.</p>
-      <div class="card"><ol class="ibsteps"><li><b>The customer signs</b> with their fingerprint or face.</li><li><b>It appears here</b>, addressed to your wallet. Nothing to copy or paste.</li><li><b>You submit it</b> and pay the small network fee.</li></ol><div class="row"><button class="btn" id="ibc" type="button">Connect my wallet</button></div><p id="ibs" class="small mute"></p></div><div id="ibl"></div>`;
+      <div class="card"><ol class="ibsteps"><li><b>The customer signs</b> with their fingerprint or face.</li><li><b>It appears here</b>, addressed to your wallet. Nothing to copy or paste.</li><li><b>You submit it</b> and pay the small network fee.</li></ol><div class="row"><button class="btn" id="ibc" type="button">Connect my wallet</button></div><p id="ibs" class="small mute"></p></div><p class="small mute">Prefer a notice in Slack or Discord and no clicking? You can run an optional <a href="https://github.com/samuel025/Lgtie/tree/main/bridge" target="_blank" rel="noopener">bridge</a> of your own that tells your webhook and can submit for you. LGtie runs no server, so it is yours to run.</p><div id="ibl"></div>`;
     const start = async () => {
       const me = W().account(); if (!me) return; $("#ibc").hidden = true;
       let tasks = {wait: [], soon: []}; const items = new Map(), seenPacks = new Set(), render = () => {
@@ -2399,6 +2399,7 @@ MY POLICY:
       ["wallet", "Invite a customer with a wallet", "Propose an agreement that fixes the rules, the neutral person and the time limits.", "#agree", "Make an agreement"],
       ["cases", "Handle a case", "Open a dispute, answer the questions, or look one up by number.", "#case", "Go to cases"],
       ["records", "Inbox", "Fingerprint customers send you their signed answers here. You review and submit them with one click.", "#inbox", "Open my inbox"],
+      ["dev", "Skip the inbox (optional)", "Run a small script of your own that sends a notice to Slack, Discord or Zapier and can submit for you.", "https://github.com/samuel025/Lgtie/tree/main/bridge", "See the bridge"],
       ["cases", "Cases with fingerprint customers", "See the agreements and cases you opened with customers who use a passkey, and answer them.", "#pk/cases", "See passkey cases"],
       ["embed", "Put it on your website", "Add the claim check or the fingerprint sign-up with one line of code.", "embed-demo.html", "See a demo page"],
       ["records", "Reviewer records", "See who decided cases, and who did not decide in time.", "#reviewer", "See the records"],
