@@ -38,7 +38,7 @@ Reproduce: `node prototypes/passkey/gen-vector.mjs > contracts/test/WebAuthnVect
 
 - **A signature is not unique.** `(r, s)` and `(r, N - s)` both verify (tested). Replay protection must come from a nonce or a one-time state change in the signed challenge, never from the signature.
 - **A passkey is bound to the site's domain** (the relying-party id). We need the final public domain before real enrollment, and changing it later means re-enrolling everyone.
-- **Not yet tested:** passkeys inside an embedded frame or pop-up, real phone authenticators, and cross-ecosystem sync (Apple to Google is not automatic).
+- **Tested by hand once:** the team ran the whole flow (passkey, agreement, evidence, inbox) on a real phone and it worked. **Not yet tested:** many devices and browsers, passkeys inside an embedded frame on a real phone, and cross-ecosystem sync (Apple to Google is not automatic).
 
 ## Gate 2: the contracts (written, tested, not deployed)
 
@@ -83,7 +83,7 @@ Built on `site/pkcore.js`: keccak256, ABI encoding, the payload hashes and the W
 **Frame test (`tests/browser/passkeys-frame.mjs`).** A fictional Acme page served from a different site embeds LGtie with `<script src=".../embed.js" data-flow="join" data-onclaim="...">`. Passkey creation, the account-control check and signing all work inside the cross-site frame; the host page receives the claim code through a postMessage that checks the sender's origin, and a forged message from the page itself is ignored. The embed adds `allow="publickey-credentials-create *; publickey-credentials-get *"`, which cross-site frames need. `site/embed-demo.html` is now the Acme demo: checker, "file a claim with your fingerprint or face", "my claim", and a stand-in staff view that shows how a real back end would store the claim code and send an invite link.
 
 **Still open**
-- Real phones and other browsers: the frame test used Chrome with a virtual authenticator. Safari and Firefox rules for passkeys in cross-site frames, and storage partitioning there, are untested. (The pages avoid relying on local storage inside the frame: they find the account by the passkey itself.)
+- Other phones and browsers: one real-phone run worked, but the frame test used Chrome with a virtual authenticator. Safari and Firefox rules for passkeys in cross-site frames, and storage partitioning there, are untested. (The pages avoid relying on local storage inside the frame: they find the account by the passkey itself.)
 - The final public domain is not chosen; a passkey made on `localhost` will not work there.
 - Evidence signing now has a page: a customer adds a file fingerprint or a written explanation on My cases, signs it, and it reaches the business's inbox. Signed actions queue in order (the page remembers the next number for a day).
 - The business inbox uses public Nostr relays (`site/nostr.js`); relays can drop messages, so a copy-link fallback remains.

@@ -62,7 +62,7 @@ A TapeOut circuit is a pure function by construction: no state, no external call
 - It does not check that answers are true. The result follows the answers given; a reviewer decides disputed facts and can be wrong. The circuit shows the rules were applied consistently, nothing more.
 - A reviewer both sides accepted can still be biased, and two parties can agree on the same false answer. There is no staking, jury or slashing. Required written reasons and the Side A / Side B view make a bad decision visible and harder, not impossible.
 - The inbox depends on public relays run by others, which can be slow or drop messages, and nothing notifies the business: it has to open the inbox. The copy-link fallback always works.
-- The contracts are unaudited and hold no funds. The passkey system is new: recovery after losing every device is not built, and it is untested on real phones and in Safari and Firefox (it was tested in Chrome with a virtual authenticator, including inside a cross-site frame). There are no customers, no revenue and no validated price.
+- The contracts are unaudited and hold no funds. The passkey system is new: recovery after losing every device is not built, and it was tried end to end once by the team on a real phone and worked, but it is untested in Safari and Firefox (it was also tested in Chrome with a virtual authenticator, including inside a cross-site frame). There are no customers, no revenue and no validated price.
 - Only one rule set is published on mainnet so far.
 - Other entries also compile rules to TapeOut circuits. We do not claim to be first at that. What we built that we have not seen elsewhere is the dispute process around the rules.
 
