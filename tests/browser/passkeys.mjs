@@ -17,7 +17,7 @@ const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromiu
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage();
 const errs = []; p.on("pageerror", e => errs.push("pageerror: " + e.message));
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 400))); if (!c) fails++; };
-const shot = async n => { if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, {recursive: true}); await p.screenshot({path: process.env.SHOTS + "/" + n + ".png", fullPage: true}); } };   // SHOTS=/some/dir saves screenshots
+const shot = async n => { if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, {recursive: true}); await w(1500); await p.screenshot({path: process.env.SHOTS + "/" + n + ".png", fullPage: true}); } };   // SHOTS=/some/dir saves screenshots
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 30000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await w(300); } return false; }
 const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`);
@@ -65,6 +65,7 @@ await as(RELAYER, "#inbox"); await p.click("#ibc").catch(() => {}); await w(1500
 ok("an inbox for some other wallet shows nothing waiting", /Waiting for you \(0\)/.test(await T("#ibl")), await T("#ibl"));
 await as(BUSINESS, "#inbox"); await p.click("#ibc").catch(() => {});
 ok("the business's inbox shows her acceptance as waiting", await until(async () => /Waiting for you \(1\)/.test(await T("#ibl")) && /Accept agreement #1/.test(await T("#ibl"))), await T("#ibl"));
+await shot("inbox-waiting");
 await p.click("[data-go]");
 ok("the business submits it from the inbox", await until(async () => /Submitted/.test(await T("#ibs")) && /Waiting for you \(0\)/.test(await T("#ibl"))), await T("#ibs") + await T("#ibl"));
 ok("the submitted item moves to done", /Done or expired \(1\)/.test(await T("#ibl")), await T("#ibl"));
@@ -149,6 +150,7 @@ await as(REVIEWER, "#inbox"); await p.click("#ibc").catch(() => {});
 ok("the reviewer's inbox lists the case waiting for their decision, with a button", await until(async () => /Waiting for your decision \(1\)/.test(await T("#ibl")) && !!(await p.$('a[href="#pk/case/1/decide"]'))), await T("#ibl"));
 await as(REVIEWER, "#pk/case/1/decide");
 ok("the decide link connects and opens the decision form by itself, in the blind view", await until(async () => !!(await p.$("#rv-one"))) && /names are hidden/.test(await T("main")), await T("main"));
+await shot("reviewer-form");
 await as(REVIEWER, "#pk/case/1");
 await clickText("#wacts button", "Decide as the reviewer"); await w(1500);
 ok("the reviewer sees Side A and Side B instead of the parties", /names are hidden/.test(await T("main")) && /Side A opened the case/.test(await T("main")) && !(await p.$$eval("main tbody th, main .small", e => e.some(x => /Opened by/.test(x.innerText)))), await T("main"));
@@ -161,6 +163,7 @@ await p.click("#rv-coi"); await p.click("#send");
 ok("the reviewer decides only the disputed question and the real circuit gives the result", await until(async () => /Covered/.test(await T(".res .big"))), await T("main"));
 
 ok("the reviewer's reason is recorded on the passkey case page", await until(async () => /Report shows no excluded cause/.test(await T("#rvreasons")) && /Reviewer's reason/.test(await T(".res"))), await T("main"));
+await shot("case-decided");
 const stHref = await p.$eval("#stmtdl", a => a.href).catch(() => ""), stText = decodeURIComponent(stHref.split(",").slice(1).join(",")), stHash = "0x" + crypto.createHash("sha256").update(stText, "utf8").digest("hex");
 ok("the recorded fingerprint is the SHA-256 of the reviewer's statement", /LGTIE REVIEWER STATEMENT/.test(stText) && (await T("#rvreasons")).includes(stHash.slice(0, 18)), stHash + " " + await T("#rvreasons"));
 // ---- 8. The other attacks, with a second customer ("Sam") on a new device.

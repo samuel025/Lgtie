@@ -33,6 +33,51 @@ LGtie never holds anyone's money. It records decisions and checks that rules wer
 | How it works, as a short animated story | https://lgtie.vercel.app/#about |
 | Everything a business can do, including its inbox for customers' signed actions and the passkey cases | https://lgtie.vercel.app/#for-business |
 
+## Screenshots
+
+Taken from the live site, except the four marked "test environment", which come from the automated end-to-end test (a fork of X Layer, test wallets and a virtual passkey, so they show how the pages behave, not real customers).
+
+**Check a claim, build the rules**
+
+<p><img src="docs/img/home.png" alt="LGtie home page with the live rule circuit" width="100%"></p>
+<p><sub>The home page runs the real published warranty circuit: tap an answer and the result and reason change.</sub></p>
+
+<table><tr>
+<td width="50%"><img src="docs/img/checker.png" alt="Claim checker with a result"><br><sub>The claim checker. The result is confirmed on X Layer.</sub></td>
+<td width="50%"><img src="docs/img/builder.png" alt="Rule builder"><br><sub>The guided builder: questions, a click-to-cycle rule grid, a test, then publish.</sub></td>
+</tr></table>
+
+**A real case on X Layer** (played by the team, so a demonstration, not a customer)
+
+<table><tr>
+<td width="50%"><img src="docs/img/case.png" alt="Decided case page"><br><sub>Six answers matched. One differed, so only that question went to the reviewer.</sub></td>
+<td width="50%"><img src="docs/img/receipt.png" alt="Printable receipt"><br><sub>The one-page receipt, which you can print or save as a PDF.</sub></td>
+</tr></table>
+
+**No wallet for the customer** (test environment)
+
+<table><tr>
+<td width="50%"><img src="docs/img/customer-evidence.png" alt="Customer adding evidence with a passkey"><br><sub>A customer adds evidence on their own device and signs it with their fingerprint. Nothing is uploaded.</sub></td>
+<td width="50%"><img src="docs/img/inbox.png" alt="Business inbox with a waiting action"><br><sub>The business's inbox: the customer's signed action is waiting, and one click submits it.</sub></td>
+</tr></table>
+
+**The reviewer** (test environment)
+
+<table><tr>
+<td width="50%"><img src="docs/img/reviewer-form.png" alt="Reviewer decision form with required reasons"><br><sub>A reviewer must give written reasons and a no-conflict declaration before deciding.</sub></td>
+<td width="50%"><img src="docs/img/case-decided.png" alt="Decided case showing the reviewer's reason"><br><sub>The decided case shows the reviewer's reason. Sides are labelled A and B while the reviewer decides.</sub></td>
+</tr></table>
+
+**For businesses, and on a phone**
+
+<table><tr>
+<td width="60%"><img src="docs/img/business.png" alt="For businesses page"><br><sub>Everything a business can do, in one place.</sub></td>
+<td width="40%"><img src="docs/img/phone-case.png" alt="Case page on a phone"><br><sub>The pages are laid out for phones.</sub></td>
+</tr></table>
+
+<p><img src="docs/img/about.png" alt="How it works, as an animated story" width="100%"></p>
+<p><sub>"How it works" tells the story in six animated steps.</sub></p>
+
 ## How it works
 
 ```
