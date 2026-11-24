@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Builds out/lgtie-demo.mp4: fits each recorded clip to its narration, adds subtitles, mixes the voice.
-No speed-ups: clips were recorded at normal speed, timed to the narration. Only real waiting (marked with dead() while recording) is cut out.
-Light on resources on purpose: one ffmpeg at a time, 2 threads, `nice`, 24 fps, 720p.
+"""Builds out/lgtie-demo.mp4. The clips play at exactly real speed (nothing is sped up, slowed down, trimmed or stretched).
+The narration follows the screen: while recording, each sentence's illustrating action is timed (beats.json). Where the screen is a bit behind
+the voice, a natural pause is inserted before that sentence, so the narrator never talks about something that has not appeared yet.
+Each page also appears LEAD seconds before the narrator speaks about it. Only real waiting (marked dead() while recording) is cut out.
+No subtitles are burned in (a separate subtitles.srt is written). Light on resources: one ffmpeg at a time, 2 threads, `nice`, 24 fps, 720p.
 Usage (from the folder that holds out/):  python3 assemble.py"""
 import json, os, subprocess, textwrap
 
@@ -10,54 +12,65 @@ FFMPEG = ["nice", "-n", "19", "ffmpeg", "-v", "error", "-y", "-threads", "2"]
 def run(cmd): subprocess.run(cmd, check=True)
 sentences = json.load(open(OUT + "/sentences.json")); scenes = json.load(open(OUT + "/scenes.json")); durs = json.load(open(CLIPS + "/durations.json"))
 marks = json.load(open(CLIPS + "/marks.json")) if os.path.exists(CLIPS + "/marks.json") else {}
-audio_len = float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", OUT + "/narration.mp3"]).strip())
-TAIL = 1.2; MIN_SPEED, MAX_SPEED = 1.0, 1.08
+beats = json.load(open(CLIPS + "/beats.json")) if os.path.exists(CLIPS + "/beats.json") else {}
+probe = lambda f, k: float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", k, "-of", "csv=p=0", f]).strip().splitlines()[0])
+audio_len = probe(OUT + "/narration.mp3", "format=duration"); rate = int(probe(OUT + "/narration.mp3", "stream=sample_rate"))
+LEAD, TAIL, MAX_PAUSE = 0.6, 1.2, 3.0
+starts = [0.0] + [s["start"] for s in scenes[1:]]; ends = starts[1:] + [audio_len]
 
-# 1. one video segment per scene, as long as its narration (the next scene starts where this one's words begin)
-starts = [0.0] + [s["start"] for s in scenes[1:]]; ends = starts[1:] + [audio_len + TAIL]
-parts = []
+# 1. which sentences belong to which scene, and how far the screen is behind the narration at each one (the voice waits for it)
+plan = []; cum = 0.0   # cum: seconds of pause added in earlier scenes
 for i, sc in enumerate(scenes):
-    D = ends[i] - starts[i]; clip = f"{CLIPS}/{sc['id']}.mp4"; src = durs[sc["id"]]
+    ss = [x for x in sentences if starts[i] - 1e-6 <= x["start"] < ends[i] - 1e-6]
+    b = beats.get(sc["id"], {}); run_max = 0.0; shifts = []
+    for k in range(len(ss)):
+        run_max = max(run_max, min(MAX_PAUSE, b.get(str(k), 0.0)) if str(k) in b else 0.0); shifts.append(run_max)
+    end_shift = max(run_max, min(MAX_PAUSE * 2, b.get("end", 0.0)))
+    plan.append({"id": sc["id"], "ss": ss, "shifts": shifts, "cum": cum, "end_shift": end_shift})
+    cum += end_shift
+total_pause = cum
+
+# 2. one video segment per scene: exactly the recorded clip, minus the marked waiting
+parts = []; seg_len = []
+for i, sc in enumerate(scenes):
+    clip = f"{CLIPS}/{sc['id']}.mp4"; src = durs[sc["id"]]
     cuts = [(a + 0.5, b - 0.2) for a, b in marks.get(sc["id"], []) if b - a > 0.9]          # real waiting: keep half a second, drop the rest
     kept = src - sum(b - a for a, b in cuts)
-    f = max(MIN_SPEED, min(MAX_SPEED, kept / D)); stretched = kept / f
+    D = (ends[i] - starts[i]) + (TAIL + LEAD if i == len(scenes) - 1 else 0) + plan[i]["end_shift"]
     vf = ["fps=24"]
     if cuts: vf += ["select='not(" + "+".join(f"between(t,{a:.2f},{b:.2f})" for a, b in cuts) + ")'", "setpts=N/(24*TB)"]
-    vf += [f"setpts=PTS/{f:.4f}", "scale=1280:720:flags=bicubic", "setsar=1"]
-    if stretched < D: vf.append(f"tpad=stop_mode=clone:stop_duration={D - stretched + 0.2:.3f}")   # hold the last frame if the clip is short
-    vf += [f"trim=duration={D:.3f}", "setpts=PTS-STARTPTS", "fade=t=in:st=0:d=0.3", f"fade=t=out:st={max(0, D - 0.3):.3f}:d=0.3", "format=yuv420p"]
+    vf += ["scale=1280:720:flags=bicubic", "setsar=1"]
+    if kept < D: vf.append(f"tpad=stop_mode=clone:stop_duration={D - kept + 0.2:.3f}")   # only if the clip is a little short: hold the last frame
+    vf += [f"trim=duration={D:.3f}", "setpts=PTS-STARTPTS", "fade=t=in:st=0:d=0.4", f"fade=t=out:st={max(0, D - 0.4):.3f}:d=0.4", "format=yuv420p"]
     out = f"{TMP}/scene_{i}.mp4"
     run(FFMPEG + ["-i", clip, "-vf", ",".join(vf), "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-r", "24", out])
-    note = ("  cut %.1fs of waiting" % sum(b - a for a, b in cuts)) if cuts else ""
-    print(f"{sc['id']:9s} narration {D:5.1f}s  clip {src:5.1f}s{note}  speed x{f:.2f}" + ("  (held last frame)" if stretched < D - 0.05 else "") + ("  (trimmed end)" if stretched > D + 0.05 else ""))
-    parts.append(out)
+    print(f"{sc['id']:9s} clip {src:5.1f}s" + (f"  cut {sum(b - a for a, b in cuts):.1f}s of waiting" if cuts else "") + f"  -> {D:5.1f}s on screen, voice waits for the screen {plan[i]['end_shift']:.1f}s in total")
+    parts.append(out); seg_len.append(D)
 open(f"{TMP}/list.txt", "w").write("".join(f"file '{os.path.abspath(p)}'\n" for p in parts))
 run(FFMPEG + ["-f", "concat", "-safe", "0", "-i", f"{TMP}/list.txt", "-c", "copy", f"{TMP}/video.mp4"])
+total = sum(seg_len)
 
-# 2. subtitles: each spoken sentence split into short lines, shown for the time it is spoken
-def fmt(t): h = int(t // 3600); m = int(t % 3600 // 60); s = t % 60; return f"{h:02d}:{m:02d}:{int(s):02d},{int((s % 1) * 1000):03d}"
-cues = []
-for s in sentences:
-    words = s["text"].split(); chunks, cur = [], []
-    for w in words:
-        cur.append(w)
-        if len(" ".join(cur)) >= 64: chunks.append(" ".join(cur)); cur = []
-    if cur: chunks.append(" ".join(cur))
-    if len(chunks) > 1 and len(chunks[-1]) < 14: last = chunks.pop(); chunks[-1] += " " + last
-    total = sum(len(c) for c in chunks); t = s["start"]
-    for c in chunks:
-        d = (s["end"] - s["start"]) * len(c) / total; cues.append((t, t + d, c)); t += d
-srt = ""
-for n, (a, b, c) in enumerate(cues, 1):
-    body = "\n".join(textwrap.wrap(c, 38))
-    srt += f"{n}\n{fmt(a)} --> {fmt(b)}\n{body}\n\n"
-open(f"{OUT}/subtitles.srt", "w").write(srt)
-
-# 3. burn the subtitles in and mix the narration (voice only, levelled, with a short fade at the end)
-style = "FontName=DejaVu Sans,Fontsize=11,Bold=0,PrimaryColour=&H00FFFFFF,OutlineColour=&H99000000,BorderStyle=3,Outline=4,Shadow=0,Alignment=2,MarginV=14"
-total = ends[-1]
-run(FFMPEG + ["-i", f"{TMP}/video.mp4", "-i", OUT + "/narration.mp3", "-filter_complex",
-              f"[0:v]subtitles={OUT}/subtitles.srt:force_style='{style}'[v];[1:a]loudnorm=I=-16:TP=-1.5:LRA=11,apad,afade=t=out:st={total - 1.0:.2f}:d=1.0[a]",
-              "-map", "[v]", "-map", "[a]", "-t", f"{total:.2f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "21", "-pix_fmt", "yuv420p", "-r", "24",
+# 3. the narration, cut at sentence boundaries, with a pause inserted wherever the screen needs a moment
+placed = []   # (sentence, new start time)
+pieces = []   # ("a", t0, t1) audio from the narration, or ("s", length) silence
+prev_shift = 0.0; flat = [(p, x, p["shifts"][k]) for p in plan for k, x in enumerate(p["ss"])]
+for n, (p, x, sh) in enumerate(flat):
+    shift = p["cum"] + sh
+    if shift - prev_shift > 0.05: pieces.append(("s", shift - prev_shift))
+    t0 = x["start"] if n else 0.0; t1 = flat[n + 1][1]["start"] if n + 1 < len(flat) else audio_len
+    pieces.append(("a", t0, t1)); placed.append((x, x["start"] + shift)); prev_shift = shift
+fc = ""; labels = ""
+for j, pc in enumerate(pieces):
+    if pc[0] == "a": fc += f"[0:a]atrim=start={pc[1]:.3f}:end={pc[2]:.3f},asetpts=PTS-STARTPTS,aresample={rate}[p{j}];"
+    else: fc += f"anullsrc=r={rate}:cl=mono,atrim=0:{pc[1]:.3f},asetpts=PTS-STARTPTS[p{j}];"
+    labels += f"[p{j}]"
+fc += f"{labels}concat=n={len(pieces)}:v=0:a=1,loudnorm=I=-16:TP=-1.5:LRA=11,adelay={int(LEAD * 1000)}|{int(LEAD * 1000)},apad,afade=t=out:st={total - 1.0:.2f}:d=1.0[a]"
+run(FFMPEG + ["-i", OUT + "/narration.mp3", "-i", f"{TMP}/video.mp4", "-filter_complex", fc, "-map", "1:v", "-map", "[a]", "-t", f"{total:.2f}", "-c:v", "copy",
               "-c:a", "aac", "-b:a", "160k", "-movflags", "+faststart", OUT + "/lgtie-demo.mp4"])
-print("done:", OUT + "/lgtie-demo.mp4", f"{total:.1f}s")
+
+# 4. subtitles as a separate file (not burned in), matching the final timing
+def fmt(t): t += LEAD; h = int(t // 3600); m = int(t % 3600 // 60); s = t % 60; return f"{h:02d}:{m:02d}:{int(s):02d},{int((s % 1) * 1000):03d}"
+srt = ""
+for n, (x, st) in enumerate(placed, 1): srt += f"{n}\n{fmt(st)} --> {fmt(st + x['end'] - x['start'])}\n" + "\n".join(textwrap.wrap(x["text"], 42)) + "\n\n"
+open(f"{OUT}/subtitles.srt", "w").write(srt)
+print("done:", OUT + "/lgtie-demo.mp4", f"{total:.1f}s (voice pauses added: {total_pause:.1f}s)")

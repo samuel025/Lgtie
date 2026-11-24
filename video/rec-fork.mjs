@@ -3,7 +3,7 @@
 // Every action is timed to the sentence it illustrates, at normal speed. Setup (agreement, case, business answers) happens off camera.
 // Needs: anvil forking X Layer on 127.0.0.1:8547, forge, the site served at http://localhost:8090, puppeteer-core and ws installed.
 import fs from "node:fs"; import { execFileSync } from "node:child_process";
-import { launch, scene, timeline, dead, sleep, label, scrollTo, scrollToEl, clickOn, pointAt, moveTo, spot, typeIn, boxOf, restoreCursor } from "./lib.mjs";
+import { launch, scene, timeline, dead, sleep, label, scrollTo, scrollToEl, clickOn, pointAt, moveTo, spot, typeIn, boxOf, restoreCursor, navFade } from "./lib.mjs";
 const { startRelay } = await import(process.env.RELAY_MODULE || "../nostr-relay.mjs");
 const REPO = process.env.REPO || "/home/samuel/Documents/tiebreak", tl = timeline(), only = process.argv[2] ? process.argv[2].split(",") : null, want = id => !only || only.includes(id);
 const BASE = "http://localhost:8090/index.html", ANVIL = "http://127.0.0.1:8547", CFGP = REPO + "/site/config.js", REG = "0x25E87D367316038a2d3B6A4fe3d58AA453D4c219";
@@ -31,7 +31,7 @@ await cdp.send("WebAuthn.addVirtualAuthenticator", { options: { protocol: "ctap2
 const TEST = "Test environment: a fork of X Layer, test wallets, a virtual passkey";
 const as = async (addr, hash) => { if (!page.url().startsWith("http://localhost:8090")) await page.goto(BASE); await page.evaluate((a, r) => { localStorage.setItem("acct", a); localStorage.setItem("lgtie.inboxRelays", JSON.stringify(r)); }, addr, RELAYS).catch(() => {}); await page.goto(BASE + "?" + Date.now() + hash); await sleep(900); await label(page, TEST, true); };
 // change role and page without reloading (so nothing flashes on camera)
-const hashNav = async (addr, hash) => { await page.evaluate((a, h) => { localStorage.setItem("acct", a); location.hash = h; }, addr, hash); await sleep(500); await restoreCursor(page); };
+const hashNav = async (addr, hash) => { await page.evaluate((a, h) => { localStorage.setItem("acct", a); location.hash = h; }, addr, hash); await sleep(220); await restoreCursor(page); };
 const T = sel => page.$eval(sel, e => e.innerText).catch(() => "");
 const until = async (fn, ms = 30000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await sleep(200); } return false; };
 const click = sel => page.click(sel);
@@ -52,23 +52,30 @@ await page.evaluate(() => document.querySelectorAll("#ans .yn").forEach(g => g.q
 need(await until(async () => /Waiting for answers/.test(await T("main"))), "business answers");
 fs.writeFileSync("/tmp/lgtie-video-photo.txt", "photo of the receipt");
 
-// ----- scene "nowallet": the customer answers with a fingerprint, the inbox, evidence, the optional helper -----
+// ----- scene "nowallet": the customer answers with a fingerprint, the business inbox, evidence, the optional helper -----
+const ROLE = r => label(page, r + " (test environment)", true);
 if (want("nowallet")) {
   await as("", "#mine"); await click("#find"); need(await until(async () => !!(await page.$('[data-act="answer"]'))), "answer form");
   await page.evaluate(() => document.querySelectorAll("#cs .qs .yn").forEach((g, i) => g.querySelector(`button[data-v="${i === 4 ? 0 : 1}"]`).click()));   // her answers are chosen; the signing is on camera
-  await page.evaluate(() => document.querySelector("#cs h3").scrollIntoView({ block: "start" })); await page.evaluate(() => scrollBy(0, -70)); await sleep(500); await moveTo(page, 560, 300, 10);
-  await scene(page, "nowallet", tl, async ({ at, S }) => {
-    await at(0.2); await spot(page, "#cs .card", 2400, { pad: 8, scroll: false }); await moveTo(page, 420, 190, 1300);                                 // Customers do not need a crypto wallet.
-    await at(S[1].t0 + 0.1); await scrollToEl(page, '[data-act="answer"]', 1000, 0, 0.55); await clickOn(page, '[data-act="answer"]', 1000);   // They approve with the fingerprint or face scan...
-    await dead(() => until(async () => /Sent to the other side's inbox/.test(await T("#inboxst")), 15000)); await spot(page, "#packbox", 1700, { pad: 8 });
-    await at(S[2].t0 - 0.3); await hashNav(BUSINESS, "#inbox"); await clickOn(page, "#ibc", 600);                                                    // That lands in the business's inbox...
-    await dead(() => until(async () => !!(await page.$("[data-go]")), 15000)); await spot(page, ".card[data-k]", 1600, { pad: 10 });
-    await at(S[2].t0 + 1.9); await clickOn(page, "[data-go]", 600); await sleep(400);             // ... where one click submits it.
-    await at(S[3].t0 - 0.2); await hashNav("", "#mine"); await clickOn(page, "#find", 550); await dead(() => until(async () => !!(await page.$('[data-act="evidence"]')), 15000));   // Evidence works the same way.
-    await at(S[4].t0 - 0.2); await clickOn(page, '[data-act="evidence"]', 600); await (await page.$("#evf")).uploadFile("/tmp/lgtie-video-photo.txt");   // A photo, or a written note...
-    await spot(page, ".evbox", 1800, { pad: 8 }); await typeIn(page, "#evn", "Photo of the receipt", 38); await clickOn(page, "#evgo", 500);
-    await dead(() => until(async () => /Sent to the other side's inbox/.test(await T("#inboxst")), 15000)); await spot(page, "#packbox", 1400, { pad: 8 });
-    await at(S[5].t0 - 0.3); await hashNav("", "#for-business"); await sleep(400); await spot(page, ".paths .path", 2200, { nth: 5, pad: 10 }); await pointAt(page, ".paths .path", 1100, 5, 0.5, 0.55);   // And an optional helper can ping Slack for you.
+  await page.evaluate(() => document.querySelector("#cs h3").scrollIntoView({ block: "start" })); await page.evaluate(() => scrollBy(0, -90)); await sleep(500); await ROLE("Customer's device: My cases"); await moveTo(page, 683, 420, 10);
+  await scene(page, "nowallet", tl, async ({ at, beat, S }) => {
+    await beat(1, 0.0); await spot(page, "#cs .card", 2000, { pad: 8, scroll: false }); await moveTo(page, 520, 250, 1300);                            // This is a customer's page.
+    await beat(2, 0.2); await scrollToEl(page, '[data-act="answer"]', 1100, 0, 0.55);                                                                 // They answer the questions, and approve with the fingerprint...
+    await beat(2, 2.0); await clickOn(page, '[data-act="answer"]', 1000);
+    await dead(() => until(async () => /Sent to the other side's inbox/.test(await T("#inboxst")), 15000)); await spot(page, "#packbox", 2200, { pad: 8 });
+    await beat(3, -0.3); await navFade(page, async () => { await hashNav(BUSINESS, "#inbox"); await ROLE("Business: Inbox"); await moveTo(page, 683, 420, 10); });   // Now, the business's inbox.
+    await beat(3, 1.0); await clickOn(page, "#ibc", 900);
+    await dead(() => until(async () => !!(await page.$("[data-go]")), 15000));
+    await beat(4, 0.2); await spot(page, ".card[data-k]", 2900, { pad: 10 });                                                                         // The customer's signed answers are waiting here...
+    await beat(4, 2.7); await clickOn(page, "[data-go]", 900); await sleep(900);                                                                      // ... and one click submits them.
+    await beat(5, -0.3); await navFade(page, async () => { await hashNav("", "#mine"); await ROLE("Customer's device: My cases"); await moveTo(page, 683, 420, 10); });   // Evidence works the same way.
+    await beat(5, 0.7); await clickOn(page, "#find", 800); await dead(() => until(async () => !!(await page.$('[data-act="evidence"]')), 15000));
+    await beat(6, 0.0); await clickOn(page, '[data-act="evidence"]', 900); await (await page.$("#evf")).uploadFile("/tmp/lgtie-video-photo.txt"); await spot(page, ".evbox", 2400, { pad: 8 });   // The customer picks a photo, or writes a note...
+    await beat(6, 2.3); await typeIn(page, "#evn", "Photo of the receipt", 55);
+    await beat(6, 4.4); await clickOn(page, "#evgo", 800); await dead(() => until(async () => /Sent to the other side's inbox/.test(await T("#inboxst")), 15000));
+    await beat(7, 0.1); await spot(page, ".evbox > p.small", 1500, { pad: 8 });                                                                        // Nothing is uploaded.
+    await beat(8, -0.3); await navFade(page, async () => { await hashNav("", "#for-business"); await ROLE("Business page"); await moveTo(page, 683, 420, 10); });   // ... an optional helper
+    await beat(8, 1.4); await spot(page, ".paths .path", 3400, { nth: 5, pad: 10 }); await pointAt(page, ".paths .path", 1200, 5, 0.5, 0.55);
   });
 }
 
@@ -80,16 +87,16 @@ if (want("reviewer")) {
     need(await until(async () => /Sent to the other side's inbox/.test(await T("#inboxst"))), "answers sent");
     await as(BUSINESS, "#inbox"); await click("#ibc").catch(() => {}); need(await until(async () => !!(await page.$("[data-go]"))), "answers in inbox"); await click("[data-go]"); need(await until(async () => /Submitted/.test(await T("#ibs"))), "answers submitted");
   }
-  await as(REVIEWER, "#pk/case/1/decide"); need(await until(async () => !!(await page.$("#rv-one")), 25000), "decision form"); await page.evaluate(() => scrollTo(0, 0)); await sleep(500); await moveTo(page, 560, 300, 10);
-  await scene(page, "reviewer", tl, async ({ at, S }) => {
-    await at(0.2); await spot(page, ".card thead", 2800, { pad: 10, scroll: false }); await pointAt(page, ".card thead th:nth-child(2)", 1100, 0, 0.5, 0.5);    // side A and side B instead of names
-    await at(2.1); await scrollToEl(page, "#ans", 900, 0, 0.12);
-    await at(2.9); await clickOn(page, '#ans .yn button[data-v="1"]', 600);
-    await at(3.7); await typeIn(page, "#rv-one", "Report shows no excluded cause", 30);                                                                 // ... has to write down their reasons
-    await at(5.1); await clickOn(page, "#rv-full", 500); await page.type("#rv-full", "No excluded cause appears in the report.", { delay: 10 });
-    await at(6.1); await clickOn(page, "#rv-coi", 500); await clickOn(page, "#send", 500);
-    await dead(() => until(async () => /Decided/.test(await T("main")), 40000)); await sleep(500);
-    await page.evaluate(() => { const r = document.querySelector(".res"); r && r.scrollIntoView({ block: "center", behavior: "smooth" }); }); await sleep(1100); await spot(page, ".res", 2000, { pad: 10, scroll: false });   // Those show on the case, and on the receipt.
+  await as(REVIEWER, "#pk/case/1/decide"); need(await until(async () => !!(await page.$("#rv-one")), 25000), "decision form"); await page.evaluate(() => scrollTo(0, 0)); await sleep(500); await ROLE("Reviewer: decision"); await moveTo(page, 683, 420, 10);
+  await scene(page, "reviewer", tl, async ({ at, beat, S }) => {
+    await beat(0, 0.3); await spot(page, ".card thead", 3600, { pad: 8, scroll: false }); await pointAt(page, ".card thead th:nth-child(2)", 1200, 0, 0.5, 0.5);   // side A and side B, instead of names
+    await beat(1, -0.6); await scrollToEl(page, "#ans", 1000, 0, 0.12);                                                                                 // They answer the disputed question...
+    await beat(1, 0.6); await clickOn(page, '#ans .yn button[data-v="1"]', 800);
+    await beat(1, 1.9); await typeIn(page, "#rv-one", "Report shows no excluded cause", 36);                                                          // ... and have to write down their reasons.
+    await beat(2, 0.0); await clickOn(page, "#rv-full", 600); await page.type("#rv-full", "No excluded cause appears in the report.", { delay: 12 });
+    await beat(2, 1.5); await clickOn(page, "#rv-coi", 600); await clickOn(page, "#send", 600);
+    await dead(() => until(async () => /Decided/.test(await T("main")), 40000)); await sleep(400);
+    await beat(2, 4.2); await page.evaluate(() => { const r = document.querySelector(".res"); r && r.scrollIntoView({ block: "center", behavior: "smooth" }); }); await sleep(1200); await spot(page, ".res", 3400, { pad: 10, scroll: false });   // Those reasons are shown on the case, and on the receipt...
   });
 }
 await browser.close(); await relay.close();
