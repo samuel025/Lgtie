@@ -4,9 +4,11 @@
 
 **How it is made**
 
-1. `tts.py` makes one continuous narration with a Microsoft neural voice (`en-US-AndrewNeural`) through the Edge online text-to-speech service, which needs no API key, and records when each sentence is spoken. The voice is synthetic; say so when you upload the video.
-2. `rec-live.mjs` records the scenes that use the live site (https://lgtie.vercel.app) with puppeteer and Chrome's built-in screen recording, with a visible cursor.
+1. `tts.py` makes one continuous narration with a Microsoft neural voice (`en-US-AndrewNeural`, slowed to about 2.5 words a second) through the Edge online text-to-speech service, which needs no API key, and records when each sentence is spoken. The voice is synthetic; say so when you upload the video.
+2. `rec-live.mjs` records the scenes that use the live site (https://lgtie.vercel.app) with puppeteer and Chrome's built-in screen recording.
 3. `rec-fork.mjs` records the two scenes that need a real customer and reviewer flow. They run in a **test environment** (a fork of X Layer, test wallets, a Chrome virtual passkey) and are labelled as such on screen.
-4. `assemble.py` fits each clip to its narration (tightening the pauses between sentences), adds subtitles and mixes the voice with ffmpeg.
+4. `assemble.py` fits each clip to its narration, cuts only real waiting (transactions, page loads), adds subtitles and mixes the voice with ffmpeg.
 
-The scripts need puppeteer-core, `ws`, ffmpeg, Foundry (for the fork scenes) and the Python package `edge-tts`. They are meant to run one process at a time and are light on the machine (720p, 24 fps, ffmpeg at low priority).
+**Pacing.** Nothing is sped up. Every on-screen action is scheduled against the timing of the sentence it illustrates (`lib.mjs`, `scene()`), so the picture waits for the words. The page is rendered at 1120x630 and captured at 1280x720 so text is larger. A big orange pointer with a halo and click ripples shows where to look, and an orange highlight box dims everything else while a point is made.
+
+The scripts need puppeteer-core, `ws`, ffmpeg, Foundry (for the fork scenes) and the Python package `edge-tts`. Run one process at a time: they are light on the machine (720p, 24 fps, ffmpeg at low priority), and the fork should only run while recording.
