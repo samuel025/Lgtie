@@ -399,7 +399,7 @@
       <p class="small">Reviewer: <code>${short(c.reviewer)}</code> <span data-rid="${c.reviewer}"></span></p>
       ${c.status === 0 ? `<p class="small mute">Answers due by ${when(c.answerBy)}.</p>` : c.status === 1 ? `<p class="small mute">The reviewer has until ${when(c.reviewBy)}. Reviewer ${c.reviewerAcked ? "has taken part" : "has not yet confirmed taking part"}.</p>` : ""}
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
-      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
+      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical and to see which evidence it lists.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       ${ev.length ? `<div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded. Nothing is uploaded: the files stay with the people who share them.</p><table class="ctab"><thead><tr><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabelV4(e.question))}</td><td data-l="By">${evWho(e)}</td><td data-l="Note">${esc(e.note)}</td><td data-l="Fingerprint"><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table><div id="fchk"></div></div>` : ""}
       ${live && !blind && !RV.isReviewer(W().account(), cc) ? reviewerInviteCard(`You are the neutral reviewer for case #${id} (${P.name}) on LGtie. ${c.status === 1 ? "The two sides disagree on some answers and the case is waiting for you." : "The two sides are still answering. If they disagree, the case will wait for you."} Open ${siteBase()}#pk/case/${id}/decide, connect your wallet and decide only the questions they disagree on. You will write your reasons and confirm you have no conflict of interest. You pay a small network fee. Nothing is held in escrow.`, c.status === 1 ? "The case is waiting for the reviewer. They get no notification, so send them this." : "Send this so the reviewer is ready if the sides disagree.") : ""}
       <div class="card" id="wal"></div><div id="cmsg" class="small"></div>`;
@@ -429,14 +429,20 @@
     };
   }
   function bindReview(P, dis, id, ev, c) {
+    window.TB_REVIEW.evidenceNote(document.getElementById("rv-evnote"), ev);
     const vals = collect(P, dis); $("#send").onclick = async () => {
       const msg = $("#cmsg"); try {
         const RV = window.TB_REVIEW, rd = RV.read($("#ans")); if (!rd.ok) throw new Error(rd.error);
         if (P.questions.some((_, i) => dis[i] && vals[i] === undefined)) throw new Error("Answer every disputed question.");
         const me = W().account(), decisions = P.questions.map((q, i) => dis[i] ? {n: i + 1, text: q.text, yes: !!vals[i]} : null).filter(Boolean);
-        const text = RV.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10)}), hash = await RV.sha256Hex(text);
+        // the statement lists the evidence recorded right now (read fresh). On a retry, reuse the statement already recorded.
+        const evNow = await readEvidence(id), cc2 = {reviewer: c.reviewer, filer: c.filer.wallet, filerOp: c.filerOp, decider: c.decider.wallet, deciderOp: c.deciderOp}, prior = RV.saved(CFG.chainId, V4().cases, id), priorHash = prior ? await RV.sha256Hex(prior) : null;
+        const label = e => String(e.by).toLowerCase() === c.reviewer.toLowerCase() ? "Reviewer" : e.passkey ? (e.passkey === c.filer.passkey ? "Side A" : "Side B") : RV.sideOf(e.by, cc2);
+        let text, hash;
+        if (priorHash && evNow.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === priorHash.toLowerCase())) { text = prior; hash = priorHash; }
+        else { text = RV.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10), evidence: {entries: evNow, digest: await RV.evidenceDigest(evNow), labelOf: label}}); hash = await RV.sha256Hex(text); }
         RV.save(CFG.chainId, V4().cases, id, text);                              // keep the statement on this device so it can be downloaded afterwards
-        if (!ev.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === hash.toLowerCase())) { msg.className = "small mute"; msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), 255, hash, rd.oneLine])); }
+        if (!evNow.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === hash.toLowerCase())) { msg.className = "small mute"; msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), 255, hash, rd.oneLine])); }
         const mask = P.questions.reduce((m, _, i) => m + (dis[i] && vals[i] ? 1n << BigInt(i) : 0n), 0n); msg.className = "small mute"; msg.textContent = "Confirm 2 of 2 in your wallet: submit your decision…";
         await W().send(V4().cases, enc("review", ["uint256", "uint64"], [Number(id), mask])); pkCase(id);
       } catch (e) { console.error("review failed:", e && e.stack || e); msg.className = "small err"; msg.textContent = (e && e.message) || String(e); }

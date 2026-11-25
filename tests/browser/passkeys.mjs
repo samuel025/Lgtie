@@ -167,6 +167,9 @@ ok("the reviewer's reason is recorded on the passkey case page", await until(asy
 await shot("case-decided");
 const stHref = await p.$eval("#stmtdl", a => a.href).catch(() => ""), stText = decodeURIComponent(stHref.split(",").slice(1).join(",")), stHash = "0x" + crypto.createHash("sha256").update(stText, "utf8").digest("hex");
 ok("the recorded fingerprint is the SHA-256 of the reviewer's statement", /LGTIE REVIEWER STATEMENT/.test(stText) && (await T("#rvreasons")).includes(stHash.slice(0, 18)), stHash + " " + await T("#rvreasons"));
+ok("the statement lists the evidence examined (passkey and wallet entries, labelled Side A or Side B) with a digest", /Evidence examined: \d+ entr(y|ies) recorded on this case when this statement was written/.test(stText) && /Evidence digest: 0x[0-9a-f]{64}/.test(stText) && /(Side A|Side B) · about /.test(stText), stText.slice(0, 700));
+fs.writeFileSync("/tmp/lgtie-pk-statement.txt", stText); await (await p.$("#dzf")).uploadFile("/tmp/lgtie-pk-statement.txt");
+ok("dropping the statement on the passkey case page checks its evidence list against the chain", await until(async () => /Same file as recorded/.test(await T("#dzr")) && /✓ Evidence examined: entr(y 1 matches|ies 1 to \d+ match) the chain/.test(await T("#dzr"))), await T("#dzr"));
 // ---- 8. The other attacks, with a second customer ("Sam") on a new device.
 await cdp.send("WebAuthn.removeVirtualAuthenticator", {authenticatorId: mayaDevice}); await authn();
 await p.evaluate(() => localStorage.removeItem("lgtie.passkey"));

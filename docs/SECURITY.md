@@ -74,6 +74,12 @@ This is a prototype. If you find a problem, open an issue on the repository.
 
 **Not covered, and open:** this is my own review, not an independent audit. Passkey recovery after losing every device is not built. One real-phone run by the builder worked; Safari and Firefox are untested. The page can only show a person what it displays, since WebAuthn cannot show the signed hash, so a compromised page could show one thing and sign another. The business creates the customer's account and can stall by not submitting a signed action (the signed action can be submitted by anyone, so the customer can ask another wallet holder).
 
+## Which evidence the reviewer examined
+
+A reviewer's written statement (fingerprinted on-chain as the reviewer's own evidence entry) lists every evidence entry recorded on the case when it was written, in on-chain order, with a digest: SHA-256 of the lines `number|submitter|passkey account|question|time|fingerprint|note`. Anyone holding the statement can recompute the digest from the case's evidence list on X Layer. The case page does this when the statement is dropped on it, and reports: the entries match; how many entries were added after the statement (not examined); or that the statement leaves out entries that were recorded before it, or lists a digest that is not the chain's.
+
+This makes it visible which evidence existed before a decision, and that evidence added or changed afterwards was not examined. It does not show that the reviewer read the evidence, that the evidence is genuine, or anything about files (only fingerprints are recorded). It needs no contract change. A reviewer who races an addition between reading the list and recording the statement can show one "left out" entry; the page words this as a fact, not an accusation. Statements written before this feature have no evidence section and are shown as such.
+
 ## Checking the compiler
 
 The circuit that runs on X Layer is produced by LGtie's rule compiler. A bug there would silently change what the rules mean, so the circuit is checked against the rules by a separate, formal method (`site/verify.js`, described in [VERIFICATION.md](VERIFICATION.md)): a symbolic proof, for every possible set of answers, that the two agree, runnable on any published circuit by anyone. It proves the circuit implements the rules as written; it does not prove the rules are fair, the answers true, or the contracts safe.

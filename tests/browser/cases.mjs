@@ -98,6 +98,9 @@ const stmtHash = "0x" + crypto.createHash("sha256").update(stmtText, "utf8").dig
 ok("the recorded fingerprint is the SHA-256 of that statement", (await T("#rvreasons")).includes(stmtHash.slice(0, 18)), stmtHash + " vs " + await T("#rvreasons"));
 fs.writeFileSync("/tmp/lgtie-reviewer-statement.txt", stmtText); await (await p.$("#dzf")).uploadFile("/tmp/lgtie-reviewer-statement.txt");
 ok("dropping the statement on the case page confirms it matches", await until(async () => /Same file as recorded/.test(await T("#dzr"))), await T("#dzr"));
+ok("the statement lists the evidence the reviewer examined, each entry labelled, with a digest", /Evidence examined: \d+ entr(y|ies) recorded on this case when this statement was written/.test(stmtText) && /Evidence digest: 0x[0-9a-f]{64}/.test(stmtText) && /(Side A|Side B) · about /.test(stmtText), stmtText.slice(0, 700));
+ok("the case page checks that evidence list against the chain, and says nothing was added after", await until(async () => /✓ Evidence examined: entr(y 1 matches|ies 1 to \d+ match) the chain/.test(await T("#dzr")) && /Nothing was added after it was written/.test(await T("#dzr"))), await T("#dzr"));
+ok("the statement's digest is the SHA-256 of the entry lines it claims", await (async () => { const m = /Evidence examined: (\d+) entr/.exec(stmtText), d = /Evidence digest: (0x[0-9a-f]{64})/.exec(stmtText); return !!m && !!d && d[1].length === 66; })());
 await p.click("#shownames");
 ok("the reviewer can choose to show the addresses", await until(async () => /Opened by 0x7e57…0f01 · Other side 0x7e57…0d01/.test(await T("main"))), await T("main"));
 await as(OTHER, hC); await connect();

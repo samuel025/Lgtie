@@ -40,7 +40,17 @@
   const decodeEvidence = hex => { const t = decodeTupleString(hex, 5, 4); return {by: t.A(0), question: Number(t.N(1)), at: Number(t.N(2)), hash: "0x" + t.W(3), note: t.str}; };
   const decodeRuleSet = hex => { const t = decodeTupleString(hex, 9, 8); return {publisher: t.A(0), circuitId: Number(t.N(2)), nQ: Number(t.N(3)), nOut: Number(t.N(4)), hash: "0x" + t.W(5), previousId: Number(t.N(6)), publishedAt: Number(t.N(7)), name: t.str}; };
 
+  const readEv = async id => { const n = Number(BigInt(await call(SEL.evCount + w(id)))); return Promise.all(Array.from({length: n}, (_, i) => call(SEL.evAt + w(id) + w(i)).then(decodeEvidence))); };
   // ---------- evidence: drop a file you were sent and see whether it is the one recorded (hashed in the browser, never uploaded) ----------
+  // For a reviewer's statement: does the evidence list it claims match the evidence on the chain? -> html to add under the match message
+  async function statementCheck(text, ev, h) {
+    const r = await window.TB_REVIEW.checkStatement(text, ev, h), n = r.later ? r.later.length : 0;
+    if (r.status === "none") return ` <br><span class="badge">This statement does not list the evidence it examined</span>`;
+    const lateTxt = n ? `${n} entr${n === 1 ? "y" : "ies"} added after it was written, not examined.` : "Nothing was added after it was written.";
+    if (r.status === "ok" && r.missed > 0) return ` <br><span class="badge warn">✗ The statement leaves out evidence that was already recorded</span> ${r.missed} entr${r.missed === 1 ? "y" : "ies"} recorded before it ${r.missed === 1 ? "is" : "are"} not in its list. ${lateTxt}`;
+    if (r.status === "ok") return ` <br><span class="badge ok">${r.n ? `✓ Evidence examined: ${r.n === 1 ? "entry 1 matches" : "entries 1 to " + r.n + " match"} the chain` : "✓ It says no evidence had been recorded, and that matches the chain"}</span> ${lateTxt}`;
+    return ` <br><span class="badge warn">✗ The evidence list in this statement does not match the chain</span> ${r.status === "toomany" ? "It lists more entries than the case has." : "The digest it states is not the digest of those entries on X Layer."}`;
+  }
   function mountFileCheck(box, ev, label) {
     if (!box) return; if (!ev.length) { box.innerHTML = ""; return; }
     box.innerHTML = `<div class="drop" id="dz"><p><b>Got a file from the other side? Check it here.</b></p><p class="small mute">Drop it here or <label class="flink">choose a file<input type="file" id="dzf" hidden></label>. It is fingerprinted in your browser and never uploaded.</p><div id="dzr" class="small" role="status" aria-live="polite"></div></div>`;
@@ -50,7 +60,8 @@
       const h = (await hashFile(f)).toLowerCase(), hit = ev.filter(e => e.hash.toLowerCase() === h);
       document.querySelectorAll(".evrow").forEach(r => r.classList.toggle("match", hit.some(e => e.hash.toLowerCase() === (r.dataset.h || "").toLowerCase())));
       out.className = "small";
-      out.innerHTML = hit.length ? `<span class="badge ok">✓ Same file as recorded</span> <b>${esc(f.name)}</b> is identical to the evidence recorded for ${esc(label(hit[0].question))} (fingerprint <code>${h.slice(0, 14)}…</code>). That shows the file is unchanged since it was recorded, not that it is genuine.`
+      let stmt = ""; if (hit.length && window.TB_REVIEW && f.size < 300000) { try { const text = await f.text(); if (/^LGTIE REVIEWER STATEMENT/.test(text)) stmt = await statementCheck(text, ev, h); } catch (e) {} }
+      out.innerHTML = hit.length ? `<span class="badge ok">✓ Same file as recorded</span> <b>${esc(f.name)}</b> is identical to the evidence recorded for ${esc(label(hit[0].question))} (fingerprint <code>${h.slice(0, 14)}…</code>). That shows the file is unchanged since it was recorded, not that it is genuine.${stmt}`
         : `<span class="badge warn">No match</span> <b>${esc(f.name)}</b> (fingerprint <code>${h.slice(0, 14)}…</code>) is not one of the ${ev.length} fingerprint${ev.length === 1 ? "" : "s"} recorded on this case. It may be a different or edited file.`;
     };
     box.querySelector("#dzf").onchange = e => check(e.target.files[0]);
@@ -207,7 +218,7 @@
       <div class="card"><table class="ctab"><thead><tr><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): opener ${ok(c.filerOk)}, other side ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><p class="small" style="margin:4px 0"><span data-rid="${c.reviewer}"></span></p><div id="rv"></div></div>
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
-      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
+      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical and to see which evidence it lists.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       <div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded here. Nothing is uploaded: the files stay with the people who share them, and the reviewer checks what they receive against the fingerprint. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.</p>
         ${ev.length ? `<table class="ctab"><thead><tr><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabel(e.question))}</td><td data-l="By">${who(e.by)}</td><td data-l="Note">${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No evidence recorded yet.</p>`}
         <div id="fchk"></div><div id="evform"></div></div>
@@ -264,15 +275,19 @@
     }
     async function recordReasons(f, rd, need, vals, msg) {
       const RV2 = window.TB_REVIEW, decisions = need.map(i => ({n: i + 1, text: P.questions[i].text, yes: !!vals[i]}));
-      const text = RV2.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10)}), hash = await RV2.sha256Hex(text);
+      // the statement lists the evidence recorded right now (read fresh, it may have changed since the page loaded). On a retry, reuse the statement already recorded.
+      const evNow = await readEv(id), prior = RV2.saved(CFG.chainId, CFG.caseContract, id), priorHash = prior ? await RV2.sha256Hex(prior) : null;
+      let text, hash;
+      if (priorHash && evNow.some(e => e.by.toLowerCase() === me && e.hash.toLowerCase() === priorHash.toLowerCase())) { text = prior; hash = priorHash; }
+      else { text = RV2.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10), evidence: {entries: evNow, digest: await RV2.evidenceDigest(evNow), labelOf: e => RV2.sideOf(e.by, c)}}); hash = await RV2.sha256Hex(text); }
       RV2.save(CFG.chainId, CFG.caseContract, id, text);                       // keep the statement on this device so it can be downloaded afterwards
-      if (f.dataset.attached === hash || ev.some(e => e.by.toLowerCase() === me && e.hash.toLowerCase() === hash)) return;
+      if (f.dataset.attached === hash || evNow.some(e => e.by.toLowerCase() === me && e.hash.toLowerCase() === hash)) return;
       msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…";
       const bytes = new TextEncoder().encode(rd.oneLine), nh = [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
       await send(SEL.evidence + w(id) + w(WHOLE) + hash.slice(2) + w(128) + w(bytes.length) + nh.padEnd(Math.ceil(bytes.length / 32) * 64, "0")); f.dataset.attached = hash;
     }
     document.querySelectorAll("[data-form]").forEach(f => {
-      if (f.dataset.form === "review") { window.TB_REVIEW.bind(f); if (window.TB_RID) window.TB_RID.noteFor(f.querySelector("#rv-idnote"), window.TB_WALLET.account()); }
+      if (f.dataset.form === "review") { window.TB_REVIEW.bind(f); window.TB_REVIEW.evidenceNote(f.querySelector("#rv-evnote"), ev); if (window.TB_RID) window.TB_RID.noteFor(f.querySelector("#rv-idnote"), window.TB_WALLET.account()); }
       const vals = {}; f.querySelectorAll(".yn").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => { vals[g.dataset.i] = b.dataset.v === "1"; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === vals[g.dataset.i]))); }));
       f.querySelector("[data-send]").onclick = async () => {
         const kind = f.dataset.form, need = [...f.querySelectorAll(".yn")].map(g => Number(g.dataset.i)), msg = f.querySelector("[data-msg]");

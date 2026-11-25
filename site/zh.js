@@ -963,9 +963,23 @@ window.TB_ZH = {
  "Warranty claims (published rules)": "保修理赔（已发布的规则）",
  "Paste my own rules": "粘贴我自己的规则",
  "Check against the chain": "对照链上检查",
- "Enter a circuit number.": "请输入电路编号。"
+ "Enter a circuit number.": "请输入电路编号。",
+ "No evidence has been recorded yet. Your statement will say so.": "目前还没有记录任何证据，你的声明会如实说明。",
+ "This statement does not list the evidence it examined": "这份声明没有列出它所审阅的证据",
+ "✓ It says no evidence had been recorded, and that matches the chain": "✓ 它说当时还没有记录任何证据，这与链上一致",
+ "✗ The statement leaves out evidence that was already recorded": "✗ 这份声明遗漏了此前已记录的证据",
+ "✗ The evidence list in this statement does not match the chain": "✗ 这份声明中的证据清单与链上不一致",
+ "It lists more entries than the case has.": "它列出的条目比案件实际拥有的更多。",
+ "The digest it states is not the digest of those entries on X Layer.": "它声明的摘要并不是这些条目在 X Layer 上的摘要。",
+ "Nothing was added after it was written.": "在它写成之后没有新增任何内容。",
+ "; drop the file you were sent below to check it is identical and to see which evidence it lists.": "；请把你收到的文件拖到下方，核对是否一致，并查看它列出了哪些证据。"
 },
   patterns: [
+  [/^Your statement will list the (\d+) evidence entr(?:y|ies) recorded so far, with a digest anyone can check against X Layer\. Anything added after you record your reasons is not covered\.$/, "你的声明将列出目前已记录的 {1} 条证据，并附上任何人都能对照 X Layer 核对的摘要。你记录理由之后新增的内容不在涵盖范围内。"],
+  [/^✓ Evidence examined: entry 1 matches the chain$/, "✓ 已审阅的证据：第 1 条与链上一致"], [/^✓ Evidence examined: entries 1 to (\d+) match the chain$/, "✓ 已审阅的证据：第 1 至 {1} 条与链上一致"],
+  [/^(\d+) entr(?:y|ies) added after it was written, not examined\.$/, "在它写成之后新增了 {1} 条，未被审阅。"],
+  [/^(\d+) entr(?:y|ies) recorded before it (?:is|are) not in its list\.(?: (.+))?$/, (m, n, rest) => "在它之前已记录的 " + n + " 条证据不在它的清单中。" + (rest ? (rest.startsWith("Nothing") ? "在它写成之后没有新增任何内容。" : (rest.match(/^(\d+)/) ? "在它写成之后新增了 " + rest.match(/^(\d+)/)[1] + " 条，未被审阅。" : rest)) : "")],
+
   [/^\((\d+) gates\)$/, "（{1} 个门）"],
 
   [/^(\d+) cases?$/, "{1} 个案件"], [/^(\d+) decided$/, "{1} 个已裁决"], [/^(\d+) open$/, "{1} 个进行中"], [/^(\d+) no decision$/, "{1} 个无决定"],

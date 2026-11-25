@@ -1428,9 +1428,23 @@ window.TB_ZH = {
  "Warranty claims (published rules)": "保修理赔（已发布的规则）",
  "Paste my own rules": "粘贴我自己的规则",
  "Check against the chain": "对照链上检查",
- "Enter a circuit number.": "请输入电路编号。"
+ "Enter a circuit number.": "请输入电路编号。",
+ "No evidence has been recorded yet. Your statement will say so.": "目前还没有记录任何证据，你的声明会如实说明。",
+ "This statement does not list the evidence it examined": "这份声明没有列出它所审阅的证据",
+ "✓ It says no evidence had been recorded, and that matches the chain": "✓ 它说当时还没有记录任何证据，这与链上一致",
+ "✗ The statement leaves out evidence that was already recorded": "✗ 这份声明遗漏了此前已记录的证据",
+ "✗ The evidence list in this statement does not match the chain": "✗ 这份声明中的证据清单与链上不一致",
+ "It lists more entries than the case has.": "它列出的条目比案件实际拥有的更多。",
+ "The digest it states is not the digest of those entries on X Layer.": "它声明的摘要并不是这些条目在 X Layer 上的摘要。",
+ "Nothing was added after it was written.": "在它写成之后没有新增任何内容。",
+ "; drop the file you were sent below to check it is identical and to see which evidence it lists.": "；请把你收到的文件拖到下方，核对是否一致，并查看它列出了哪些证据。"
 },
   patterns: [
+  [/^Your statement will list the (\d+) evidence entr(?:y|ies) recorded so far, with a digest anyone can check against X Layer\. Anything added after you record your reasons is not covered\.$/, "你的声明将列出目前已记录的 {1} 条证据，并附上任何人都能对照 X Layer 核对的摘要。你记录理由之后新增的内容不在涵盖范围内。"],
+  [/^✓ Evidence examined: entry 1 matches the chain$/, "✓ 已审阅的证据：第 1 条与链上一致"], [/^✓ Evidence examined: entries 1 to (\d+) match the chain$/, "✓ 已审阅的证据：第 1 至 {1} 条与链上一致"],
+  [/^(\d+) entr(?:y|ies) added after it was written, not examined\.$/, "在它写成之后新增了 {1} 条，未被审阅。"],
+  [/^(\d+) entr(?:y|ies) recorded before it (?:is|are) not in its list\.(?: (.+))?$/, (m, n, rest) => "在它之前已记录的 " + n + " 条证据不在它的清单中。" + (rest ? (rest.startsWith("Nothing") ? "在它写成之后没有新增任何内容。" : (rest.match(/^(\d+)/) ? "在它写成之后新增了 " + rest.match(/^(\d+)/)[1] + " 条，未被审阅。" : rest)) : "")],
+
   [/^\((\d+) gates\)$/, "（{1} 个门）"],
 
   [/^(\d+) cases?$/, "{1} 个案件"], [/^(\d+) decided$/, "{1} 个已裁决"], [/^(\d+) open$/, "{1} 个进行中"], [/^(\d+) no decision$/, "{1} 个无决定"],
@@ -2957,9 +2971,10 @@ MY POLICY:
 
   // The statement the reviewer keeps. Deterministic: the same inputs always give the same text, so its fingerprint is reproducible.
   // decisions: [{n: question number, text: question text, yes: boolean}]
-  function build({caseId, reviewer, decisions, oneLine, full, date}) {
+  function build({caseId, reviewer, decisions, oneLine, full, date, evidence}) {
     const lines = ["LGTIE REVIEWER STATEMENT", "Case: #" + caseId, "Reviewer: " + String(reviewer).toLowerCase(), "Written: " + date, "", "Decisions on the disputed questions:"];
     decisions.forEach(d => lines.push(" " + d.n + ". " + d.text + " -> " + (d.yes ? "Yes" : "No")));
+    if (evidence) lines.push("", ...evidenceSection(evidence.entries, evidence.digest, evidence.labelOf).slice(0, -1));
     lines.push("", "Conflict-of-interest declaration:", " " + DECLARATION, "", "One-line reason (public): " + oneLine, "", "Full reasons:", full, "");
     return lines.join("\n");
   }
@@ -2986,7 +3001,7 @@ MY POLICY:
 
   // The extra fields on the reviewer's decision form.
   function fields() {
-    return `<div class="rvfields"><div id="rv-idnote"></div><h4>Your reasons (required)</h4>
+    return `<div class="rvfields"><div id="rv-idnote"></div><p class="small mute" id="rv-evnote"></p><h4>Your reasons (required)</h4>
       <p class="small mute">Both sides and anyone who reads this case can see that you gave reasons. Explain which evidence you relied on and what you could not verify. Do not name people.</p>
       <div class="wide"><label><span>One-line reason (public)</span><input id="rv-one" type="text" maxlength="60" placeholder="For example: report shows impact damage" autocomplete="off"></label></div><p class="small mute" id="rv-count"></p>
       <label class="small">Full reasons (kept in a file you download; only its fingerprint is recorded)</label><textarea id="rv-full" rows="5" placeholder="Which evidence did you rely on, and how did it answer each disputed question? What could you not verify?"></textarea>
@@ -2998,7 +3013,43 @@ MY POLICY:
   }
   function read(root) { const v = id => (root.querySelector(id) || {}); return validate({oneLine: v("#rv-one").value, full: v("#rv-full").value, coi: !!v("#rv-coi").checked}); }
 
-  const api = {DECLARATION, LIMITS, validate, build, sha256Hex, sideOf, isReviewer, reasonsOf, bytesOf, key, save, saved, downloadLink, fields, bind, read};
+
+  // ----- the evidence the reviewer examined -----
+  // A reviewer's statement can list the evidence entries recorded on the case when it was written, with a digest anyone can recompute from X Layer. So it is
+  // on the record which evidence the reviewer had, and evidence added (or replaced) afterwards is visible as not examined. This is not a promise that the reviewer
+  // read it, or that it is genuine: it shows which entries existed and were fingerprinted before the decision.
+  // An entry is {by, passkey, question, at, hash, note}. The digest is SHA-256 of the lines "number|submitter|passkey account|question|time|fingerprint|note", joined by newlines.
+  const entryLine = (e, i) => [i + 1, String(e.by).toLowerCase(), String(e.passkey || 0), e.question, e.at, String(e.hash).toLowerCase(), e.note || ""].join("|");
+  const evidenceDigest = entries => sha256Hex((entries || []).map(entryLine).join("\n"));
+  const utc = sec => new Date(Number(sec) * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  const aboutQ = q => Number(q) === 255 ? "the whole case" : "question " + (Number(q) + 1);
+  // lines for the statement. labelOf(e) -> "Side A" | "Side B" | "Reviewer" | ...
+  function evidenceSection(entries, digest, labelOf) {
+    const n = (entries || []).length; if (!n) return ["Evidence examined: none recorded when this statement was written.", ""];
+    return ["Evidence examined: " + n + " entr" + (n === 1 ? "y" : "ies") + " recorded on this case when this statement was written (entries 1 to " + n + ", in on-chain order):"]
+      .concat(entries.map((e, i) => " " + (i + 1) + ". " + (labelOf ? labelOf(e) : "Someone") + " · about " + aboutQ(e.question) + " · fingerprint " + e.hash + " · " + utc(e.at) + (e.note ? " · note \"" + e.note + "\"" : "")))
+      .concat(["Evidence digest: " + digest, "(To check it: SHA-256 of the lines \"number|submitter|passkey account|question|time|fingerprint|note\", one per entry, joined by newlines, read from the case's evidence list on X Layer. Entries added after this statement was written were not examined.)", ""]);
+  }
+  // Check the evidence list a statement claims against the evidence the chain has now. entries: the case's evidence list now; statementHash: the statement's own fingerprint.
+  // The statement's own entry marks the moment it was recorded: everything before it should be in its list, everything after it was not examined.
+  // -> {status: "ok" | "mismatch" | "none" | "toomany", n (entries it lists), missed (entries recorded before it but not listed), later (entries added after it)}
+  async function checkStatement(text, entries, statementHash) {
+    const t = String(text || ""), list = entries || [], sh = String(statementHash || "").toLowerCase(), isOwn = e => String(e.hash).toLowerCase() === sh;
+    const none = /^Evidence examined: none recorded/m.test(t), m = /^Evidence examined: (\d+) entr/m.exec(t), d = /^Evidence digest: (0x[0-9a-f]{64})/m.exec(t);
+    if (!none && (!m || !d)) return {status: "none"};
+    const n = none ? 0 : Number(m[1]), own = list.findIndex(isOwn);
+    if (n > list.length || (own >= 0 && n > own)) return {status: "toomany", n, found: d ? d[1] : null};      // it cannot have examined entries that did not exist yet
+    const expected = n ? await evidenceDigest(list.slice(0, n)) : null;
+    if (n && expected !== d[1]) return {status: "mismatch", n, expected, found: d[1]};
+    return {status: "ok", n, expected, missed: own >= 0 ? own - n : 0, later: list.slice(own >= 0 ? own + 1 : n).filter(e => !isOwn(e))};
+  }
+  // The note on the decision form: what the statement will cover.
+  function evidenceNote(el, entries) {
+    if (!el) return; const n = (entries || []).length;
+    el.textContent = n ? `Your statement will list the ${n} evidence entr${n === 1 ? "y" : "ies"} recorded so far, with a digest anyone can check against X Layer. Anything added after you record your reasons is not covered.` : "No evidence has been recorded yet. Your statement will say so.";
+  }
+
+  const api = {entryLine, evidenceDigest, evidenceSection, checkStatement, evidenceNote, DECLARATION, LIMITS, validate, build, sha256Hex, sideOf, isReviewer, reasonsOf, bytesOf, key, save, saved, downloadLink, fields, bind, read};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_REVIEW = api;
 })();
 
@@ -3045,7 +3096,17 @@ MY POLICY:
   const decodeEvidence = hex => { const t = decodeTupleString(hex, 5, 4); return {by: t.A(0), question: Number(t.N(1)), at: Number(t.N(2)), hash: "0x" + t.W(3), note: t.str}; };
   const decodeRuleSet = hex => { const t = decodeTupleString(hex, 9, 8); return {publisher: t.A(0), circuitId: Number(t.N(2)), nQ: Number(t.N(3)), nOut: Number(t.N(4)), hash: "0x" + t.W(5), previousId: Number(t.N(6)), publishedAt: Number(t.N(7)), name: t.str}; };
 
+  const readEv = async id => { const n = Number(BigInt(await call(SEL.evCount + w(id)))); return Promise.all(Array.from({length: n}, (_, i) => call(SEL.evAt + w(id) + w(i)).then(decodeEvidence))); };
   // ---------- evidence: drop a file you were sent and see whether it is the one recorded (hashed in the browser, never uploaded) ----------
+  // For a reviewer's statement: does the evidence list it claims match the evidence on the chain? -> html to add under the match message
+  async function statementCheck(text, ev, h) {
+    const r = await window.TB_REVIEW.checkStatement(text, ev, h), n = r.later ? r.later.length : 0;
+    if (r.status === "none") return ` <br><span class="badge">This statement does not list the evidence it examined</span>`;
+    const lateTxt = n ? `${n} entr${n === 1 ? "y" : "ies"} added after it was written, not examined.` : "Nothing was added after it was written.";
+    if (r.status === "ok" && r.missed > 0) return ` <br><span class="badge warn">✗ The statement leaves out evidence that was already recorded</span> ${r.missed} entr${r.missed === 1 ? "y" : "ies"} recorded before it ${r.missed === 1 ? "is" : "are"} not in its list. ${lateTxt}`;
+    if (r.status === "ok") return ` <br><span class="badge ok">${r.n ? `✓ Evidence examined: ${r.n === 1 ? "entry 1 matches" : "entries 1 to " + r.n + " match"} the chain` : "✓ It says no evidence had been recorded, and that matches the chain"}</span> ${lateTxt}`;
+    return ` <br><span class="badge warn">✗ The evidence list in this statement does not match the chain</span> ${r.status === "toomany" ? "It lists more entries than the case has." : "The digest it states is not the digest of those entries on X Layer."}`;
+  }
   function mountFileCheck(box, ev, label) {
     if (!box) return; if (!ev.length) { box.innerHTML = ""; return; }
     box.innerHTML = `<div class="drop" id="dz"><p><b>Got a file from the other side? Check it here.</b></p><p class="small mute">Drop it here or <label class="flink">choose a file<input type="file" id="dzf" hidden></label>. It is fingerprinted in your browser and never uploaded.</p><div id="dzr" class="small" role="status" aria-live="polite"></div></div>`;
@@ -3055,7 +3116,8 @@ MY POLICY:
       const h = (await hashFile(f)).toLowerCase(), hit = ev.filter(e => e.hash.toLowerCase() === h);
       document.querySelectorAll(".evrow").forEach(r => r.classList.toggle("match", hit.some(e => e.hash.toLowerCase() === (r.dataset.h || "").toLowerCase())));
       out.className = "small";
-      out.innerHTML = hit.length ? `<span class="badge ok">✓ Same file as recorded</span> <b>${esc(f.name)}</b> is identical to the evidence recorded for ${esc(label(hit[0].question))} (fingerprint <code>${h.slice(0, 14)}…</code>). That shows the file is unchanged since it was recorded, not that it is genuine.`
+      let stmt = ""; if (hit.length && window.TB_REVIEW && f.size < 300000) { try { const text = await f.text(); if (/^LGTIE REVIEWER STATEMENT/.test(text)) stmt = await statementCheck(text, ev, h); } catch (e) {} }
+      out.innerHTML = hit.length ? `<span class="badge ok">✓ Same file as recorded</span> <b>${esc(f.name)}</b> is identical to the evidence recorded for ${esc(label(hit[0].question))} (fingerprint <code>${h.slice(0, 14)}…</code>). That shows the file is unchanged since it was recorded, not that it is genuine.${stmt}`
         : `<span class="badge warn">No match</span> <b>${esc(f.name)}</b> (fingerprint <code>${h.slice(0, 14)}…</code>) is not one of the ${ev.length} fingerprint${ev.length === 1 ? "" : "s"} recorded on this case. It may be a different or edited file.`;
     };
     box.querySelector("#dzf").onchange = e => check(e.target.files[0]);
@@ -3212,7 +3274,7 @@ MY POLICY:
       <div class="card"><table class="ctab"><thead><tr><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): opener ${ok(c.filerOk)}, other side ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><p class="small" style="margin:4px 0"><span data-rid="${c.reviewer}"></span></p><div id="rv"></div></div>
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
-      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
+      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical and to see which evidence it lists.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       <div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded here. Nothing is uploaded: the files stay with the people who share them, and the reviewer checks what they receive against the fingerprint. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.</p>
         ${ev.length ? `<table class="ctab"><thead><tr><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabel(e.question))}</td><td data-l="By">${who(e.by)}</td><td data-l="Note">${esc(e.note)}</td><td><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No evidence recorded yet.</p>`}
         <div id="fchk"></div><div id="evform"></div></div>
@@ -3269,15 +3331,19 @@ MY POLICY:
     }
     async function recordReasons(f, rd, need, vals, msg) {
       const RV2 = window.TB_REVIEW, decisions = need.map(i => ({n: i + 1, text: P.questions[i].text, yes: !!vals[i]}));
-      const text = RV2.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10)}), hash = await RV2.sha256Hex(text);
+      // the statement lists the evidence recorded right now (read fresh, it may have changed since the page loaded). On a retry, reuse the statement already recorded.
+      const evNow = await readEv(id), prior = RV2.saved(CFG.chainId, CFG.caseContract, id), priorHash = prior ? await RV2.sha256Hex(prior) : null;
+      let text, hash;
+      if (priorHash && evNow.some(e => e.by.toLowerCase() === me && e.hash.toLowerCase() === priorHash.toLowerCase())) { text = prior; hash = priorHash; }
+      else { text = RV2.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10), evidence: {entries: evNow, digest: await RV2.evidenceDigest(evNow), labelOf: e => RV2.sideOf(e.by, c)}}); hash = await RV2.sha256Hex(text); }
       RV2.save(CFG.chainId, CFG.caseContract, id, text);                       // keep the statement on this device so it can be downloaded afterwards
-      if (f.dataset.attached === hash || ev.some(e => e.by.toLowerCase() === me && e.hash.toLowerCase() === hash)) return;
+      if (f.dataset.attached === hash || evNow.some(e => e.by.toLowerCase() === me && e.hash.toLowerCase() === hash)) return;
       msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…";
       const bytes = new TextEncoder().encode(rd.oneLine), nh = [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
       await send(SEL.evidence + w(id) + w(WHOLE) + hash.slice(2) + w(128) + w(bytes.length) + nh.padEnd(Math.ceil(bytes.length / 32) * 64, "0")); f.dataset.attached = hash;
     }
     document.querySelectorAll("[data-form]").forEach(f => {
-      if (f.dataset.form === "review") { window.TB_REVIEW.bind(f); if (window.TB_RID) window.TB_RID.noteFor(f.querySelector("#rv-idnote"), window.TB_WALLET.account()); }
+      if (f.dataset.form === "review") { window.TB_REVIEW.bind(f); window.TB_REVIEW.evidenceNote(f.querySelector("#rv-evnote"), ev); if (window.TB_RID) window.TB_RID.noteFor(f.querySelector("#rv-idnote"), window.TB_WALLET.account()); }
       const vals = {}; f.querySelectorAll(".yn").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => { vals[g.dataset.i] = b.dataset.v === "1"; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === vals[g.dataset.i]))); }));
       f.querySelector("[data-send]").onclick = async () => {
         const kind = f.dataset.form, need = [...f.querySelectorAll(".yn")].map(g => Number(g.dataset.i)), msg = f.querySelector("[data-msg]");
@@ -4101,7 +4167,7 @@ MY POLICY:
       <p class="small">Reviewer: <code>${short(c.reviewer)}</code> <span data-rid="${c.reviewer}"></span></p>
       ${c.status === 0 ? `<p class="small mute">Answers due by ${when(c.answerBy)}.</p>` : c.status === 1 ? `<p class="small mute">The reviewer has until ${when(c.reviewBy)}. Reviewer ${c.reviewerAcked ? "has taken part" : "has not yet confirmed taking part"}.</p>` : ""}
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
-      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
+      ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical and to see which evidence it lists.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       ${ev.length ? `<div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded. Nothing is uploaded: the files stay with the people who share them.</p><table class="ctab"><thead><tr><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabelV4(e.question))}</td><td data-l="By">${evWho(e)}</td><td data-l="Note">${esc(e.note)}</td><td data-l="Fingerprint"><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table><div id="fchk"></div></div>` : ""}
       ${live && !blind && !RV.isReviewer(W().account(), cc) ? reviewerInviteCard(`You are the neutral reviewer for case #${id} (${P.name}) on LGtie. ${c.status === 1 ? "The two sides disagree on some answers and the case is waiting for you." : "The two sides are still answering. If they disagree, the case will wait for you."} Open ${siteBase()}#pk/case/${id}/decide, connect your wallet and decide only the questions they disagree on. You will write your reasons and confirm you have no conflict of interest. You pay a small network fee. Nothing is held in escrow.`, c.status === 1 ? "The case is waiting for the reviewer. They get no notification, so send them this." : "Send this so the reviewer is ready if the sides disagree.") : ""}
       <div class="card" id="wal"></div><div id="cmsg" class="small"></div>`;
@@ -4131,14 +4197,20 @@ MY POLICY:
     };
   }
   function bindReview(P, dis, id, ev, c) {
+    window.TB_REVIEW.evidenceNote(document.getElementById("rv-evnote"), ev);
     const vals = collect(P, dis); $("#send").onclick = async () => {
       const msg = $("#cmsg"); try {
         const RV = window.TB_REVIEW, rd = RV.read($("#ans")); if (!rd.ok) throw new Error(rd.error);
         if (P.questions.some((_, i) => dis[i] && vals[i] === undefined)) throw new Error("Answer every disputed question.");
         const me = W().account(), decisions = P.questions.map((q, i) => dis[i] ? {n: i + 1, text: q.text, yes: !!vals[i]} : null).filter(Boolean);
-        const text = RV.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10)}), hash = await RV.sha256Hex(text);
+        // the statement lists the evidence recorded right now (read fresh). On a retry, reuse the statement already recorded.
+        const evNow = await readEvidence(id), cc2 = {reviewer: c.reviewer, filer: c.filer.wallet, filerOp: c.filerOp, decider: c.decider.wallet, deciderOp: c.deciderOp}, prior = RV.saved(CFG.chainId, V4().cases, id), priorHash = prior ? await RV.sha256Hex(prior) : null;
+        const label = e => String(e.by).toLowerCase() === c.reviewer.toLowerCase() ? "Reviewer" : e.passkey ? (e.passkey === c.filer.passkey ? "Side A" : "Side B") : RV.sideOf(e.by, cc2);
+        let text, hash;
+        if (priorHash && evNow.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === priorHash.toLowerCase())) { text = prior; hash = priorHash; }
+        else { text = RV.build({caseId: id, reviewer: me, decisions, oneLine: rd.oneLine, full: rd.full, date: new Date().toISOString().slice(0, 10), evidence: {entries: evNow, digest: await RV.evidenceDigest(evNow), labelOf: label}}); hash = await RV.sha256Hex(text); }
         RV.save(CFG.chainId, V4().cases, id, text);                              // keep the statement on this device so it can be downloaded afterwards
-        if (!ev.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === hash.toLowerCase())) { msg.className = "small mute"; msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), 255, hash, rd.oneLine])); }
+        if (!evNow.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === hash.toLowerCase())) { msg.className = "small mute"; msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), 255, hash, rd.oneLine])); }
         const mask = P.questions.reduce((m, _, i) => m + (dis[i] && vals[i] ? 1n << BigInt(i) : 0n), 0n); msg.className = "small mute"; msg.textContent = "Confirm 2 of 2 in your wallet: submit your decision…";
         await W().send(V4().cases, enc("review", ["uint256", "uint64"], [Number(id), mask])); pkCase(id);
       } catch (e) { console.error("review failed:", e && e.stack || e); msg.className = "small err"; msg.textContent = (e && e.message) || String(e); }
