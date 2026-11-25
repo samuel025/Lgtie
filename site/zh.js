@@ -905,9 +905,20 @@ window.TB_ZH = {
  "What you can judge (optional)": "你擅长裁决什么（可选）",
  "Your fee (optional)": "你的收费（可选）",
  "For example: used electronics, smart-contract security": "例如：二手电子产品、智能合约安全",
- "For example: US$10 per disputed question": "例如：每个有争议的问题 10 美元"
+ "For example: US$10 per disputed question": "例如：每个有争议的问题 10 美元",
+ "More": "更多",
+ "Jump to": "快速前往",
+ "Use it": "使用",
+ "Check and trust": "核对与信任",
+ "Source code and docs": "源代码与文档",
+ "Security notes": "安全说明",
+ "Invite a customer": "邀请客户",
+ "Quick links": "快速链接",
+ "See who decided cases": "查看裁决记录",
+ "Re-check a result": "重新核对结果"
 },
   patterns: [
+  [/^Evidence: (.+)$/, "证据：{1}"],
   [/^(\d+) questions? · published on X Layer$/, "{1} 个问题 · 已发布在 X Layer"],
   [/^Specialty: (.+)$/, "专长：{1}"], [/^Fee: (.+)$/, "费用：{1}"],
   [/^Keep the specialty under (\d+) characters\.$/, "专长请控制在 {1} 个字符以内。"], [/^Keep the fee under (\d+) characters\.$/, "收费说明请控制在 {1} 个字符以内。"],

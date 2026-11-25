@@ -17,6 +17,7 @@ npm i puppeteer-core            # in any folder; then run: node <path>/checker.m
 | `hero.mjs` | the home hero draws the real 39-gate circuit, tapping an answer changes the result, autoplay, the count-up facts, the card icons, and the circuit on checker pages | network |
 | `builder.mjs` | the visual rule builder: forms, text view, spreadsheet paste, AI-reply loading | none |
 | `embed.mjs` | the embeddable checker and its demo page | network |
+| `links.mjs` | finding things: the header's More menu (opens, closes on Escape, on a click elsewhere and when you pick something), the quick links under the home headline (plain words, no jargon), the grouped footer sitemap, in Chinese, and on a phone | none |
 | `templates.mjs` | the #templates page, a free checker for a template, opening it in the builder, and all of it in Chinese (the published warranty checker stays in English rules) | none |
 | `i18n.mjs` | languages: Chinese by default on a fresh profile, the 中文 / EN switch and its persistence, translated results, counters, dates and placeholders, and a real case read from mainnet | network (reads X Layer) |
 | `reviewerid.mjs` | named reviewers: a real wallet signature (made with `cast`), profile setup, publishing to a local relay, the public-page check against a fake page, a stranger's browser finding the name, and the agreement form refusing a profile for the wrong address | `cast`, `ws`; reads mainnet for the case list only |

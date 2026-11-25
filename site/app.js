@@ -52,6 +52,7 @@
         <h1>Settle disputes fairly, with rules everyone can see first.</h1>
         <p class="sub">A business publishes its rules before anything goes wrong. You both answer the same yes or no questions. Only the answers you disagree on go to a neutral person, and anyone can check the result.</p>
         <div class="cta"><a class="btn" href="#check/warranty">Try a claim check <span class="arr">→</span></a><a class="btn ghost" href="#case/1">See a real case</a></div>
+        <div class="quick" aria-label="Quick links"><b>Jump to</b><a href="#templates">Templates</a><a href="#build">Build a checker</a><a href="#agree">Make an agreement</a><a href="#pk/agree">Invite a customer</a><a href="#mine">My cases</a><a href="#join">Get a passkey</a><a href="#reviewer">See who decided cases</a><a href="#verify">Re-check a result</a></div>
         <p class="small mute fine">Checking a claim needs no account and no wallet. LGtie never holds anyone's money.</p>
       </div>
       <div class="panel stage">${art("ember")}<div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div></div>
@@ -301,7 +302,7 @@
     main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.toggle("about", view === "about"); main.classList.toggle("hub", view === "for-business"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
     if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
     armReveal(view === "embed");
-    document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));
+    document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view)); closeMore(); const mo = document.querySelector(".more summary"); if (mo) mo.classList.toggle("on", !!document.querySelector(".more .menu a.on"));
     window.scrollTo(0, 0);
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
@@ -325,6 +326,10 @@
     if (view === "about") return about();
     home();
   }
+  // the "More" menu: closes when you pick something, click elsewhere or press Escape
+  const closeMore = () => document.querySelectorAll(".more[open]").forEach(d => d.removeAttribute("open"));
+  document.addEventListener("click", e => document.querySelectorAll(".more[open]").forEach(d => { if (!d.contains(e.target) || e.target.closest(".menu a")) d.removeAttribute("open"); }));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeMore(); });
   window.addEventListener("hashchange", route);
   route();
 })();

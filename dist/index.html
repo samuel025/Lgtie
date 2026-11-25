@@ -402,11 +402,22 @@ main.hub{max-width:1100px}
 @media(max-width:700px){.stepper{overflow:visible}.stepper li{flex:0 1 auto}.stepper li:not(:last-child)::after{flex:1 1 10px;min-width:8px}}
 
 .grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:18px 0}.grid2 .card{margin:0}
+
+/* finding things: the More menu, the quick links on the home page, and the footer sitemap */
+.more{position:relative;margin:0}.more summary{display:block;list-style:none;cursor:pointer;font-size:14px;padding:6px 0;color:var(--ink);user-select:none}.more summary::before{display:none}.more summary:focus-visible{outline:2px solid var(--ink);outline-offset:3px;border-radius:6px}.more summary::-webkit-details-marker{display:none}
+.more summary::after{content:"\25BE";font-size:11px;margin-left:5px}.more[open] summary::after{content:"\25B4"}.more summary.on{text-decoration:underline;text-underline-offset:7px}
+.more .menu{position:absolute;right:0;top:calc(100% + 6px);min-width:220px;background:#fff;border:1px solid var(--warm,#ddd);border-radius:14px;padding:8px;box-shadow:0 14px 34px rgba(0,0,0,.14);z-index:70;display:flex;flex-direction:column}
+.more .menu a{padding:9px 12px;border-radius:9px;white-space:nowrap}.more .menu a::after{display:none}.more .menu a:hover,.more .menu a.on{background:rgba(0,0,0,.06)}
+.quick{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:20px 0 4px}.quick b{font-size:13px;font-weight:500;color:var(--stone);margin-right:2px}
+.quick a{font-size:13px;padding:7px 14px;border:1px solid var(--warm,#ddd);border-radius:9999px;color:var(--ink);text-decoration:none;background:#fff;transition:background .2s,color .2s}.quick a:hover{background:var(--ink);color:#fff}
+.fcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:22px 28px;margin:0 0 26px}.fcols h5{margin:0 0 8px;font:500 13px/1.2 var(--sans);color:#000;letter-spacing:0}
+.fcols a{display:block;padding:4px 0;text-decoration:none;color:var(--ink)}.fcols a:hover{text-decoration:underline}
+@media(max-width:700px){.more .menu{left:0;right:auto}}
 /* language: Chinese needs system CJK fonts (the embedded Inter has Latin only) and looser tracking */
 html[lang^="zh"]{--serif:"InterEmbedded","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","WenQuanYi Micro Hei",ui-sans-serif,system-ui,sans-serif;--sans:var(--serif)}
 html[lang^="zh"] body{letter-spacing:0;line-height:1.65;line-break:strict}
 html[lang^="zh"] h1,html[lang^="zh"] h2,html[lang^="zh"] h3,html[lang^="zh"] h4,html[lang^="zh"] .brand{letter-spacing:0;line-height:1.25;font-weight:400}
-html[lang^="zh"] h1,html[lang^="zh"] h2{text-wrap:balance;word-break:keep-all;overflow-wrap:anywhere}
+html[lang^="zh"] h1,html[lang^="zh"] h2{text-wrap:balance;line-break:strict;word-break:normal;overflow-wrap:normal}
 html[lang^="zh"] .hcopy h1{font-size:clamp(34px,4vw,54px)}
 html[lang^="zh"] h1{font-size:clamp(38px,6.4vw,60px)}
 html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^="zh"] textarea{letter-spacing:0}
@@ -417,9 +428,9 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
-<nav id="nav"><a href="#about" data-k="about">How it works</a><a href="#check/warranty" data-k="check">Try a claim check</a><a href="#for-business" data-k="for-business">For businesses</a><a href="#mine" data-k="mine">My cases</a><a class="pill" href="#case/1">See a real case</a></nav></div></header>
+<nav id="nav"><a href="#about" data-k="about">How it works</a><a href="#templates" data-k="templates">Templates</a><a href="#check/warranty" data-k="check">Try a claim check</a><a href="#for-business" data-k="for-business">For businesses</a><a href="#mine" data-k="mine">My cases</a><details class="more"><summary>More</summary><div class="menu"><a href="#build" data-k="build">Build a checker</a><a href="#agree" data-k="agree">Make an agreement</a><a href="#inbox" data-k="inbox">Inbox</a><a href="#reviewer" data-k="reviewer">Reviewer records</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#join" data-k="join">Get a passkey</a></div></details><a class="pill" href="#case/1">See a real case</a></nav></div></header>
 <main id="main"></main>
-<footer><div class="wrap"><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div><div style="margin-top:10px"><a href="#about">How it works</a> · <a href="#templates">Templates</a> · <a href="#verify">Verify a circuit</a> · <a href="#reviewer">Reviewer records</a> · <a href="#for-business">For businesses</a> · <a href="#join">Get a passkey</a> · <a href="#mine">My cases</a> · <a href="#verify">For developers: verify a circuit</a></div></div></footer>
+<footer><div class="wrap"><div class="fcols"><div><h5>Use it</h5><a href="#check/warranty">Try a claim check</a><a href="#case/1">See a real case</a><a href="#mine">My cases</a><a href="#join">Get a passkey</a><a href="#templates">Templates</a></div><div><h5>For businesses</h5><a href="#for-business">For businesses</a><a href="#build">Build a checker</a><a href="#agree">Make an agreement</a><a href="#pk/agree">Invite a customer</a><a href="#inbox">Inbox</a><a href="embed-demo.html">Put it on your website</a></div><div><h5>Check and trust</h5><a href="#about">How it works</a><a href="#reviewer">Reviewer records</a><a href="#verify">Verify a circuit</a><a href="https://github.com/samuel025/Lgtie" target="_blank" rel="noopener noreferrer">Source code and docs</a><a href="https://github.com/samuel025/Lgtie/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security notes</a></div></div><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div></div></footer>
 <script>/* zh.js */
 // Chinese translations for the app (see lang.js). `dict` maps an exact English string to Chinese; `patterns` handle text with numbers and names;
 // strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
@@ -1328,9 +1339,20 @@ window.TB_ZH = {
  "What you can judge (optional)": "你擅长裁决什么（可选）",
  "Your fee (optional)": "你的收费（可选）",
  "For example: used electronics, smart-contract security": "例如：二手电子产品、智能合约安全",
- "For example: US$10 per disputed question": "例如：每个有争议的问题 10 美元"
+ "For example: US$10 per disputed question": "例如：每个有争议的问题 10 美元",
+ "More": "更多",
+ "Jump to": "快速前往",
+ "Use it": "使用",
+ "Check and trust": "核对与信任",
+ "Source code and docs": "源代码与文档",
+ "Security notes": "安全说明",
+ "Invite a customer": "邀请客户",
+ "Quick links": "快速链接",
+ "See who decided cases": "查看裁决记录",
+ "Re-check a result": "重新核对结果"
 },
   patterns: [
+  [/^Evidence: (.+)$/, "证据：{1}"],
   [/^(\d+) questions? · published on X Layer$/, "{1} 个问题 · 已发布在 X Layer"],
   [/^Specialty: (.+)$/, "专长：{1}"], [/^Fee: (.+)$/, "费用：{1}"],
   [/^Keep the specialty under (\d+) characters\.$/, "专长请控制在 {1} 个字符以内。"], [/^Keep the fee under (\d+) characters\.$/, "收费说明请控制在 {1} 个字符以内。"],
@@ -3697,6 +3719,7 @@ MY POLICY:
         <h1>Settle disputes fairly, with rules everyone can see first.</h1>
         <p class="sub">A business publishes its rules before anything goes wrong. You both answer the same yes or no questions. Only the answers you disagree on go to a neutral person, and anyone can check the result.</p>
         <div class="cta"><a class="btn" href="#check/warranty">Try a claim check <span class="arr">→</span></a><a class="btn ghost" href="#case/1">See a real case</a></div>
+        <div class="quick" aria-label="Quick links"><b>Jump to</b><a href="#templates">Templates</a><a href="#build">Build a checker</a><a href="#agree">Make an agreement</a><a href="#pk/agree">Invite a customer</a><a href="#mine">My cases</a><a href="#join">Get a passkey</a><a href="#reviewer">See who decided cases</a><a href="#verify">Re-check a result</a></div>
         <p class="small mute fine">Checking a claim needs no account and no wallet. LGtie never holds anyone's money.</p>
       </div>
       <div class="panel stage">${art("ember")}<div class="viz" id="heroviz" aria-label="A live simulation of the circuit"></div></div>
@@ -3946,7 +3969,7 @@ MY POLICY:
     main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.toggle("about", view === "about"); main.classList.toggle("hub", view === "for-business"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
     if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
     armReveal(view === "embed");
-    document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view));
+    document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view)); closeMore(); const mo = document.querySelector(".more summary"); if (mo) mo.classList.toggle("on", !!document.querySelector(".more .menu a.on"));
     window.scrollTo(0, 0);
     if (!view) return home();
     if (view === "check") return check(key || "warranty", rest.join("/"));
@@ -3970,6 +3993,10 @@ MY POLICY:
     if (view === "about") return about();
     home();
   }
+  // the "More" menu: closes when you pick something, click elsewhere or press Escape
+  const closeMore = () => document.querySelectorAll(".more[open]").forEach(d => d.removeAttribute("open"));
+  document.addEventListener("click", e => document.querySelectorAll(".more[open]").forEach(d => { if (!d.contains(e.target) || e.target.closest(".menu a")) d.removeAttribute("open"); }));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeMore(); });
   window.addEventListener("hashchange", route);
   route();
 })();

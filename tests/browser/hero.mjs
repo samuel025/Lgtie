@@ -20,7 +20,7 @@ const before = await T("#heroviz .vres .big"); await w(9800 + 3800); ok("autopla
 ok("counters count up to their values", await (async () => { await p.evaluate(() => document.querySelector(".facts").scrollIntoView()); await w(1800); return (await T(".fact:nth-child(1) b")).trim() === "7" && /128/.test(await T(".fact:nth-child(2) b")); })(), await T(".facts"));
 ok("four feature rows, each with a grainy gradient panel", (await p.$$(".row2 .pnl .art")).length === 4);
 // ---- orientation: a short nav, a "where do I start" chooser, a hub for businesses
-ok("the nav is four plain links and one button", (await p.$$eval("#nav a", a => a.map(x => x.textContent.trim()))).join("|") === "How it works|Try a claim check|For businesses|My cases|See a real case");
+ok("the nav is five plain links, a More menu and one button", (await p.$$eval("#nav > a", a => a.map(x => x.textContent.trim()))).join("|") === "How it works|Templates|Try a claim check|For businesses|My cases|See a real case" && (await p.$$("#nav .more .menu a")).length === 6);
 ok("the home page asks where to start and offers three doors", /Where do you want to start/.test(await p.$eval("main", e => e.textContent)) && (await p.$$(".startsec .path")).length === 3);
 ok("the hero says what the product is for without jargon", !/X Layer|circuit|NAND|reviewer/.test(await p.$eval(".hcopy", e => e.textContent)), await p.$eval(".hcopy", e => e.textContent));
 await p.goto(BASE + "#for-business"); await w(800);
