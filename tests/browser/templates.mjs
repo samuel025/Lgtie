@@ -19,11 +19,26 @@ const answer = async (p, i, v) => { const g = (await p.$$(".yn"))[i], btn = awai
 // ---- English ----
 const e = await page("en");
 await e.goto(BASE + "#templates"); await w(1200);
-ok("the page lists the five templates", (await e.$$eval(".grid2 .card h3", hs => hs.map(h => h.textContent))).join("|") === "Second-hand sale|Freelance milestone|Rental deposit|Bug bounty severity|Warranty claim", (await e.$$eval(".grid2 .card h3", hs => hs.map(h => h.textContent))).join("|"));
-ok("each card offers the checker, the builder and a message to send", (await e.$$(".grid2 .card")).length === 5 && (await e.$$('.grid2 a[href^="#check/"]')).length === 5 && (await e.$$('.grid2 a[href^="#build/"]')).length === 5 && (await e.$$("[data-msg]")).length === 5);
-ok("only the warranty rules say they are published on X Layer", (await e.$$eval(".grid2 .card", cs => cs.filter(c => /published on X Layer/.test(c.innerText)).length)) === 1);
+ok("the page lists the five templates", (await e.$$eval(".tpl h3", hs => hs.map(h => h.textContent))).join("|") === "Second-hand sale|Freelance milestone|Rental deposit|Bug bounty severity|Warranty claim", (await e.$$eval(".tpl h3", hs => hs.map(h => h.textContent))).join("|"));
+ok("each card offers the checker, the builder and a message to send", (await e.$$(".tpl")).length === 5 && (await e.$$('.tpl a[href^="#check/"]')).length === 5 && (await e.$$('.tpl a[href^="#build/"]')).length === 5 && (await e.$$("[data-msg]")).length === 5);
+ok("only the warranty rules say they are published on X Layer", (await e.$$eval(".tpl", cs => cs.filter(c => /Published on X Layer/.test(c.innerText)).length)) === 1);
 ok("it says plainly that trying a checker is free and that publishing costs a fee", /free and needs no wallet/.test(await T(e, "main")) && /small fee/.test(await T(e, "main")));
 ok("it carries the 'ask for an LGtie agreement' advice for buyers and sellers", /Will you accept an LGtie agreement\?/.test(await T(e, "main")) && /supporting evidence/.test(await T(e, "main")) && !/proves|guarantee/i.test(await T(e, "main")));
+
+// layout: a tidy list, one line of actions, a clause that fits
+ok("on a desktop each template is one row with its actions on a single line", await e.$$eval(".tpl", rows => rows.every(r => { const a = r.querySelector(".acts").getBoundingClientRect(), x = r.getBoundingClientRect(); return a.height < 46 && a.right <= x.right && x.height < 130; })));
+ok("the rows are the same width and line up", await e.$$eval(".tpl", rows => new Set(rows.map(r => Math.round(r.getBoundingClientRect().width))).size === 1 && new Set(rows.map(r => Math.round(r.getBoundingClientRect().left))).size === 1));
+ok("every template has an icon", (await e.$$(".tpl .ico svg")).length === 5);
+ok("the clause box grows to fit its text (no inner scrollbar)", await e.$eval("#clausecard textarea", t => t.scrollHeight <= t.clientHeight + 4));
+ok("the controls sit beside the clause on a desktop", await e.$eval("#clausecard .ctl", c => { const d = document.querySelector("#clausecard .doc").getBoundingClientRect(), k = c.getBoundingClientRect(); return k.right <= d.left + 2 && Math.abs(k.top - d.top) < 80; }));
+ok("the selects show their whole label (nothing cut off)", await e.$$eval("#clausecard select", ss => ss.every(s => { const o = s.options[s.selectedIndex].text; return o.length < 30 || s.clientWidth > 230; })));
+const ph = await b.newPage(); await ph.setViewport({width: 390, height: 800, isMobile: true, deviceScaleFactor: 2}); ph.on("pageerror", x => errs.push("phone: " + x.message));
+await ph.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (x) {} });
+await ph.goto(BASE + "#templates"); await w(1800);
+ok("on a phone the page does not scroll sideways", await ph.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+ok("and the rows stack with their actions underneath", await ph.$$eval(".tpl", rows => rows.every(r => { const a = r.querySelector(".acts").getBoundingClientRect(), t = r.querySelector(".txt").getBoundingClientRect(); return a.top >= t.bottom - 2 && a.right <= innerWidth; })));
+ok("and the clause controls stack above the clause", await ph.$eval("#clausecard .ctl", c => { const d = document.querySelector("#clausecard .doc").getBoundingClientRect(); return c.getBoundingClientRect().bottom <= d.top + 2; }));
+await ph.close(); await e.bringToFront();
 
 await e.goto(BASE + "#check/secondhand"); await w(1500);
 ok("the second-hand checker opens with its five questions", (await e.$$(".yn")).length === 5 && /Does the item match the description/.test(await T(e, "main")));
@@ -62,7 +77,7 @@ ok("an agreement page offers the clause with its own reviewer, time limits and p
 // ---- Chinese ----
 const z = await page("zh");
 await z.goto(BASE + "#templates"); await w(1500);
-ok("the templates page is in Chinese", /从模板开始/.test(await T(z, "h1")) && (await z.$$eval(".grid2 .card h3", hs => hs.map(h => h.textContent))).join("|") === "二手交易|自由职业里程碑付款|租房押金|漏洞赏金严重程度|保修理赔", (await z.$$eval(".grid2 .card h3", hs => hs.map(h => h.textContent))).join("|"));
+ok("the templates page is in Chinese", /从模板开始/.test(await T(z, "h1")) && (await z.$$eval(".tpl h3", hs => hs.map(h => h.textContent))).join("|") === "二手交易|自由职业里程碑付款|租房押金|漏洞赏金严重程度|保修理赔", (await z.$$eval(".tpl h3", hs => hs.map(h => h.textContent))).join("|"));
 ok("its buttons and counters are in Chinese", /试用检查器/.test(await T(z, "main")) && /5 个问题|7 个问题/.test(await T(z, "main")) && /已发布在 X Layer/.test(await T(z, "main")));
 ok("the advice for buyers and sellers is in Chinese", /你愿意接受 LGtie 协议吗/.test(await T(z, "main")) && /佐证材料/.test(await T(z, "main")));
 await z.goto(BASE + "#templates"); await w(1500);

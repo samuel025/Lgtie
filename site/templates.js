@@ -137,8 +137,8 @@ rule: Q6=yes -> 中危 : 造成永久性损害，但没有资金损失。
 default: 低危 : 可以复现且在范围内，但没有资金损失，也没有永久性损害。
 `}},
     {key: "warranty",
-      en: {chip: "Warranty example", title: "Warranty claim", blurb: "Is a repair covered? These rules are published on X Layer.", text: null},
-      zh: {chip: "保修示例", title: "保修理赔", blurb: "维修是否在保修范围内？这套规则已发布在 X Layer 上。", text: `name: 保修理赔
+      en: {chip: "Warranty example", title: "Warranty claim", blurb: "Is a repair covered by the warranty?", text: null},
+      zh: {chip: "保修示例", title: "保修理赔", blurb: "维修是否在保修范围内？", text: `name: 保修理赔
 about: 在提交理赔之前，先查明维修是否在保修范围内。
 question: 产品是否已登记，或者你能否出示购买凭证？ | 登记号或收据
 question: 是否仍在保修期内？ | 购买日期
@@ -217,43 +217,65 @@ default: 予以保修 : 保修的所有条件均已满足。
     ? `在开始之前，我们能不能先约定好万一出问题怎么处理？这是我们双方都会回答的问题，以及决定结果的规则：${base()}#check/${key}\n如果将来有分歧，只有我们答案不一致的问题才会交给中立的第三方。你接受 LGtie 协议吗？`
     : `Before we go ahead, can we agree in advance what happens if something goes wrong? Here are the questions we would both answer, and the rules that decide the result: ${base()}#check/${key}\nIf we ever disagree, only the questions we answer differently go to a neutral person. Do you accept an LGtie agreement?`;
 
-  // The clause card, used on the templates page (everything editable) and on an agreement page (the agreement's own reviewer and time limits).
-  // o: {key, fixed (true on an agreement page), reviewer, answerDays, reviewDays, link}
+  // The clause card, used on the templates page (controls on the left, the clause on the right) and on an agreement page (the agreement's own
+  // reviewer and time limits, so only the effect can be chosen). o: {key, fixed, reviewer, answerDays, reviewDays, link}
   const sha = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(x => x.toString(16).padStart(2, "0")).join("");
   const dayOpts = (n, list) => list.map(d => `<option value="${d}"${d === n ? " selected" : ""}>${d} days</option>`).join("");
   function clauseCard(el, o) {
     const fixed = !!o.fixed, uid = "cl" + Math.random().toString(36).slice(2, 7);
     el.innerHTML = `<h3>Put it in your contract</h3>
       <p class="small">The legal effect comes from your own written contract, not from LGtie. Paste a clause like this into it, so the contract itself says how a disagreement about the facts is settled. Have a lawyer in your jurisdiction review it: this is a template, not legal advice.</p>
-      <div class="row">${fixed ? "" : `<label>Rules <select id="${uid}k">${LIBRARY.map(t => `<option value="${t.key}"${t.key === o.key ? " selected" : ""}>${esc(info(t.key).title)}</option>`).join("")}</select></label>`}
-        <label>The outcome is <select id="${uid}e"><option value="binding">Binding on the parties (expert determination of facts)</option><option value="advisory">Advisory only (considered before going to court)</option></select></label></div>
-      ${fixed ? "" : `<div class="row"><label>Neutral person (name, optional) <input id="${uid}r" type="text" placeholder="For example: Amina Yusuf" autocomplete="off" style="width:min(320px,100%)"></label><label>To answer <select id="${uid}a">${dayOpts(o.answerDays || 7, [3, 7, 14, 30])}</select></label><label>For the neutral person <select id="${uid}d">${dayOpts(o.reviewDays || 7, [3, 7, 14, 30])}</select></label></div>`}
-      <textarea id="${uid}t" rows="14" readonly style="width:100%"></textarea>
-      <div class="row"><button class="btn small" id="${uid}c" type="button">Copy the clause</button></div>
-      <p class="small mute">This does not limit anyone's right to go to court or to arbitration. The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award. Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.</p>`;
+      <div class="clause${fixed ? "" : " two"}">
+        <div class="ctl">
+          ${fixed ? "" : `<label>Rules<select id="${uid}k">${LIBRARY.map(t => `<option value="${t.key}"${t.key === o.key ? " selected" : ""}>${esc(info(t.key).title)}</option>`).join("")}</select></label>`}
+          <label>The outcome is<select id="${uid}e"><option value="binding">Binding (expert determination)</option><option value="advisory">Advisory only</option></select></label>
+          ${fixed ? "" : `<label>Neutral person (name, optional)<input id="${uid}r" type="text" placeholder="For example: Amina Yusuf" autocomplete="off"></label>
+          <div class="two2"><label>To answer<select id="${uid}a">${dayOpts(o.answerDays || 7, [3, 7, 14, 30])}</select></label><label>For the neutral person<select id="${uid}d">${dayOpts(o.reviewDays || 7, [3, 7, 14, 30])}</select></label></div>`}
+        </div>
+        <div class="doc">
+          <div class="dochead"><b>The clause</b><button class="btn small" id="${uid}c" type="button">Copy the clause</button></div>
+          <textarea class="paper" id="${uid}t" rows="10" readonly aria-label="The clause"></textarea>
+          <ul class="fine"><li>This does not limit anyone's right to go to court or to arbitration.</li><li>The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award.</li><li>Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.</li></ul>
+        </div>
+      </div>`;
     const $ = s => el.querySelector("#" + uid + s);
+    const fit = () => { const t = $("t"); t.style.height = "auto"; t.style.height = (t.scrollHeight + 4) + "px"; };
     async function draw() {
       const key = fixed ? o.key : $("k").value, text = templateText(key, true), P = TB.parse(text).policy, pubd = published(key) ? root.TB_CONFIG.published[key] : null;
       const rvText = fixed ? o.reviewer : $("r").value;
       $("t").value = clause({key, effect: $("e").value, reviewer: rvText, answerDays: fixed ? o.answerDays : Number($("a").value), reviewDays: fixed ? o.reviewDays : Number($("d").value), link: o.link || (base() + "#check/" + key), hash: await sha(TB.canonical(P)), published: pubd});
+      fit();
     }
     el.querySelectorAll("select,input").forEach(x => { x.oninput = draw; x.onchange = draw; });
     $("c").onclick = async () => { try { await navigator.clipboard.writeText($("t").value); const b = $("c"), t = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = t, 1400); } catch { $("t").select(); } };
+    window.addEventListener("resize", () => { if (el.isConnected) fit(); });
     draw(); return {draw};
   }
 
+  // small line icons, one per template
+  const SHIELD = '<path d="M12 3l7 3v5.5c0 4.3-3 7.7-7 9-4-1.3-7-4.7-7-9V6l7-3z"/>';
+  const ICON = {
+    secondhand: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+    freelance: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 13h18"/>',
+    rental: '<path d="M3.5 11 12 4l8.5 7"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/>',
+    bounty: SHIELD + '<path d="M12 8.5v4M12 15.4v.1"/>',
+    warranty: SHIELD + '<path d="M8.6 12l2.4 2.4 4.4-4.8"/>'
+  };
   function page() {
-    const cards = LIBRARY.map(t => {
-      const i = info(t.key), n = TB.parse(templateText(t.key, true)).policy.questions.length;
-      return `<div class="card"><h3>${esc(i.title)}</h3><p class="small">${esc(i.blurb)}</p><p class="small mute">${n} questions${published(t.key) ? " · published on X Layer" : ""}</p>
-        <div class="row"><a class="btn small" href="#check/${t.key}">Try the checker</a><a class="btn small ghost" href="#build/${t.key}">Use in the builder</a><button class="btn small ghost" data-msg="${t.key}" type="button">Copy a message to send</button></div></div>`;
+    main.classList.add("tplpage");
+    const rows = LIBRARY.map(t => {
+      const i = info(t.key), n = TB.parse(templateText(t.key, true)).policy.questions.length, pub = published(t.key);
+      return `<div class="card tpl"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[t.key] || SHIELD}</svg></div>
+        <div class="txt"><h3>${esc(i.title)}</h3><p class="small">${esc(i.blurb)}</p><div class="meta"><span class="badge">${n} questions</span>${pub ? `<span class="badge ok">Published on X Layer</span>` : ""}</div></div>
+        <div class="acts"><a class="btn small" href="#check/${t.key}">Try the checker</a><a class="btn small ghost" href="#build/${t.key}">Use in the builder</a><button class="btn small ghost" data-msg="${t.key}" type="button">Copy a message to send</button></div></div>`;
     }).join("");
     main.innerHTML = `<h1>Start from a template</h1><p class="lede">Pick a common situation, try its checker for free, then make the rules your own in the builder. Templates are starting points, not legal advice.</p>
-      <div class="grid2">${cards}</div>
-      <div class="card"><h3>Before you pay, ask for it</h3><p class="small">Ask the other side: "Will you accept an LGtie agreement?" If they will not agree the refund rules before you pay, you have learned something. If they will, you both know what happens if it goes wrong.</p>
-        <p class="small">Selling? Show buyers the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.</p></div>
-      <div class="card" id="clausecard"></div>
-      <div class="note">Trying a checker is free and needs no wallet. To use a template in an agreement or a case on X Layer, its rules have to be published first, which costs a small fee. Only the warranty rules are published today.</div>`;
+      <div class="tpllist">${rows}</div>
+      <div class="note">Trying a checker is free and needs no wallet. To use a template in an agreement or a case on X Layer, its rules have to be published first, which costs a small fee. Only the warranty rules are published today.</div>
+      <h2 class="sech">Before you pay, ask for it</h2>
+      <div class="duo"><div><h4>Buying or hiring</h4><p class="small">Ask first: "Will you accept an LGtie agreement?" If they will not agree the refund rules before you pay, you have learned something. If they will, you both know what happens if it goes wrong.</p></div>
+        <div><h4>Selling or providing</h4><p class="small">Show the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.</p></div></div>
+      <div class="card" id="clausecard"></div>`;
     clauseCard(main.querySelector("#clausecard"), {key: "freelance"});
     main.querySelectorAll("[data-msg]").forEach(b => b.onclick = async () => { const t = message(b.dataset.msg); try { await navigator.clipboard.writeText(t); const o = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = o, 1400); } catch { prompt("Copy:", t); } });
   }

@@ -299,7 +299,7 @@
     window.TB_HERO.stop();
     const h = location.hash.replace(/^#/, ""), [view, key, ...rest] = h.split("/");
     document.body.classList.toggle("embed", view === "embed");
-    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.toggle("about", view === "about"); main.classList.toggle("hub", view === "for-business"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
+    main.classList.toggle("home", !view); main.classList.toggle("builder", view === "build"); main.classList.toggle("about", view === "about"); main.classList.toggle("hub", view === "for-business"); main.classList.toggle("tplpage", view === "templates"); if (view !== "build") main.removeAttribute("data-step"); main.classList.remove("enter");
     if (view !== "embed" && view && !reduce) { void main.offsetWidth; main.classList.add("enter"); setTimeout(() => main.classList.remove("enter"), 700); }
     armReveal(view === "embed");
     document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.k === view)); closeMore(); const mo = document.querySelector(".more summary"); if (mo) mo.classList.toggle("on", !!document.querySelector(".more .menu a.on"));

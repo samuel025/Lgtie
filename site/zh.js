@@ -926,7 +926,18 @@ window.TB_ZH = {
  "For the neutral person": "中立人士的裁决期限",
  "For example: Amina Yusuf": "例如：张伟",
  "Copy the clause": "复制条款",
- "This does not limit anyone's right to go to court or to arbitration. The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award. Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.": "这不限制任何人提起诉讼或仲裁的权利。它产生的记录是各方回答了什么、裁定了什么的证据，不是法院判决，也不是仲裁裁决。答案、证据指纹和审核人的书面理由都公开在区块链上，所以请不要用 LGtie 处理必须保密的事项。"
+ "This does not limit anyone's right to go to court or to arbitration. The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award. Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.": "这不限制任何人提起诉讼或仲裁的权利。它产生的记录是各方回答了什么、裁定了什么的证据，不是法院判决，也不是仲裁裁决。答案、证据指纹和审核人的书面理由都公开在区块链上，所以请不要用 LGtie 处理必须保密的事项。",
+ "Published on X Layer": "已发布在 X Layer",
+ "Buying or hiring": "购买或雇人",
+ "Selling or providing": "出售或提供服务",
+ "The clause": "条款",
+ "Ask first: \"Will you accept an LGtie agreement?\" If they will not agree the refund rules before you pay, you have learned something. If they will, you both know what happens if it goes wrong.": "先提出：“你愿意接受 LGtie 协议吗？”如果对方不肯在你付款之前就退款规则达成一致，你就已经看出了问题。如果对方愿意，你们双方就都清楚出问题时会怎样处理。",
+ "Show the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.": "先把规则给对方看。已裁决案件的回执会显示双方约定了哪些规则、每个问题由谁裁定。如果支付公司或平台提出要求，它是有用的佐证材料，但是否采信由他们决定。",
+ "This does not limit anyone's right to go to court or to arbitration.": "这不限制任何人提起诉讼或仲裁的权利。",
+ "The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award.": "它产生的记录是各方回答了什么、裁定了什么的证据，不是法院判决，也不是仲裁裁决。",
+ "Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.": "答案、证据指纹和审核人的书面理由都公开在区块链上，所以请不要用 LGtie 处理必须保密的事项。",
+ "Binding (expert determination)": "有约束力（专家裁定）",
+ "Advisory only": "仅供参考"
 },
   patterns: [
   [/^Evidence: (.+)$/, "证据：{1}"],
