@@ -14,7 +14,7 @@ async function page(lang) {
 }
 const T = (p, sel) => p.$eval(sel, e => e.innerText).catch(() => "");
 const until = async (f, ms = 15000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f().catch(() => false)) return true; await w(250); } return false; };
-const answer = async (p, i, v) => { const g = (await p.$$(".yn"))[i], btn = await g.$(`button[data-v="${v}"]`); await btn.evaluate(e => e.scrollIntoView({block: "center"})); await w(150); await btn.click(); };
+const answer = async (p, i, v) => { const g = (await p.$$(".yn"))[i], btn = await g.$(`button[data-v="${v}"]`); await btn.evaluate(e => e.scrollIntoView({block: "center", behavior: "instant"})); await w(150); await btn.click(); };
 
 // ---- English ----
 const e = await page("en");

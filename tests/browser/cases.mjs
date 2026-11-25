@@ -10,6 +10,8 @@ console.log("AgreementRegistry", AG, "| TiebreakCaseV3", V3, "on the fork");
 const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(p => fs.existsSync(p));
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage();
 await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });   // the tests read English text; the app defaults to Chinese
+// Click like a person: bring the target to the middle of the window first. The site header is sticky, and Puppeteer treats a button hidden under it as visible.
+{ const rawClick = p.click.bind(p); p.click = async (sel, o) => { await p.$eval(sel, e => e.scrollIntoView({block: "center", behavior: "instant"})).catch(() => {}); await new Promise(r => setTimeout(r, 80)); return rawClick(sel, o); }; }
 const errs = []; p.on("pageerror", e => errs.push("pageerror: " + e.message));
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 300))); if (!c) fails++; };
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));

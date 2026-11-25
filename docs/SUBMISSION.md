@@ -23,7 +23,7 @@ LGtie is not a replacement for any of these. It targets the stage before them: a
 ## What LGtie does
 
 1. **Publish the rules.** A business writes its policy as yes or no questions and rules in a guided builder. The page compiles it into a NAND circuit and proves in the browser that the circuit gives the same answer as the rules on every combination of answers. One click tapes it out on the TapeOut processor and registers it, with a fingerprint of the rules text, in a registry.
-2. **Agree before there is a dispute (optional).** Two parties accept one published rule set, a neutral reviewer and the time limits. Once accepted it can never be changed or withdrawn.
+2. **Agree before there is a dispute (optional), once for many cases.** Two parties accept one published rule set, a neutral reviewer and the time limits. Once accepted it can never be changed or withdrawn.
 3. **Settle a case.** Each side answers the same questions before a deadline. Equal answers finish the case at once. Only the questions they answered differently go to the reviewer, and only that reviewer's answers to those questions count. A case nobody finishes in time ends as **no decision**; nobody wins by default.
 4. **Anyone can re-run it.** The processor's `eval` is a free read, so anyone can recompute the result. Other contracts can read `verdict(id)` from the case contract. LGtie holds no funds.
 5. **Evidence without uploads.** Parties attach a SHA-256 fingerprint of a file and a short note. The files stay with the people. A reviewer can drop a file they were sent into the case page to check it is identical to the recorded one.

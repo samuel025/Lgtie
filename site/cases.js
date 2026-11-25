@@ -130,6 +130,18 @@
     try { const n = Number(BigInt(await acall(ASEL.count))); $("#recent").textContent = n ? `${n} agreement${n === 1 ? "" : "s"} so far. Latest: ` : "No agreements yet."; if (n) { const a = document.createElement("a"); a.href = "#agreement/" + n; a.textContent = "#" + n; $("#recent").appendChild(a); } } catch {}
   }
 
+
+  // "Cases under this agreement": a count and a list, for the wallet agreement page and the passkey one. One agreement stays in force, so any
+  // number of cases can be opened under it with the same rules, reviewer and time limits. cases: [{id, status, result, ...}]; hrefOf(c) -> link.
+  function casesCard(el, cases, {policy, hrefOf}) {
+    const n = cases.length, dec = cases.filter(c => c.status === 2).length, open = cases.filter(c => c.status < 2).length, none = cases.filter(c => c.status === 3).length;
+    const outcome = c => c.status === 2 && policy && policy.results[c.result] ? ` <span class="small">${esc(policy.results[c.result])}</span>` : "";
+    el.innerHTML = `<h3>Cases under this agreement <span class="badge">${n} case${n === 1 ? "" : "s"}</span></h3>` + (n
+      ? `<p class="small">${dec ? `<span class="badge ok">${dec} decided</span> ` : ""}${open ? `<span class="badge">${open} open</span> ` : ""}${none ? `<span class="badge warn">${none} no decision</span>` : ""}</p>
+         <ul class="agc">${[...cases].sort((a, b) => b.id - a.id).map(c => `<li><a href="${hrefOf(c)}">Case #${c.id}</a> <span class="badge${c.status === 2 ? " ok" : c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span>${outcome(c)}</li>`).join("")}</ul>`
+      : `<p class="small mute">No cases yet under this agreement.</p>`);
+  }
+
   async function agreement(id) {
     if (!deployed()) { upgrading("Agreement"); return; }
     main.innerHTML = `<h1>Agreement #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
@@ -143,12 +155,15 @@
         <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
         <tr><td>Terms fingerprint (a short code of the written terms)</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
+      ${a.cancelled ? "" : inForce ? `<div class="note ok-note"><b>A standing agreement.</b> It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.</div>` : `<div class="note">Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.</div>`}
       ${!inForce && !a.cancelled ? `<div class="note${isCp ? " ok-note" : ""}">${isCp ? "<b>You have been invited to accept this agreement.</b> Read the terms below, then use the button at the bottom." : !me ? `If you were invited to accept this, connect the wallet for <code>${short(a.counterparty)}</code> at the bottom of the page.` : ""}</div>` : ""}
       ${!inForce && !a.cancelled && !isCp ? inviteCard("a" + id, `I have proposed an agreement on LGtie for you to accept: ${location.href.split("#")[0]}#agreement/${id}\nOpen it, connect the wallet ${a.counterparty} and click "Accept this agreement". Rules: ${K ? K.policy.name : "rule set " + a.ruleSetId}. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts. Nothing is held in escrow and accepting costs only a small network fee.`, "Send this to the other party. They open the link, connect their wallet and accept.") : ""}
+      <div id="acts"></div>   <!-- the buttons stay here, above anything that loads later, so they never jump -->
       <div class="card"><h3>Check the written terms</h3><p class="small">Paste the terms text to see whether it is exactly what was agreed.</p><textarea id="tt" rows="3" placeholder="Paste the agreement text"></textarea><div class="row"><span id="tm" class="small"></span></div></div>
-      ${K ? `<div class="card" id="clausecard"></div>` : ""}
-      <div id="acts"></div>`;
+      ${inForce ? `<div class="card" id="agcases"><h3>Cases under this agreement</h3><p class="small mute">Reading from X Layer…</p></div>` : ""}
+      ${K ? `<div class="card" id="clausecard"></div>` : ""}`;
     bindInvite();
+    if (inForce) scanCases(200).then(sc => { const el = $("#agcases"); if (el && el.isConnected) casesCard(el, sc.cases.filter(c => c.agreementId === Number(id)), {policy: K && K.policy, hrefOf: c => "#case/" + c.id}); }).catch(() => { const el = $("#agcases"); if (el) el.querySelector("p").textContent = "X Layer could not be reached."; });
     if (K && window.TB_TEMPLATES) {
       const cc = $("#clausecard"), opts = {key: K.key, fixed: true, reviewer: `the person with wallet address ${a.reviewer}`, answerDays: a.answerWindow / DAY, reviewDays: a.reviewWindow / DAY, link: location.href.split("#")[0] + "#agreement/" + id};
       const card = window.TB_TEMPLATES.clauseCard(cc, opts);   // shown at once with the wallet address; the name is added if the reviewer has a signed profile
@@ -383,5 +398,5 @@
       <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
   }
 
-  window.TB_CASES = {scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
+  window.TB_CASES = {casesCard, scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
 })();

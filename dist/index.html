@@ -430,6 +430,11 @@ main.tplpage{max-width:1040px}.tplpage h1{font-size:clamp(34px,5vw,54px);margin:
 .clause .fine{margin:0;padding-left:18px;color:var(--stone);font-size:13px;line-height:1.6;display:grid;gap:4px}
 .tplpage .clause.two{grid-template-columns:280px minmax(0,1fr);align-items:start}@media(max-width:860px){.tplpage .clause.two{grid-template-columns:1fr}}
 
+/* the header is sticky: leave room for it whenever the page scrolls to something (a button, an anchor, a focused field) */
+html{scroll-padding-top:92px}
+@media(max-width:1000px){nav{gap:2px 12px}nav a,.more summary{font-size:13.5px}nav a.pill{display:none}.langsw{margin-left:2px}.bar{gap:6px 10px;padding-left:20px;padding-right:20px}}   /* keep the header on one row on tablets and small windows */
+@media(max-width:780px){html{scroll-padding-top:140px}}
+h3 .badge{letter-spacing:0;word-spacing:.08em;white-space:nowrap;margin-left:8px;vertical-align:middle;font-size:12px}
 /* the rule check in the builder */
 .lint .intro{margin:4px 0 0}.lint ul{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:8px}
 .lf{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;background:#fff;border:1px solid var(--warm,#ddd);border-radius:12px;padding:11px 14px;font-size:14px;line-height:1.55;letter-spacing:0}
@@ -437,6 +442,7 @@ main.tplpage{max-width:1040px}.tplpage h1{font-size:clamp(34px,5vw,54px);margin:
 .lf .lact{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.lint h3 .badge{margin-left:8px;vertical-align:middle;font-size:12px;letter-spacing:0;word-spacing:.08em;white-space:nowrap}
 @media(max-width:700px){.lf{grid-template-columns:1fr}.lf .lact{justify-content:flex-start}}
 .rrow.flash{outline:2px solid #ff5b2e;outline-offset:-2px}
+.agc{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:6px}.agc li{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--warm,#ddd);border-radius:12px;padding:9px 14px;font-size:14px}.agc a{font-weight:500}
 /* language: Chinese needs system CJK fonts (the embedded Inter has Latin only) and looser tracking */
 html[lang^="zh"]{--serif:"InterEmbedded","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","WenQuanYi Micro Hei",ui-sans-serif,system-ui,sans-serif;--sans:var(--serif)}
 html[lang^="zh"] body{letter-spacing:0;line-height:1.65;line-break:strict}
@@ -1404,9 +1410,16 @@ window.TB_ZH = {
  "Use this evidence": "采用这条证据",
  "No problems found": "没有发现问题",
  "Review them": "去查看",
- "A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.": "这是在你的浏览器里完成的简单检查，不会向任何地方发送内容。它只会提醒，绝不会阻止你发布。已发布的规则是永久的，所以现在多花几分钟，能省下日后的争论。"
+ "A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.": "这是在你的浏览器里完成的简单检查，不会向任何地方发送内容。它只会提醒，绝不会阻止你发布。已发布的规则是永久的，所以现在多花几分钟，能省下日后的争论。",
+ "A standing agreement.": "常设协议。",
+ "It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.": "它持续有效：你们任何一方都可以按需在它之下发起任意多个案件，每个案件都适用同样的规则、审核人和时间限制。每一次索赔都不需要重新订立协议。",
+ "Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.": "双方接受之后，这就是一份常设协议：你们可以按需在它之下发起任意多个案件，每次都适用同样的规则、审核人和时间限制。",
+ "Cases under this agreement": "这份协议下的案件",
+ "No cases yet under this agreement.": "这份协议下还没有案件。"
 },
   patterns: [
+  [/^(\d+) cases?$/, "{1} 个案件"], [/^(\d+) decided$/, "{1} 个已裁决"], [/^(\d+) open$/, "{1} 个进行中"], [/^(\d+) no decision$/, "{1} 个无决定"],
+
   [/^(\d+) to fix$/, "{1} 项需处理"], [/^(\d+) to consider$/, "{1} 项可考虑"], [/^Rule (\d+)$/, "规则 {1}"],
 
   [/^Evidence: (.+)$/, "证据：{1}"],
@@ -2934,6 +2947,18 @@ MY POLICY:
     try { const n = Number(BigInt(await acall(ASEL.count))); $("#recent").textContent = n ? `${n} agreement${n === 1 ? "" : "s"} so far. Latest: ` : "No agreements yet."; if (n) { const a = document.createElement("a"); a.href = "#agreement/" + n; a.textContent = "#" + n; $("#recent").appendChild(a); } } catch {}
   }
 
+
+  // "Cases under this agreement": a count and a list, for the wallet agreement page and the passkey one. One agreement stays in force, so any
+  // number of cases can be opened under it with the same rules, reviewer and time limits. cases: [{id, status, result, ...}]; hrefOf(c) -> link.
+  function casesCard(el, cases, {policy, hrefOf}) {
+    const n = cases.length, dec = cases.filter(c => c.status === 2).length, open = cases.filter(c => c.status < 2).length, none = cases.filter(c => c.status === 3).length;
+    const outcome = c => c.status === 2 && policy && policy.results[c.result] ? ` <span class="small">${esc(policy.results[c.result])}</span>` : "";
+    el.innerHTML = `<h3>Cases under this agreement <span class="badge">${n} case${n === 1 ? "" : "s"}</span></h3>` + (n
+      ? `<p class="small">${dec ? `<span class="badge ok">${dec} decided</span> ` : ""}${open ? `<span class="badge">${open} open</span> ` : ""}${none ? `<span class="badge warn">${none} no decision</span>` : ""}</p>
+         <ul class="agc">${[...cases].sort((a, b) => b.id - a.id).map(c => `<li><a href="${hrefOf(c)}">Case #${c.id}</a> <span class="badge${c.status === 2 ? " ok" : c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span>${outcome(c)}</li>`).join("")}</ul>`
+      : `<p class="small mute">No cases yet under this agreement.</p>`);
+  }
+
   async function agreement(id) {
     if (!deployed()) { upgrading("Agreement"); return; }
     main.innerHTML = `<h1>Agreement #${esc(id)}</h1><p class="mute">Reading from X Layer…</p>`;
@@ -2947,12 +2972,15 @@ MY POLICY:
         <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
         <tr><td>Terms fingerprint (a short code of the written terms)</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
+      ${a.cancelled ? "" : inForce ? `<div class="note ok-note"><b>A standing agreement.</b> It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.</div>` : `<div class="note">Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.</div>`}
       ${!inForce && !a.cancelled ? `<div class="note${isCp ? " ok-note" : ""}">${isCp ? "<b>You have been invited to accept this agreement.</b> Read the terms below, then use the button at the bottom." : !me ? `If you were invited to accept this, connect the wallet for <code>${short(a.counterparty)}</code> at the bottom of the page.` : ""}</div>` : ""}
       ${!inForce && !a.cancelled && !isCp ? inviteCard("a" + id, `I have proposed an agreement on LGtie for you to accept: ${location.href.split("#")[0]}#agreement/${id}\nOpen it, connect the wallet ${a.counterparty} and click "Accept this agreement". Rules: ${K ? K.policy.name : "rule set " + a.ruleSetId}. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts. Nothing is held in escrow and accepting costs only a small network fee.`, "Send this to the other party. They open the link, connect their wallet and accept.") : ""}
+      <div id="acts"></div>   <!-- the buttons stay here, above anything that loads later, so they never jump -->
       <div class="card"><h3>Check the written terms</h3><p class="small">Paste the terms text to see whether it is exactly what was agreed.</p><textarea id="tt" rows="3" placeholder="Paste the agreement text"></textarea><div class="row"><span id="tm" class="small"></span></div></div>
-      ${K ? `<div class="card" id="clausecard"></div>` : ""}
-      <div id="acts"></div>`;
+      ${inForce ? `<div class="card" id="agcases"><h3>Cases under this agreement</h3><p class="small mute">Reading from X Layer…</p></div>` : ""}
+      ${K ? `<div class="card" id="clausecard"></div>` : ""}`;
     bindInvite();
+    if (inForce) scanCases(200).then(sc => { const el = $("#agcases"); if (el && el.isConnected) casesCard(el, sc.cases.filter(c => c.agreementId === Number(id)), {policy: K && K.policy, hrefOf: c => "#case/" + c.id}); }).catch(() => { const el = $("#agcases"); if (el) el.querySelector("p").textContent = "X Layer could not be reached."; });
     if (K && window.TB_TEMPLATES) {
       const cc = $("#clausecard"), opts = {key: K.key, fixed: true, reviewer: `the person with wallet address ${a.reviewer}`, answerDays: a.answerWindow / DAY, reviewDays: a.reviewWindow / DAY, link: location.href.split("#")[0] + "#agreement/" + id};
       const card = window.TB_TEMPLATES.clauseCard(cc, opts);   // shown at once with the wallet address; the name is added if the reviewer has a signed profile
@@ -3187,7 +3215,7 @@ MY POLICY:
       <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
   }
 
-  window.TB_CASES = {scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
+  window.TB_CASES = {casesCard, scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
 })();
 
 </script><script>/* nostr.js */
@@ -3848,13 +3876,14 @@ MY POLICY:
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr><tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code></td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</div>` : ""}
       ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
-      <div class="row" id="acts"></div><div id="amsg" class="small"></div><div id="cases"></div>`;
+      ${a.cancelled ? "" : inForce ? `<div class="note ok-note"><b>A standing agreement.</b> It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.</div>` : `<div class="note">Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.</div>`}
+      <div class="row" id="acts"></div><div id="amsg" class="small"></div><div class="card" id="cases"><h3>Cases under this agreement</h3><p class="small mute">Reading from X Layer…</p></div>`;
     bindReviewerInvite();
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
     if (inForce) add("Open a dispute under this agreement", "", async () => { const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
-    const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if (cs.length) $("#cases").innerHTML = `<h3>Cases</h3>` + cs.map(c => `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(STATUS[c.status])}</p>`).join("");
+    try { const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: c => "#pk/case/" + c.id}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkAll() {
     if (!deployed()) { notDeployed("Passkey cases"); return; }

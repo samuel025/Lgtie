@@ -946,9 +946,16 @@ window.TB_ZH = {
  "Use this evidence": "采用这条证据",
  "No problems found": "没有发现问题",
  "Review them": "去查看",
- "A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.": "这是在你的浏览器里完成的简单检查，不会向任何地方发送内容。它只会提醒，绝不会阻止你发布。已发布的规则是永久的，所以现在多花几分钟，能省下日后的争论。"
+ "A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.": "这是在你的浏览器里完成的简单检查，不会向任何地方发送内容。它只会提醒，绝不会阻止你发布。已发布的规则是永久的，所以现在多花几分钟，能省下日后的争论。",
+ "A standing agreement.": "常设协议。",
+ "It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.": "它持续有效：你们任何一方都可以按需在它之下发起任意多个案件，每个案件都适用同样的规则、审核人和时间限制。每一次索赔都不需要重新订立协议。",
+ "Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.": "双方接受之后，这就是一份常设协议：你们可以按需在它之下发起任意多个案件，每次都适用同样的规则、审核人和时间限制。",
+ "Cases under this agreement": "这份协议下的案件",
+ "No cases yet under this agreement.": "这份协议下还没有案件。"
 },
   patterns: [
+  [/^(\d+) cases?$/, "{1} 个案件"], [/^(\d+) decided$/, "{1} 个已裁决"], [/^(\d+) open$/, "{1} 个进行中"], [/^(\d+) no decision$/, "{1} 个无决定"],
+
   [/^(\d+) to fix$/, "{1} 项需处理"], [/^(\d+) to consider$/, "{1} 项可考虑"], [/^Rule (\d+)$/, "规则 {1}"],
 
   [/^Evidence: (.+)$/, "证据：{1}"],
