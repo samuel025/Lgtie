@@ -74,6 +74,10 @@ This is a prototype. If you find a problem, open an issue on the repository.
 
 **Not covered, and open:** this is my own review, not an independent audit. Passkey recovery after losing every device is not built. One real-phone run by the builder worked; Safari and Firefox are untested. The page can only show a person what it displays, since WebAuthn cannot show the signed hash, so a compromised page could show one thing and sign another. The business creates the customer's account and can stall by not submitting a signed action (the signed action can be submitted by anyone, so the customer can ask another wallet holder).
 
+## What is public
+
+Everything LGtie records is on a public blockchain and cannot be deleted: answers, fingerprints of evidence, the reviewer's written reasons and one-line reason, wallet addresses, times and results. Files are never uploaded and reasons must not name people, but the case and its outcome are visible to anyone. Do not use LGtie for matters that must stay confidential. See `docs/USING-WITH-CONTRACTS.md` for the legal questions this raises.
+
 ## Named reviewers
 
 A reviewer used to be shown only as a wallet address, so neither side could tell who they were agreeing to. A reviewer can now attach an identity, with no contract change and no server.

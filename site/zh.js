@@ -915,7 +915,18 @@ window.TB_ZH = {
  "Invite a customer": "邀请客户",
  "Quick links": "快速链接",
  "See who decided cases": "查看裁决记录",
- "Re-check a result": "重新核对结果"
+ "Re-check a result": "重新核对结果",
+ "Put it in your contract": "写进你的合同",
+ "The legal effect comes from your own written contract, not from LGtie. Paste a clause like this into it, so the contract itself says how a disagreement about the facts is settled. Have a lawyer in your jurisdiction review it: this is a template, not legal advice.": "法律效力来自你们自己的书面合同，而不是 LGtie。把这样一条条款写进合同，让合同本身说明事实分歧如何解决。请让你所在司法辖区的律师审阅：这只是模板，不构成法律意见。",
+ "The outcome is": "结果的效力",
+ "Binding on the parties (expert determination of facts)": "对双方有约束力（对事实问题的专家裁定）",
+ "Advisory only (considered before going to court)": "仅供参考（提起诉讼前先予考虑）",
+ "Neutral person (name, optional)": "中立人士（姓名，可选）",
+ "To answer": "作答期限",
+ "For the neutral person": "中立人士的裁决期限",
+ "For example: Amina Yusuf": "例如：张伟",
+ "Copy the clause": "复制条款",
+ "This does not limit anyone's right to go to court or to arbitration. The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award. Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.": "这不限制任何人提起诉讼或仲裁的权利。它产生的记录是各方回答了什么、裁定了什么的证据，不是法院判决，也不是仲裁裁决。答案、证据指纹和审核人的书面理由都公开在区块链上，所以请不要用 LGtie 处理必须保密的事项。"
 },
   patterns: [
   [/^Evidence: (.+)$/, "证据：{1}"],

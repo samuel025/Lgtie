@@ -176,7 +176,38 @@ default: 予以保修 : 保修的所有条件均已满足。
   const info = key => { const t = find(key); return t ? (lang() === "zh" ? t.zh : t.en) : null; };
   TB.LIBRARY = LIBRARY; TB.templateText = templateText; TB.templateInfo = info;
 
-  const api = {LIBRARY, templateText, info, find};
+
+  // ---------- a clause for the parties' written contract ----------
+  // The legal effect of any of this comes from the parties' own written contract that points at the rules; LGtie records answers and applies the rules.
+  // The clause says the outcome is an expert determination of questions of fact (binding) or advisory, never a court judgment or an arbitral award,
+  // leaves the right to go to court or arbitration untouched, and tells the parties that the record is public. It is a template: a lawyer in the
+  // parties' jurisdiction should review it. Pure, so it can be tested.
+  // o: {key, effect: "binding" | "advisory", reviewer (text, optional), answerDays, reviewDays, link, hash (rules fingerprint, optional), published {ruleSetId, circuitId} (optional), name (optional), lang}
+  function clause(o) {
+    const zh = (o.lang || lang()) === "zh", i = find(o.key) ? (zh ? find(o.key).zh : find(o.key).en) : null, name = o.name || (i && i.title) || o.key;
+    const A = o.answerDays || 7, R = o.reviewDays || 7, binding = o.effect !== "advisory", rv = (o.reviewer || "").trim();
+    const fp = o.hash ? o.hash.slice(0, 18) + "…" : "", pub = o.published ? o.published : null;
+    if (zh) return [
+      `争议处理。如果双方对“${name}”是否适用存在分歧，双方将使用以下已公布的规则：${o.link}${fp ? `（规则指纹 ${fp}）` : ""}${pub ? `（X Layer 上的规则集 #${pub.ruleSetId}，电路 #${pub.circuitId}）` : ""}。`,
+      `自收到书面争议通知之日起 ${A} 日内，双方各自回答规则中的同样问题。双方回答相同的问题，视为双方已经认可。`,
+      `只有双方回答不一致的问题，才提交给${rv ? rv : "协议中指定的、或双方另行书面约定的"}中立人士。该人士是双方事先都接受的，只裁决这些问题，并在 ${R} 日内给出书面理由。随后由已公布的规则得出结果。`,
+      binding ? `双方同意，该结果作为对这些事实问题的专家裁定对双方具有约束力，但不影响任何一方以欺诈、明显错误或缺乏公正性为由提出异议的权利。` : `该结果仅供参考。双方同意在提起诉讼或仲裁之前善意地考虑该结果，且该结果不妨碍任何一方采取其他任何措施。`,
+      `本条款不限制任何一方就上述问题之外的事项提起诉讼或仲裁的权利。`,
+      `所产生的记录用于证明各方回答了什么、裁定了什么。它不是法院判决，也不是仲裁裁决。`,
+      `双方知悉，答案、证据指纹和审核人的书面理由会记录在公共区块链上，任何人都能看到。`
+    ].join("\n\n");
+    return [
+      `Dispute process. If the parties disagree about whether "${name}" applies, they will use the published rules at ${o.link}${fp ? ` (rules fingerprint ${fp})` : ""}${pub ? ` (rule set #${pub.ruleSetId}, circuit #${pub.circuitId} on X Layer)` : ""}.`,
+      `Within ${A} days of a written notice of dispute, each party answers the same questions in the rules. A question both parties answer the same way is treated as agreed.`,
+      `Only the questions the parties answer differently go to ${rv ? rv : "the neutral person named in the agreement, or agreed by the parties in writing"}, a neutral person both parties have accepted in advance, who decides those questions only and gives written reasons within ${R} days. The published rules then give the outcome.`,
+      binding ? `The parties agree to be bound by that outcome as an expert determination of those questions of fact, without prejudice to any right to challenge it for fraud, manifest error or lack of impartiality.` : `That outcome is advisory only. The parties agree to consider it in good faith before starting court or arbitration proceedings, and it does not prevent either of them from taking any other step.`,
+      `This clause does not limit either party's right to go to court or to arbitration about anything outside those questions.`,
+      `The record produced is evidence of what each party answered and what was decided. It is not a court judgment or an arbitral award.`,
+      `The parties acknowledge that answers, fingerprints of evidence and the reviewer's written reasons are recorded on a public blockchain and can be seen by anyone.`
+    ].join("\n\n");
+  }
+
+  const api = {LIBRARY, templateText, info, find, clause};
   if (typeof module !== "undefined" && module.exports) { module.exports = api; return; }
 
   // ---------- the #templates page ----------
@@ -185,6 +216,32 @@ default: 予以保修 : 保修的所有条件均已满足。
   const message = key => lang() === "zh"
     ? `在开始之前，我们能不能先约定好万一出问题怎么处理？这是我们双方都会回答的问题，以及决定结果的规则：${base()}#check/${key}\n如果将来有分歧，只有我们答案不一致的问题才会交给中立的第三方。你接受 LGtie 协议吗？`
     : `Before we go ahead, can we agree in advance what happens if something goes wrong? Here are the questions we would both answer, and the rules that decide the result: ${base()}#check/${key}\nIf we ever disagree, only the questions we answer differently go to a neutral person. Do you accept an LGtie agreement?`;
+
+  // The clause card, used on the templates page (everything editable) and on an agreement page (the agreement's own reviewer and time limits).
+  // o: {key, fixed (true on an agreement page), reviewer, answerDays, reviewDays, link}
+  const sha = async t => "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)))].map(x => x.toString(16).padStart(2, "0")).join("");
+  const dayOpts = (n, list) => list.map(d => `<option value="${d}"${d === n ? " selected" : ""}>${d} days</option>`).join("");
+  function clauseCard(el, o) {
+    const fixed = !!o.fixed, uid = "cl" + Math.random().toString(36).slice(2, 7);
+    el.innerHTML = `<h3>Put it in your contract</h3>
+      <p class="small">The legal effect comes from your own written contract, not from LGtie. Paste a clause like this into it, so the contract itself says how a disagreement about the facts is settled. Have a lawyer in your jurisdiction review it: this is a template, not legal advice.</p>
+      <div class="row">${fixed ? "" : `<label>Rules <select id="${uid}k">${LIBRARY.map(t => `<option value="${t.key}"${t.key === o.key ? " selected" : ""}>${esc(info(t.key).title)}</option>`).join("")}</select></label>`}
+        <label>The outcome is <select id="${uid}e"><option value="binding">Binding on the parties (expert determination of facts)</option><option value="advisory">Advisory only (considered before going to court)</option></select></label></div>
+      ${fixed ? "" : `<div class="row"><label>Neutral person (name, optional) <input id="${uid}r" type="text" placeholder="For example: Amina Yusuf" autocomplete="off" style="width:min(320px,100%)"></label><label>To answer <select id="${uid}a">${dayOpts(o.answerDays || 7, [3, 7, 14, 30])}</select></label><label>For the neutral person <select id="${uid}d">${dayOpts(o.reviewDays || 7, [3, 7, 14, 30])}</select></label></div>`}
+      <textarea id="${uid}t" rows="14" readonly style="width:100%"></textarea>
+      <div class="row"><button class="btn small" id="${uid}c" type="button">Copy the clause</button></div>
+      <p class="small mute">This does not limit anyone's right to go to court or to arbitration. The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award. Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.</p>`;
+    const $ = s => el.querySelector("#" + uid + s);
+    async function draw() {
+      const key = fixed ? o.key : $("k").value, text = templateText(key, true), P = TB.parse(text).policy, pubd = published(key) ? root.TB_CONFIG.published[key] : null;
+      const rvText = fixed ? o.reviewer : $("r").value;
+      $("t").value = clause({key, effect: $("e").value, reviewer: rvText, answerDays: fixed ? o.answerDays : Number($("a").value), reviewDays: fixed ? o.reviewDays : Number($("d").value), link: o.link || (base() + "#check/" + key), hash: await sha(TB.canonical(P)), published: pubd});
+    }
+    el.querySelectorAll("select,input").forEach(x => { x.oninput = draw; x.onchange = draw; });
+    $("c").onclick = async () => { try { await navigator.clipboard.writeText($("t").value); const b = $("c"), t = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = t, 1400); } catch { $("t").select(); } };
+    draw(); return {draw};
+  }
+
   function page() {
     const cards = LIBRARY.map(t => {
       const i = info(t.key), n = TB.parse(templateText(t.key, true)).policy.questions.length;
@@ -195,8 +252,10 @@ default: 予以保修 : 保修的所有条件均已满足。
       <div class="grid2">${cards}</div>
       <div class="card"><h3>Before you pay, ask for it</h3><p class="small">Ask the other side: "Will you accept an LGtie agreement?" If they will not agree the refund rules before you pay, you have learned something. If they will, you both know what happens if it goes wrong.</p>
         <p class="small">Selling? Show buyers the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.</p></div>
+      <div class="card" id="clausecard"></div>
       <div class="note">Trying a checker is free and needs no wallet. To use a template in an agreement or a case on X Layer, its rules have to be published first, which costs a small fee. Only the warranty rules are published today.</div>`;
+    clauseCard(main.querySelector("#clausecard"), {key: "freelance"});
     main.querySelectorAll("[data-msg]").forEach(b => b.onclick = async () => { const t = message(b.dataset.msg); try { await navigator.clipboard.writeText(t); const o = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = o, 1400); } catch { prompt("Copy:", t); } });
   }
-  root.TB_TEMPLATES = Object.assign(api, {page});
+  root.TB_TEMPLATES = Object.assign(api, {page, clauseCard});
 })(typeof window !== "undefined" ? window : globalThis);

@@ -34,4 +34,20 @@ ok("an unpublished template follows the language on its checker page", /^name: �
 globalThis.TB_I18N = {lang: "en"};
 ok("in English everything is English", T.templateText("secondhand") === T.find("secondhand").en.text && T.templateText("warranty") === TB.TEMPLATES.warranty);
 ok("an unknown key returns nothing", T.templateText("nope") === undefined);
+
+// ---- the clause for a written contract ----
+const base = {key: "freelance", effect: "binding", reviewer: "Amina Yusuf", answerDays: 7, reviewDays: 14, link: "https://lgtie.example/#check/freelance", hash: "0x" + "ab".repeat(32), lang: "en"};
+const en = T.clause(base), enAdv = T.clause({...base, effect: "advisory"}), zhc = T.clause({...base, lang: "zh"});
+ok("the clause names the rules, the link and the rules fingerprint", /"Freelance milestone"/.test(en) && en.includes(base.link) && en.includes("0xabababababababab…"));
+ok("it gives the time limits and the neutral person", /Within 7 days of a written notice of dispute/.test(en) && /written reasons within 14 days/.test(en) && /go to Amina Yusuf, a neutral person/.test(en));
+ok("binding: an expert determination of questions of fact that can still be challenged for fraud, manifest error or lack of impartiality", /expert determination of those questions of fact/.test(en) && /fraud, manifest error or lack of impartiality/.test(en) && !/advisory only/.test(en));
+ok("advisory: considered in good faith before court or arbitration, and not binding", /advisory only/.test(enAdv) && /before starting court or arbitration/.test(enAdv) && !/bound by that outcome/.test(enAdv));
+ok("it never calls the outcome an award or a judgment, and says it is neither", /not a court judgment or an arbitral award/.test(en) && !/arbitral award\b(?! *\.)/.test(en.replace("not a court judgment or an arbitral award", "")));
+ok("it leaves the right to go to court or to arbitration alone", /does not limit either party's right to go to court or to arbitration/.test(en));
+ok("it tells the parties the record is public", /recorded on a public blockchain and can be seen by anyone/.test(en));
+ok("it does not give legal advice or promise enforceability", !/enforceable|guarantee|legally binding/i.test(en + enAdv));
+ok("a missing neutral person falls back to the one named in the agreement", /named in the agreement, or agreed by the parties in writing/.test(T.clause({...base, reviewer: ""})));
+ok("a published rule set is named with its circuit", /rule set #1, circuit #13 on X Layer/.test(T.clause({...base, key: "warranty", published: {ruleSetId: 1, circuitId: 13}})));
+ok("the Chinese clause says the same things", /争议处理/.test(zhc) && /专家裁定/.test(zhc) && /不是法院判决，也不是仲裁裁决/.test(zhc) && /公共区块链/.test(zhc) && /不限制任何一方/.test(zhc) && zhc.includes(base.link) && /7 日内/.test(zhc) && /14 日内/.test(zhc));
+ok("and the Chinese advisory one is advisory", /仅供参考/.test(T.clause({...base, lang: "zh", effect: "advisory"})) && !/具有约束力/.test(T.clause({...base, lang: "zh", effect: "advisory"})));
 console.log(fails ? fails + " FAILED" : "all passed"); process.exit(fails ? 1 : 0);

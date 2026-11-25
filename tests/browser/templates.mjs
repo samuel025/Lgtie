@@ -41,12 +41,32 @@ ok("it has a button for every template and a blank one", (await e.$$("[data-t]")
 await e.click('[data-t="freelance"]'); await w(800);
 ok("choosing another template loads it", (await e.$$eval("input", is => is.some(i => /delivered by the agreed deadline/.test(i.value)))));
 
+// ---- the clause for a written contract ----
+const val = (p, sel) => p.$eval(sel, e => e.value).catch(() => "");
+await e.goto(BASE + "#templates"); await w(1500);
+const CL = "#clausecard textarea";
+ok("the templates page has a clause for your written contract", await until(async () => /Dispute process\./.test(await val(e, CL))), await val(e, CL));
+ok("it says the legal effect comes from your own contract and asks for a lawyer's review", /legal effect comes from your own written contract/.test(await T(e, "#clausecard")) && /lawyer in your jurisdiction/.test(await T(e, "#clausecard")));
+ok("it says the record is public and is not a judgment or an award", /public on the blockchain/.test(await T(e, "#clausecard")) && /not a court judgment or an arbitral award/.test(await val(e, CL)));
+const binding = await val(e, CL);
+await e.select('#clausecard select[id$="e"]', "advisory"); await w(500);
+ok("switching to advisory changes the clause", binding !== await val(e, CL) && /advisory only/.test(await val(e, CL)) && /expert determination/.test(binding));
+await e.select('#clausecard select[id$="k"]', "rental"); await w(500);
+ok("choosing another template changes the rules named in it", /Rental deposit|Rental security deposit/.test(await val(e, CL)) && /#check\/rental/.test(await val(e, CL)));
+ok("the clause never promises enforceability", !/enforceable|guarantee|legally binding/i.test(await val(e, CL)));
+await e.type("#clausecard input[type=text]", "Amina Yusuf"); await w(400);
+ok("a named neutral person appears in the clause", /go to Amina Yusuf, a neutral person/.test(await val(e, CL)));
+await e.goto(BASE + "#agreement/1"); await w(1000);
+ok("an agreement page offers the clause with its own reviewer, time limits and published rule set", await until(async () => /rule set #1, circuit #13 on X Layer/.test(await val(e, CL)) && /Within 7 days/.test(await val(e, CL)) && /wallet address 0x/.test(await val(e, CL)), 25000), await val(e, CL));
+
 // ---- Chinese ----
 const z = await page("zh");
 await z.goto(BASE + "#templates"); await w(1500);
 ok("the templates page is in Chinese", /从模板开始/.test(await T(z, "h1")) && (await z.$$eval(".grid2 .card h3", hs => hs.map(h => h.textContent))).join("|") === "二手交易|自由职业里程碑付款|租房押金|漏洞赏金严重程度|保修理赔", (await z.$$eval(".grid2 .card h3", hs => hs.map(h => h.textContent))).join("|"));
 ok("its buttons and counters are in Chinese", /试用检查器/.test(await T(z, "main")) && /5 个问题|7 个问题/.test(await T(z, "main")) && /已发布在 X Layer/.test(await T(z, "main")));
 ok("the advice for buyers and sellers is in Chinese", /你愿意接受 LGtie 协议吗/.test(await T(z, "main")) && /佐证材料/.test(await T(z, "main")));
+await z.goto(BASE + "#templates"); await w(1500);
+ok("the clause card is in Chinese and so is the clause", /写进你的合同/.test(await T(z, "#clausecard")) && /律师/.test(await T(z, "#clausecard")) && /争议处理/.test(await val(z, CL)) && /不是法院判决，也不是仲裁裁决/.test(await val(z, CL)), await T(z, "#clausecard"));
 await z.goto(BASE + "#check/secondhand"); await w(1500);
 ok("and the evidence labels are translated too", /证据：IMEI 或序列号查询结果/.test(await T(z, "main")) && !/Evidence:/.test(await T(z, "main")), (await T(z, "main")).slice(0, 300));
 ok("the checker asks Chinese questions", /物品与商品页面的描述和照片相符吗/.test(await T(z, "main")), (await T(z, "main")).slice(0, 200));
