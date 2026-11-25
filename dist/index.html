@@ -400,13 +400,1067 @@ main.hub{max-width:1100px}
 @media(max-width:700px){nav{flex-wrap:wrap!important;overflow:visible!important;gap:0 16px!important}}
 @media screen and (max-width:640px){.receipt{padding:22px 18px;overflow-wrap:anywhere}.rt,.rt tbody{display:block}.rt thead{display:none}.rt tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 14px;padding:12px 0;border-top:1px solid var(--warm)}.rt td{padding:0!important;white-space:normal!important}.rt td:first-child{grid-column:1/-1;font-size:15px}.rt td[data-l]::before{content:attr(data-l);display:block;font-size:12px;color:var(--stone);margin-bottom:2px}}
 @media(max-width:700px){.stepper{overflow:visible}.stepper li{flex:0 1 auto}.stepper li:not(:last-child)::after{flex:1 1 10px;min-width:8px}}
+
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin:18px 0}.grid2 .card{margin:0}
+/* language: Chinese needs system CJK fonts (the embedded Inter has Latin only) and looser tracking */
+html[lang^="zh"]{--serif:"InterEmbedded","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","WenQuanYi Micro Hei",ui-sans-serif,system-ui,sans-serif;--sans:var(--serif)}
+html[lang^="zh"] body{letter-spacing:0;line-height:1.65;line-break:strict}
+html[lang^="zh"] h1,html[lang^="zh"] h2,html[lang^="zh"] h3,html[lang^="zh"] h4,html[lang^="zh"] .brand{letter-spacing:0;line-height:1.25;font-weight:400}
+html[lang^="zh"] h1,html[lang^="zh"] h2{text-wrap:balance;word-break:keep-all;overflow-wrap:anywhere}
+html[lang^="zh"] .hcopy h1{font-size:clamp(34px,4vw,54px)}
+html[lang^="zh"] h1{font-size:clamp(38px,6.4vw,60px)}
+html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^="zh"] textarea{letter-spacing:0}
+.langsw{display:inline-flex;margin-left:10px;border:1px solid var(--warm,#ddd);border-radius:9999px;overflow:hidden;vertical-align:middle}
+.langsw button{font:400 13px/1 var(--sans);padding:7px 11px;border:0;background:transparent;color:var(--ink);cursor:pointer;letter-spacing:0}
+.langsw button.on{background:var(--ink);color:#fff}
+.langsw button:not(.on):hover{background:rgba(0,0,0,.06)}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
 <nav id="nav"><a href="#about" data-k="about">How it works</a><a href="#check/warranty" data-k="check">Try a claim check</a><a href="#for-business" data-k="for-business">For businesses</a><a href="#mine" data-k="mine">My cases</a><a class="pill" href="#case/1">See a real case</a></nav></div></header>
 <main id="main"></main>
-<footer><div class="wrap"><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div><div style="margin-top:10px"><a href="#about">How it works</a> · <a href="#verify">Verify a circuit</a> · <a href="#reviewer">Reviewer records</a> · <a href="#for-business">For businesses</a> · <a href="#join">Get a passkey</a> · <a href="#mine">My cases</a> · <a href="#verify">For developers: verify a circuit</a></div></div></footer>
-<script>/* rules.js */
+<footer><div class="wrap"><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div><div style="margin-top:10px"><a href="#about">How it works</a> · <a href="#templates">Templates</a> · <a href="#verify">Verify a circuit</a> · <a href="#reviewer">Reviewer records</a> · <a href="#for-business">For businesses</a> · <a href="#join">Get a passkey</a> · <a href="#mine">My cases</a> · <a href="#verify">For developers: verify a circuit</a></div></div></footer>
+<script>/* zh.js */
+// Chinese translations for the app (see lang.js). `dict` maps an exact English string to Chinese; `patterns` handle text with numbers and names;
+// strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
+window.TB_ZH = {
+  dict: {
+ "How it works": "运作方式",
+ "Try a claim check": "试试理赔检查",
+ "For businesses": "商家入口",
+ "My cases": "我的案件",
+ "See a real case": "查看真实案件",
+ "Fair claims and disputes": "公平的理赔与争议",
+ "Settle disputes fairly, with rules everyone can see first.": "用人人都能先看到的规则，公平化解争议。",
+ "A business publishes its rules before anything goes wrong. You both answer the same yes or no questions. Only the answers you disagree on go to a neutral person, and anyone can check the result.": "商家会在问题发生之前公布规则。双方回答同样的是非问题，只有你们答案不一致的部分才交给中立的第三方，而且任何人都能核对结果。",
+ "Checking a claim needs no account and no wallet. LGtie never holds anyone's money.": "检查理赔无需账号，也无需钱包。LGtie 从不托管任何人的资金。",
+ "Registered": "已登记",
+ "Yes": "是",
+ "In warranty": "在保修期内",
+ "Authorised seller": "授权卖家",
+ "Fault covered": "故障在保修范围内",
+ "No excluded cause": "无免责原因",
+ "No": "否",
+ "Within usage limit": "未超出使用限制",
+ "Repair covered": "维修在保修范围内",
+ "Result": "结果",
+ "Not covered": "不予保修",
+ "An excluded cause was found (for example water damage, a drop or an unauthorised repair).": "发现了免责原因（例如进水、摔落或未经授权的维修）。",
+ "This is a real warranty rule set running live. Tap an answer to see how the result changes.": "这是一套正在运行的真实保修规则。点按任一答案，看看结果如何变化。",
+ "Run it on the public network": "在公共网络上运行",
+ "Built with": "技术构成",
+ "TapeOut circuits": "TapeOut 电路",
+ "One static file": "单个静态文件",
+ "Where do you want to start?": "你想从哪里开始？",
+ "Pick the one that sounds like you.": "选择最符合你的一项。",
+ "I have a claim or a complaint": "我有理赔或投诉",
+ "Find out whether you are covered, and keep a clear record of how it was decided.": "查明你是否在保障范围内，并留下清晰的裁决记录。",
+ "Check a claim": "检查理赔",
+ "I run a business": "我是商家",
+ "Publish clear rules, invite customers, and settle disagreements fairly.": "公布清晰的规则，邀请客户，公平解决分歧。",
+ "See what you can do": "看看能做什么",
+ "I was asked to review a case": "有人请我审核一个案件",
+ "A neutral person decides only the questions the two sides disagree on.": "中立的第三方只裁决双方有分歧的问题。",
+ "How reviewing works": "审核如何运作",
+ "From rules to result": "从规则到结果",
+ "One idea: settle only what the two sides disagree on.": "核心思路：只裁决双方有分歧的部分。",
+ "Publish": "公布",
+ "public rules": "公开的规则",
+ "Agree": "约定",
+ "who decides, and when": "谁来裁决、何时裁决",
+ "Answer": "作答",
+ "same questions": "回答同样的问题",
+ "Review": "审核",
+ "only the differences": "只看分歧",
+ "anyone can check": "任何人都能核对",
+ "yes or no questions decide a warranty claim": "个是非问题即可决定一次保修理赔",
+ "of 128 possible situations checked against the written rules, all matching": "种可能情形，经与书面规则逐一核对，全部吻合",
+ "LGtie checks that the rules are applied the same way every time. It cannot tell whether someone is telling the truth, so a neutral person settles the facts the two sides disagree on.": "LGtie 确保规则每一次都以同样的方式执行。它无法判断某人是否说了真话，所以双方有分歧的事实由中立的第三方来裁定。",
+ "How LGtie describes itself": "LGtie 如何定位自己",
+ "Early prototype, unaudited, holds no money": "早期原型，未经审计，不托管资金",
+ "Not a mock-up.": "这不是模型演示。",
+ "We ran a complete case on the live network: an agreement, answers from both sides, a decision and a free re-check. All three roles were wallets we controlled, so treat it as a demonstration, not a customer.": "我们在真实网络上完整跑了一个案件：一份协议、双方的答案、一项裁决，以及一次免费复核。三个角色都是我们自己控制的钱包，所以请把它当作演示，而不是真实客户。",
+ "Covered": "予以保修",
+ "Every condition of the warranty is met.": "保修的所有条件均已满足。",
+ "Open the case": "打开案件",
+ "See the receipt": "查看回执",
+ "See the agreement": "查看协议",
+ "Dispute the facts, not the verdict.": "争的是事实，而不是结论。",
+ "Instead of arguing about an outcome, both sides answer the same questions. Only the answers that differ need a person.": "与其争论结果，不如让双方回答同样的问题。只有不一致的答案才需要人来裁决。",
+ "When you disagree": "当你们有分歧时",
+ "Only the disputed answers go to a person": "只有有争议的答案才交给人裁决",
+ "Both sides answer the same questions": "双方回答同样的问题",
+ "Each side answers on its own, before a deadline, under the rules you both agreed to.": "各方在截止时间前独立作答，遵循你们共同约定的规则。",
+ "Agreed answers stand": "一致的答案直接成立",
+ "Where the two sides give the same answer, nobody needs to decide anything.": "双方答案相同的地方，无需任何人裁决。",
+ "A neutral person settles only the differences": "中立的第三方只裁决分歧",
+ "Someone you both accepted answers just the questions you disagree on. The agreed rules then give the result.": "由你们双方都认可的人，只回答你们有分歧的问题，再由约定的规则得出结果。",
+ "1. Registered?": "1. 是否已登记？",
+ "Yes · No →": "是 · 否 →",
+ "Reviewer: Yes": "审核人：是",
+ "2. In warranty?": "2. 是否在保修期内？",
+ "Yes · Yes → agreed": "是 · 是 → 一致",
+ "3. Authorised seller?": "3. 是否为授权卖家？",
+ "Agree first": "先约定",
+ "Fix the terms before any dispute": "在争议发生前先定好条款",
+ "The rules, locked in": "规则就此锁定",
+ "The agreement points to the public rules. Once both sides accept, it can't change.": "协议指向公开的规则。双方一旦接受，就无法更改。",
+ "A neutral person you both accept": "一位你们双方都认可的中立人士",
+ "Disputed questions go to someone each side approved in advance.": "有争议的问题交给双方事先都认可的人。",
+ "Deadlines that settle themselves": "到期自动了结的截止时间",
+ "If nobody decides in time, the case ends as no decision. Nobody wins by default.": "如果无人在期限内作出裁决，案件将以“无决定”结束，没有人会因此自动获胜。",
+ "Rule set": "规则集",
+ "Warranty claims": "保修理赔",
+ "Reviewer": "审核人",
+ "Accepted by both": "双方均已接受",
+ "Time to decide": "裁决时限",
+ "7 days": "7 天",
+ "Status": "状态",
+ "Accepted": "已接受",
+ "Verify": "核验",
+ "Check it yourself, free": "自己动手核对，免费",
+ "Anyone can re-run it": "任何人都能重新运行",
+ "Enter the answers and the public network gives the same result, for free.": "输入答案，公共网络就会免费给出同样的结果。",
+ "Reviewer records are public": "审核人记录公开透明",
+ "See who decided, how often, and who missed a deadline.": "查看谁作出了裁决、裁决了多少次，以及谁错过了期限。",
+ "No money is held": "不托管资金",
+ "LGtie only records decisions. Another system could read a decision and pay out.": "LGtie 只记录裁决。其他系统可以读取裁决并据此付款。",
+ "Circuit": "电路",
+ "#13 on X Layer": "X Layer 上的 #13",
+ "Answers": "答案",
+ "Cost": "费用",
+ "Free read": "免费读取",
+ "No wallet needed": "无需钱包",
+ "Customers approve with their fingerprint or face": "客户用指纹或面容确认",
+ "A passkey instead of a wallet": "用通行密钥代替钱包",
+ "The same fingerprint or face scan that unlocks their phone. No app, no seed phrase and no crypto to buy.": "就是解锁手机用的那种指纹或面容识别。无需安装应用、无需助记词，也不用购买加密货币。",
+ "Anyone can send it": "任何人都能提交",
+ "The customer signs; the business, or anyone with a wallet, submits it and pays the tiny fee. The signature covers the exact answers, so nobody can change them.": "客户签名；商家或任何有钱包的人负责提交，并支付微小的手续费。签名涵盖了确切的答案，因此没有人能改动。",
+ "Built for high stakes, still early": "为高风险场景而建，但仍处早期",
+ "The contracts are live on X Layer but unaudited, and recovery for a lost device is still being built. Nothing is held in escrow.": "合约已在 X Layer 上线，但未经审计，设备丢失后的找回功能仍在开发中。没有任何资金被托管。",
+ "Customer": "客户",
+ "A passkey account": "一个通行密钥账户",
+ "Action": "操作",
+ "Answers for a case": "某个案件的答案",
+ "Signed with": "签名方式",
+ "Fingerprint": "指纹",
+ "Sent by": "提交方",
+ "Acme, pays the fee": "Acme，支付手续费",
+ "Try it on a fictional support page": "在虚构的客服页面上试一试",
+ "Create a passkey": "创建通行密钥",
+ "Get started in minutes": "几分钟即可上手",
+ "Write your policy as questions and rules": "把你的政策写成问题和规则",
+ "Check it, then publish it on the public network": "检查无误后，发布到公共网络",
+ "Share the link or paste one snippet into your support page": "分享链接，或把一小段代码粘贴到你的客服页面",
+ "Build a checker": "制作检查器",
+ "Live": "线上",
+ "Checker appears on your page": "检查器会出现在你的页面上",
+ "Publish your own checker": "发布你自己的检查器",
+ "Paste your rules, check the circuit against them, and get a link customers can use.": "粘贴你的规则，让电路与之核对，然后获得一个客户可用的链接。",
+ "Open the builder": "打开构建器",
+ "What it does not do.": "它不做什么。",
+ "It can't tell what is true": "它无法判断什么是真的",
+ "If someone lies, the result follows the lie. A reviewer settles disputed facts, and can be wrong.": "如果有人撒谎，结果就会跟着谎言走。有争议的事实由审核人裁定，而审核人也可能出错。",
+ "It holds no money": "它不托管资金",
+ "The contracts record decisions only. Another contract may read a verdict and pay.": "合约只记录裁决。其他合约可以读取裁决并付款。",
+ "It is an early prototype": "它只是早期原型",
+ "Unaudited, with no customers yet. Recovery for a lost device is still being built.": "未经审计，目前还没有客户。设备丢失后的找回功能仍在开发中。",
+ "Frequently asked questions": "常见问题",
+ "Do I need a wallet to use a checker?": "使用检查器需要钱包吗？",
+ "No. Checking a claim needs no account and no wallet. Wallets are only for publishing and for cases.": "不需要。检查理赔无需账号，也无需钱包。钱包只用于发布规则和处理案件。",
+ "What does the circuit add over a normal website?": "电路相比普通网站多了什么？",
+ "The rules are published as data on X Layer, so nobody can quietly change them, and anyone can re-run them for free.": "规则以数据形式发布在 X Layer 上，没有人能悄悄修改，任何人也都能免费重新运行。",
+ "Who decides a disputed answer?": "有争议的答案由谁裁决？",
+ "A reviewer both sides accepted in advance, with a deadline. If no decision comes in time, the case ends as no decision.": "由双方事先认可的审核人在期限内裁决。如果没有按时作出裁决，案件以“无决定”结束。",
+ "Is it safe to rely on?": "可以放心依赖吗？",
+ "It is a hackathon prototype. The contracts are unaudited and hold no funds. Treat results as a clear explanation of the rules, not legal advice.": "这是黑客松原型。合约未经审计，也不持有资金。请把结果当作对规则的清晰说明，而非法律意见。",
+ "Try it in a minute.": "一分钟就能试用。",
+ "Open the warranty checker": "打开保修检查器",
+ "is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.": "是为 X Layer 做的黑客松原型。合约未经审计，不持有资金。结果只说明已公布的政策如何适用于所给答案，并不证明这些答案属实。",
+ "Verify a circuit": "核验电路",
+ "Reviewer records": "审核人记录",
+ "Get a passkey": "获取通行密钥",
+ "For developers: verify a circuit": "开发者：核验电路",
+ "A live simulation of the circuit": "电路的实时模拟",
+ "Live simulation of the warranty circuit": "保修电路的实时模拟",
+ "How a dispute settles: publish the rules, agree, both answer, a neutral person decides only the differences, and the result can be checked by anyone.": "争议如何了结：公布规则、约定、双方作答，由中立人士只裁决分歧，任何人都能核对结果。",
+ "LGtie: settle disputes fairly, with rules everyone can see first": "LGtie：用人人都能先看到的规则，公平化解争议",
+ "Publish the rules": "公布规则",
+ "A business writes its policy as yes or no questions. It becomes a small circuit on X Layer that nobody can quietly change.": "商家把政策写成是非问题，它会变成 X Layer 上的一个小电路，没有人能悄悄改动。",
+ "yes": "是",
+ "no": "否",
+ "on X Layer": "在 X Layer 上",
+ "Agree before anything goes wrong": "在出问题之前先约定",
+ "Both sides accept the rules, a neutral reviewer and the time limits. After that, none of it can be swapped.": "双方接受规则、中立审核人和时间限制。此后，这些都不能被替换。",
+ "fixed in advance": "事先确定",
+ "Where the answers match, it is settled. Nobody needs to argue about what they already agree on.": "答案一致的地方就算了结，已达成一致的内容无需再争论。",
+ "Business": "商家",
+ "Only the differences go to a person": "只有分歧才交给人",
+ "The reviewer both sides accepted decides just the questions they disagree on. Nothing else.": "双方认可的审核人只裁决他们有分歧的问题，别的一概不管。",
+ "agreed, no one needed": "一致，无需裁决",
+ "Q5 differs": "第 5 题不一致",
+ "one reviewer, one question": "一位审核人，一个问题",
+ "The circuit decides, and anyone can re-run it": "由电路得出结果，任何人都能重新运行",
+ "The final answers go through the published rules. One free read on X Layer gives the same result, with the reason.": "最终答案按已公布的规则运算。在 X Layer 上免费读取一次，就能得到同样的结果和理由。",
+ "anyone can re-run it, free": "任何人都能免费重新运行",
+ "Customers without a wallet": "没有钱包的客户",
+ "A fingerprint or face scan replaces the wallet. The customer approves on their own device, and the business submits it and pays the tiny fee. Live on X Layer, unaudited, and recovery for a lost device is still being built.": "指纹或面容识别取代了钱包。客户在自己的设备上确认，由商家提交并支付微小的手续费。已在 X Layer 上线，未经审计，设备丢失后的找回功能仍在开发中。",
+ "Try the fictional support page": "试试虚构的客服页面",
+ "fingerprint or face": "指纹或面容",
+ "sent by anyone": "任何人都能提交",
+ "fee": "手续费",
+ "What it does not do, and what can go wrong": "它不做什么，以及可能出什么问题",
+ "What it does not do": "它不做什么",
+ "It does not check that the answers are true. If someone gives a false answer, the result will follow the false answer. The reviewer decides disputed facts, and a reviewer can be wrong. The circuit shows the rules were applied consistently, nothing more.": "它不会核实答案是否属实。如果有人给出虚假答案，结果就会跟着虚假答案走。有争议的事实由审核人裁定，而审核人也可能出错。电路只能证明规则被一致地执行，仅此而已。",
+ "A person is not a wallet. Where an operator submits answers for someone without a wallet, that is recorded, and you are trusting the operator to pass them on unchanged.": "人不等于钱包。如果由运营方替没有钱包的人提交答案，这一点会被记录下来，而你需要相信运营方会原样转交。",
+ "What can go wrong, and what happens": "可能出什么问题，会发生什么",
+ "If this happens": "如果发生这种情况",
+ "What LGtie does": "LGtie 会怎么做",
+ "What it can't do": "它做不到什么",
+ "A party gives a false answer": "一方给出虚假答案",
+ "The result follows it. If the other side answers differently, the question goes to the reviewer.": "结果会跟着它走。如果另一方答案不同，这个问题就交给审核人。",
+ "Know the truth. If both sides agree on the same false answer, nobody checks.": "无法知道真相。如果双方认同同一个虚假答案，就没有人会去核查。",
+ "The reviewer is biased or wrong": "审核人有偏见或出错",
+ "Both sides had to accept them first, and their record is public.": "双方必须先认可他们，而且他们的记录是公开的。",
+ "Make them right. There is no appeal, jury or penalty.": "无法保证他们正确。没有上诉、陪审团或处罚。",
+ "Nobody answers or decides in time": "无人按时作答或裁决",
+ "Anyone can close the case. It ends as \"no decision\"; nobody wins by default.": "任何人都可以关闭案件。案件以“无决定”结束，没有人会自动获胜。",
+ "Force an outcome. The sides must open a new case.": "无法强制得出结果。双方必须另开一个案件。",
+ "A side tries to stall by naming another reviewer": "一方试图通过另指定审核人来拖延",
+ "The other side must accept the new one, or the case ends as \"no decision\". The newer V4 contracts refuse a new reviewer under an agreement. The site hides the option for V3 cases.": "另一方必须接受新人选，否则案件以“无决定”结束。较新的 V4 合约在协议之下会拒绝更换审核人。网站对 V3 案件隐藏了这个选项。",
+ "Change the older V3 contract: a direct call to it still allows this (known limitation F1, fixed in V4).": "无法修改较早的 V3 合约：直接调用它仍然允许这样做（已知限制 F1，V4 中已修复）。",
+ "Someone is named reviewer without knowing": "有人在不知情的情况下被指定为审核人",
+ "The record says \"no decision in time\" and notes that the reviewer's consent is not recorded.": "记录会显示“未按时作出决定”，并注明审核人的同意没有被记录。",
+ "Prove a reviewer agreed in the older V3 contract (known limitation F2). V4 records whether the reviewer ever took part. Ask them first.": "无法在较早的 V3 合约中证明审核人曾同意（已知限制 F2）。V4 会记录审核人是否参与过。请先询问他们。",
+ "A file or note is leaked": "文件或备注泄露",
+ "Files are never uploaded. Only a fingerprint and a short note go on-chain.": "文件从不上传，只有指纹和一条简短备注会上链。",
+ "Delete what is on-chain. Keep names and personal details out of notes.": "无法删除链上的内容。请不要在备注中写入姓名和个人信息。",
+ "A business registers a passkey account under a customer's identifier with its own key": "商家用自己的密钥，以客户的标识符注册通行密钥账户",
+ "The customer's page checks on-chain that her passkey controls the account and warns her not to use it if it does not.": "客户的页面会在链上核对她的通行密钥是否控制该账户，若不是，就会警告她不要使用。",
+ "Stop the registration itself. Ask the business to add your claim code again.": "无法阻止注册本身。请让商家重新添加你的认领码。",
+ "A customer loses every device with their passkey": "客户丢失了所有保存通行密钥的设备",
+ "A second passkey or a synced passkey (Apple, Google) can still act.": "第二个通行密钥或同步的通行密钥（Apple、Google）仍然可以使用。",
+ "Recover access if none is left. Assisted recovery is not built yet.": "如果一个都不剩，就无法找回访问权限。协助找回功能尚未开发。",
+ "A photo or file is faked": "照片或文件被伪造",
+ "A fingerprint shows the file is unchanged since it was recorded.": "指纹可以证明文件自记录以来没有被改动。",
+ "Show the file is genuine.": "无法证明文件是真实的。",
+ "A rule set points at a fake processor": "规则集指向了一个伪造的处理器",
+ "The site only shows rule sets it knows and checks custom ones against the official processor.": "网站只展示它认识的规则集，并将自定义规则集与官方处理器进行核对。",
+ "Protect someone calling the older V3 contract directly (known limitation F4). V4 accepts only the official processor.": "无法保护直接调用较早 V3 合约的人（已知限制 F4）。V4 只接受官方处理器。",
+ "The full list, with tests, is in": "完整列表及测试见",
+ ". The contracts are unaudited, hold no funds, and cannot be changed once deployed.": "。合约未经审计，不持有资金，部署后无法更改。",
+ "Prototype built for the X Layer TapeOut Accelerate hackathon. The contracts are unaudited and hold no funds. This page currently computes checkers in your browser and confirms against the chain once a checker has been published.": "为 X Layer TapeOut Accelerate 黑客松打造的原型。合约未经审计，不持有资金。本页目前在你的浏览器中计算检查器，待检查器发布后再与链上结果核对。",
+ "Find out whether a repair would be covered before you file a claim.": "在提交理赔之前，先查明维修是否在保修范围内。",
+ "See how the rules decide": "看看规则如何得出结论",
+ "Each dot is one small step in the checker. Dark means yes and light means no. Answer every question to watch the answer flow through. This runs on your device, using the same 39 steps that are stored on the public network.": "每个圆点代表检查器中的一个小步骤。深色表示“是”，浅色表示“否”。回答完所有问题，就能看到答案如何一步步流转。这一切都在你的设备上运行，使用的正是存放在公共网络上的同样 39 个步骤。",
+ "1. Is the product registered, or can you show proof of purchase?": "1. 产品是否已登记，或者你能否出示购买凭证？",
+ "Evidence: Registration number or receipt": "证据：登记号或收据",
+ "2. Is it still within the warranty period?": "2. 是否仍在保修期内？",
+ "Evidence: Purchase date": "证据：购买日期",
+ "3. Was it bought from an authorised seller?": "3. 是否从授权卖家处购买？",
+ "Evidence: Seller name on the receipt": "证据：收据上的卖家名称",
+ "4. Is this type of damage or fault one the warranty covers?": "4. 此类损坏或故障是否属于保修范围？",
+ "Evidence: Fault description and photos": "证据：故障描述和照片",
+ "5. Is there no excluded cause, such as water damage, a drop or an unauthorised repair?": "5. 是否不存在免责原因，例如进水、摔落或未经授权的维修？",
+ "Evidence: Repair centre inspection note": "证据：维修中心检测记录",
+ "6. Is the product within its usage limit?": "6. 产品是否未超出使用限制？",
+ "Evidence: Usage reading or hours": "证据：使用读数或使用时长",
+ "7. Is the repair you need one the warranty covers?": "7. 你需要的维修是否属于保修范围？",
+ "Evidence: Repair centre quote": "证据：维修中心报价",
+ "Put this checker on your own website": "把这个检查器放到你自己的网站上",
+ "Paste this where you want the checker to appear. It resizes itself and needs nothing else.": "把它粘贴到你想让检查器出现的位置。它会自动调整大小，不需要其他任何东西。",
+ "Copy": "复制",
+ "Or use a plain frame:": "或者使用普通的 iframe 框架：",
+ "Your answers running through the circuit": "你的答案正在流经电路",
+ "Publish your policy as a checker": "把你的政策发布成检查器",
+ "Turn your policy into a claim check your customers can use. Four short steps: questions, rules, test, publish.": "把你的政策变成客户可用的理赔检查。只需四个简短步骤：问题、规则、测试、发布。",
+ "Questions": "问题",
+ "Rules": "规则",
+ "Test": "测试",
+ "Start from:": "从以下开始：",
+ "Warranty example": "保修示例",
+ "Bug bounty example": "漏洞赏金示例",
+ "Blank": "空白",
+ "Have your policy as a document? Let an AI assistant draft the rules": "政策是一份文档？让 AI 助手起草规则",
+ "Copy this request, paste it into any AI assistant (with your policy at the bottom), then paste its reply below. Always read the result: assistants can make mistakes.": "复制这段请求，粘贴到任意 AI 助手中（把你的政策放在最后），再把它的回复粘贴到下方。请务必检查结果：助手可能出错。",
+ "Copy the request": "复制请求",
+ "Use this reply": "使用这段回复",
+ "Forms": "表单",
+ "Text": "文本",
+ "What does a customer need to answer?": "客户需要回答什么？",
+ "Write yes or no questions. Word each one so that \"yes\" is the good answer if you can, and say what evidence to show.": "写成是非问题。尽量让每个问题的措辞使“是”成为好的答案，并说明需要出示什么证据。",
+ "About this checker": "关于这个检查器",
+ "Name": "名称",
+ "One line for the customer": "给客户的一句话",
+ "+ Add a question": "＋ 添加问题",
+ "When does each result apply?": "每个结果在什么情况下适用？",
+ "Name the possible results, then build the rules. Rules are checked top to bottom and the first match decides.": "为可能的结果命名，然后建立规则。规则从上到下依次检查，第一条匹配的规则决定结果。",
+ "Possible results": "可能的结果",
+ "+ Add a result": "＋ 添加结果",
+ "One row per rule, checked from top to bottom: the first row that matches decides. Click a cell to cycle": "每条规则一行，从上到下检查：第一条匹配的规则起决定作用。点击单元格可循环切换",
+ "any": "任意",
+ "and": "和",
+ ". The row that fires lights up in the preview below.": "。起作用的那一行会在下方预览中亮起。",
+ "Is the product registered, or can you show proof of purchase?": "产品是否已登记，或者你能否出示购买凭证？",
+ "Is it still within the warranty period?": "是否仍在保修期内？",
+ "Was it bought from an authorised seller?": "是否从授权卖家处购买？",
+ "Is this type of damage or fault one the warranty covers?": "此类损坏或故障是否属于保修范围？",
+ "Is there no excluded cause, such as water damage, a drop or an unauthorised repair?": "是否不存在免责原因，例如进水、摔落或未经授权的维修？",
+ "Is the product within its usage limit?": "产品是否未超出使用限制？",
+ "Is the repair you need one the warranty covers?": "你需要的维修是否属于保修范围？",
+ "Then": "则",
+ "Because": "原因",
+ "Needs review": "需要复核",
+ "Partly covered (parts, not labour)": "部分保修（零件，不含人工）",
+ "else": "否则",
+ "no rule above matched": "以上规则均未匹配",
+ "+ Add a rule": "＋ 添加规则",
+ "Paste from a spreadsheet": "从电子表格粘贴",
+ "Copy cells from Excel or Google Sheets and paste.": "从 Excel 或 Google 表格复制单元格后粘贴。",
+ "Questions:": "问题：",
+ "two columns, question then evidence.": "两列：先是问题，再是证据。",
+ "Rules:": "规则：",
+ "three columns: conditions (for example": "三列：条件（例如",
+ "or": "或",
+ "), result name, reason.": "），结果名称，原因。",
+ "Add these questions": "添加这些问题",
+ "Add these rules": "添加这些规则",
+ "Does it behave the way you mean?": "它的表现符合你的本意吗？",
+ "Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.": "像客户那样作答。电路会亮起，结果会出现，并指明起作用的规则。",
+ "✓ The finished checker gives the same answer as your rules": "✓ 做好的检查器与你的规则给出相同的答案",
+ "Try your checker": "试用你的检查器",
+ "Copy shareable link": "复制可分享的链接",
+ "Try it": "试一试",
+ "No rule matched, so the default applies.": "没有规则匹配，因此适用默认结果。",
+ "Put it on X Layer": "发布到 X Layer",
+ "Publishing records the circuit permanently, so anyone can re-run it. A change later means publishing a new version.": "发布会把电路永久记录下来，任何人都能重新运行。日后若要修改，需要发布新版本。",
+ "Publishing it on X Layer": "发布到 X Layer",
+ "Publishing saves your rules permanently on the public network, so they can't be changed afterwards. A change means publishing a new version. It needs": "发布会把你的规则永久保存在公共网络上，之后无法更改。若要修改，需要发布新版本。它需要",
+ "(a free starter token: the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.": "（免费的入门代币：水龙头每个钱包可领取一次，每次 40 个）以及 0.0013 OKB 的费用，约为几分之一美分到几美分。",
+ "Rules fingerprint": "规则指纹",
+ "(a short code that changes if the rules text changes):": "（规则文本一变，这串短代码就会变化）：",
+ "Copy netlist": "复制网表",
+ "Download rules and circuit": "下载规则和电路",
+ "This replaces an earlier version? Rule set number": "这是替换早期版本吗？规则集编号",
+ "Your wallet will be asked to confirm up to four transactions: claim free NAND (once), buy more if short, record the circuit (0.0013 OKB), and register the rules. It spends your own OKB, and a published circuit can't be changed or removed.": "你的钱包最多会要求你确认四笔交易：领取免费的 NAND（仅一次）、不足时补购、记录电路（0.0013 OKB）、登记规则。这会花费你自己的 OKB，而且已发布的电路无法更改或删除。",
+ "Publish on X Layer with my wallet": "用我的钱包发布到 X Layer",
+ "← Questions": "← 问题",
+ "Next: Rules →": "下一步：规则 →",
+ "Paste the assistant's reply here": "在这里粘贴助手的回复",
+ "Question": "问题",
+ "Evidence (optional)": "证据（可选）",
+ "Move up": "上移",
+ "Move down": "下移",
+ "Remove": "移除",
+ "Result name": "结果名称",
+ "Reason shown to the customer": "向客户显示的原因",
+ "Move rule up": "上移规则",
+ "Move rule down": "下移规则",
+ "Delete rule": "删除规则",
+ "Default result": "默认结果",
+ "Live circuit for your rules": "你的规则对应的实时电路",
+ "optional": "可选",
+ "Publish clear rules, invite your customers, and settle disagreements fairly. Pick what you need.": "公布清晰的规则，邀请你的客户，公平解决分歧。选择你需要的功能。",
+ "Publish your rules": "公布你的规则",
+ "Turn your policy into a claim check your customers can use.": "把你的政策变成客户可用的理赔检查。",
+ "Invite a customer with no wallet": "邀请没有钱包的客户",
+ "They approve with their fingerprint or face. You send it in and pay the tiny fee.": "他们用指纹或面容确认，由你提交并支付微小的手续费。",
+ "Invite by fingerprint": "通过指纹邀请",
+ "Invite a customer with a wallet": "邀请有钱包的客户",
+ "Propose an agreement that fixes the rules, the neutral person and the time limits.": "提出一份协议，确定规则、中立人士和时间限制。",
+ "Make an agreement": "订立协议",
+ "Handle a case": "处理案件",
+ "Open a dispute, answer the questions, or look one up by number.": "发起争议、回答问题，或按编号查找案件。",
+ "Go to cases": "前往案件",
+ "Inbox": "收件箱",
+ "Fingerprint customers send you their signed answers here. You review and submit them with one click.": "使用指纹的客户会把签名后的答案发到这里。你检查后一键提交即可。",
+ "Open my inbox": "打开我的收件箱",
+ "Skip the inbox (optional)": "跳过收件箱（可选）",
+ "Run a small script of your own that sends a notice to Slack, Discord or Zapier and can submit for you.": "运行你自己的小脚本，向 Slack、Discord 或 Zapier 发送通知，并可代你提交。",
+ "See the bridge": "查看桥接脚本",
+ "Cases with fingerprint customers": "指纹客户的案件",
+ "See the agreements and cases you opened with customers who use a passkey, and answer them.": "查看你与使用通行密钥的客户之间的协议和案件，并作出回答。",
+ "See passkey cases": "查看通行密钥案件",
+ "Put it on your website": "放到你的网站上",
+ "Add the claim check or the fingerprint sign-up with one line of code.": "只需一行代码，即可添加理赔检查或指纹注册。",
+ "See a demo page": "查看演示页面",
+ "See who decided cases, and who did not decide in time.": "查看谁裁决了案件，谁没有按时裁决。",
+ "See the records": "查看记录",
+ "For developers": "面向开发者",
+ "Re-run any published rules on the public network, or read a case's decision from another contract.": "在公共网络上重新运行任何已公布的规则，或从其他合约读取案件的裁决。",
+ "Verify a published circuit": "核验已发布的电路",
+ "Look up any circuit on the TapeOut processor and run it yourself. This asks X Layer directly, so you do not have to trust this page.": "查找 TapeOut 处理器上的任何电路并亲自运行。这是直接向 X Layer 查询，所以你不必信任本页面。",
+ "Circuit number": "电路编号",
+ "Answers, one digit per question, question 1 first": "答案，每题一位数字，第 1 题在最前",
+ "Run it": "运行",
+ "Processor:": "处理器：",
+ "Agree on the rules before there is a dispute": "在争议发生前，先就规则达成一致",
+ "Before any problem comes up, you and the other side agree on three things: the public rules, a neutral person who would decide any disagreement, and the time limits. Once both of you accept, none of it can be changed or withdrawn, so neither side can swap the rules or the neutral person halfway through. If you later disagree, either of you can open a case under this agreement.": "在任何问题出现之前，你和对方先约定三件事：公开的规则、一位将裁决任何分歧的中立人士，以及时间限制。双方一旦接受，这一切都无法更改或撤回，因此任何一方都不能在中途替换规则或中立人士。日后若有分歧，任何一方都可以在这份协议下发起案件。",
+ "Propose an agreement": "提出协议",
+ "Warranty claims (published)": "保修理赔（已发布）",
+ "The other party": "对方",
+ "Neutral reviewer": "中立审核人",
+ "Time to answer after a dispute starts": "争议发起后的作答时限",
+ "Time for the reviewer": "审核人的裁决时限",
+ "Your written terms (optional)": "你的书面条款（可选）",
+ "Reviewer's signed identity (recommended)": "审核人的签名身份（推荐）",
+ "Your wallet proposes; the other party's wallet accepts. Nothing is held in escrow.": "由你的钱包提出，对方的钱包接受。不托管任何资金。",
+ "Propose the agreement": "提出协议",
+ "Your customer has no wallet?": "你的客户没有钱包？",
+ "Invite them by passkey instead: they approve with their fingerprint or face, and you submit it.": "改用通行密钥邀请他们：他们用指纹或面容确认，由你提交。",
+ "Invite a customer by passkey": "用通行密钥邀请客户",
+ "Look up an agreement": "查找协议",
+ "Open": "打开",
+ "0x… (not you and not the other party)": "0x…（不是你，也不是对方）",
+ "Paste the agreement text. Only its fingerprint goes on-chain; keep the text yourselves.": "粘贴协议文本。只有它的指纹会上链，文本请你们自行保管。",
+ "Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page, so you know who you are agreeing to.": "粘贴审核人的资料代码（lgtie-reviewer1.…）。他们会在自己的审核人页面生成，这样你就清楚自己在同意的是谁。",
+ "Agreement number": "协议编号",
+ "Proposed by": "发起人",
+ "Other party": "对方",
+ ", agreed in advance": "，已事先约定",
+ "looking for a signed identity…": "正在查找签名身份…",
+ "Time limits": "时间限制",
+ "Terms fingerprint (a short code of the written terms)": "条款指纹（书面条款的一串简短代码）",
+ "Check the written terms": "核对书面条款",
+ "Paste the terms text to see whether it is exactly what was agreed.": "粘贴条款文本，看看它是否与约定的内容完全一致。",
+ "Connect wallet": "连接钱包",
+ "to accept, withdraw or open a case": "以接受、撤回或发起案件",
+ "Paste the agreement text": "粘贴协议文本",
+ "Decided": "已裁决",
+ "Opened the case": "发起案件的一方",
+ "Other side": "对方",
+ "Disputed": "有争议",
+ "Reviewer:": "审核人：",
+ "Agreed": "一致",
+ "record": "记录",
+ "The reviewer recorded no written reasons for this decision.": "审核人没有为这项裁决记录书面理由。",
+ "Evidence": "证据",
+ "Only fingerprints are recorded here. Nothing is uploaded: the files stay with the people who share them, and the reviewer checks what they receive against the fingerprint. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.": "这里只记录指纹，不上传任何内容：文件保留在分享者手中，审核人会拿收到的文件与指纹比对。指纹能证明文件此后没有被改动，但不能证明文件本身是真实的。",
+ "About": "涉及",
+ "By": "提交人",
+ "Note": "备注",
+ "Got a file from the other side? Check it here.": "收到了对方的文件？在这里核对。",
+ "Drop it here or": "把文件拖到这里，或",
+ "choose a file": "选择文件",
+ ". It is fingerprinted in your browser and never uploaded.": "。指纹在你的浏览器中生成，文件绝不会上传。",
+ "✓ Re-checked just now on the public network: same result": "✓ 刚刚在公共网络上重新核对：结果相同",
+ "Copy link": "复制链接",
+ "Receipt": "回执",
+ "No rule matched, so the default result applied.": "没有规则匹配，因此适用默认结果。",
+ "Final": "最终",
+ "Settled by": "裁定者",
+ "Both agreed": "双方一致",
+ "Filer": "发起方",
+ "Decider": "对方",
+ "address only": "仅有地址",
+ "no signed identity found.": "未找到签名身份。",
+ "Ask the reviewer to add one": "请审核人添加一个",
+ "Agreement": "协议",
+ "Opened": "发起时间",
+ "Evidence fingerprints": "证据指纹",
+ "The files are not stored by LGtie. Each fingerprint shows a file hasn't changed since it was recorded.": "LGtie 不保存这些文件。每个指纹都证明文件自记录以来没有被改动。",
+ "Check it yourself: open": "自己核对：打开",
+ "case contract": "案件合约",
+ ". The re-run is a free read of the rules published on X Layer.": "。重新运行只是对 X Layer 上已发布规则的一次免费读取。",
+ "This receipt shows how published rules applied to the answers given. It does not prove the answers are true, and it is not legal advice. LGtie holds no funds and is an unaudited prototype.": "本回执展示的是已公布的规则如何适用于所给答案。它并不证明这些答案属实，也不构成法律意见。LGtie 不持有资金，是一个未经审计的原型。",
+ "Print or save as PDF": "打印或保存为 PDF",
+ "Back to the case": "返回案件",
+ "Reviewers": "审核人",
+ "A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that.": "一份公开记录，展示每位中立审核人做了什么，数据读自公共网络。它显示谁作出了裁决、谁没有，但不显示裁决是否正确：链上记录的内容无法判断这一点。",
+ "Cases": "案件",
+ "No decision in time": "未按时裁决",
+ "Not accepted by both sides": "双方未全部接受",
+ "Reviewer record": "审核人记录",
+ "That is not a wallet address.": "这不是钱包地址。",
+ "See all reviewers": "查看所有审核人",
+ "Settle a disagreement": "化解分歧",
+ "Both sides answer the same questions. Where they agree, the answer stands. Only the questions they disagree on go to a neutral reviewer, and the published rules give the result. A case nobody finishes in time ends with no decision. Best of all,": "双方回答同样的问题。答案一致的地方，答案成立。只有双方有分歧的问题才交给中立审核人，再由已公布的规则给出结果。没有人在期限内完成的案件，会以无决定结束。最好的做法是，",
+ "agree on the rules before there is a dispute": "在争议发生前先就规则达成一致",
+ "Under an agreement": "在协议之下",
+ "If you both accepted an agreement, open the case from the agreement page: the rules, the reviewer and the time limits are already fixed.": "如果你们都已接受一份协议，请从协议页面发起案件：规则、审核人和时间限制都已确定。",
+ "Open the agreement": "打开协议",
+ "Customer with a fingerprint, no wallet?": "客户用指纹、没有钱包？",
+ "Cases opened with a passkey customer are listed on their own page.": "与通行密钥客户发起的案件列在单独的页面上。",
+ "See passkey agreements and cases": "查看通行密钥协议和案件",
+ "Without an agreement": "没有协议时",
+ "The other side (for example the business or repair centre)": "对方（例如商家或维修中心）",
+ "Neutral person who would decide (the other side must accept)": "将作出裁决的中立人士（对方必须接受）",
+ "Time to answer": "作答时限",
+ "Evidence note, optional": "证据备注（可选）",
+ "Only a short code (a digital fingerprint) of the note goes on the public network. You are opening the case, and by opening it you accept the neutral person. They must be someone other than the two of you.": "只有这条备注的一串简短代码（数字指纹）会上传到公共网络。你发起案件，即表示你接受这位中立人士。他们必须是你们两方之外的人。",
+ "Open case": "发起案件",
+ "Look up a case": "查找案件",
+ "Agreements": "协议",
+ "e.g. the repair centre report reference": "例如：维修中心报告编号",
+ "Case number": "案件编号",
+ "Use your fingerprint or face instead of a wallet": "用指纹或面容代替钱包",
+ "Create a passkey in a few seconds. You will not need a wallet, a seed phrase or any crypto. Then give your claim code to the business that invited you. It identifies your passkey and contains nothing secret.": "几秒钟就能创建通行密钥。你不需要钱包、助记词，也不需要任何加密货币。然后把你的认领码交给邀请你的商家。它用来标识你的通行密钥，不包含任何机密。",
+ "Create my passkey": "创建我的通行密钥",
+ "Your passkey stays on your device (and in your phone's or browser's password manager, if you use one). If you lose every device with it, you could lose access to your cases, so add a second device when you can. This page and its contracts are an unaudited prototype.": "你的通行密钥保存在你的设备上（如果你使用手机或浏览器的密码管理器，也会保存在其中）。如果丢失了所有保存它的设备，你可能会失去对案件的访问权限，所以请尽早添加第二台设备。本页面及其合约是未经审计的原型。",
+ "Use your passkey to find the agreements and cases that name you, and to answer or accept. Nothing is sent from here: you sign, and the business (or anyone with a wallet) submits.": "用你的通行密钥查找点名你的协议和案件，并作出回答或接受。这里不会发送任何内容：你只负责签名，由商家（或任何有钱包的人）提交。",
+ "Find my cases with my passkey": "用我的通行密钥查找案件",
+ "I need a passkey first": "我需要先创建通行密钥",
+ "When a customer approves something with their passkey, it lands here, addressed to your wallet. Open it, check it, and submit it. You pay the small network fee and the customer never needs a wallet. If you are a neutral reviewer, cases waiting for your decision are listed here too.": "当客户用通行密钥确认某件事时，它会送到这里，收件人是你的钱包。打开它，核对后提交。你支付微小的网络手续费，客户无需拥有钱包。如果你是中立审核人，等待你裁决的案件也会列在这里。",
+ "The customer signs": "客户签名",
+ "with their fingerprint or face.": "使用他们的指纹或面容。",
+ "It appears here": "它会出现在这里",
+ ", addressed to your wallet. Nothing to copy or paste.": "，收件人是你的钱包。无需复制粘贴。",
+ "You submit it": "你来提交",
+ "and pay the small network fee.": "并支付微小的网络手续费。",
+ "Connect my wallet": "连接我的钱包",
+ "Prefer a notice in Slack or Discord and no clicking? You can run an optional": "更想在 Slack 或 Discord 里收到通知、不想点击？你可以运行一个可选的",
+ "bridge": "桥接脚本",
+ "of your own that tells your webhook and can submit for you. LGtie runs no server, so it is yours to run.": "，通知你的 webhook，并可代你提交。LGtie 不运行任何服务器，所以需要由你自己运行。",
+ "Invite a customer who has no wallet": "邀请没有钱包的客户",
+ "Paste the claim code your customer created at": "粘贴你的客户生成的认领码，生成页面在",
+ ". We register their passkey (a small network fee, paid by you) and propose an agreement to them. They accept with their fingerprint or face, and you submit it.": "。我们会登记他们的通行密钥（微小的网络手续费由你支付），并向他们提出一份协议。他们用指纹或面容接受，由你提交。",
+ "Customer's claim code": "客户的认领码",
+ "The customer creates it at": "客户在以下页面生成",
+ "and sends it to you. It contains nothing secret.": "并发给你。它不包含任何机密。",
+ "Neutral reviewer's address": "中立审核人的地址",
+ "The person both sides accept to decide only the questions they disagree on.": "双方都接受的人，只裁决双方有分歧的问题。",
+ "Written terms (optional)": "书面条款（可选）",
+ "Register the customer and propose": "登记客户并提出协议",
+ "0x… (not you)": "0x…（不是你）",
+ "Only a fingerprint of this text goes on-chain": "只有这段文字的指纹会上链",
+ "Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page.": "粘贴审核人的资料代码（lgtie-reviewer1.…）。他们会在自己的审核人页面生成。",
+ "Terms fingerprint": "条款指纹",
+ "Tell your reviewer": "通知你的审核人",
+ "The reviewer has no way of knowing unless you tell them. Send them this.": "除非你告诉他们，审核人无从得知。请把下面这段发给他们。",
+ "Copy message": "复制消息",
+ "Open a dispute under this agreement": "在这份协议下发起争议",
+ "· Waiting for answers": "· 等待作答",
+ "· Decided": "· 已裁决",
+ "Passkey agreements and cases": "通行密钥协议与案件",
+ "Everything opened with a customer's fingerprint or face. Cases between two wallets are on": "所有与客户指纹或面容相关的协议和案件。两个钱包之间的案件在",
+ "the other case page": "另一个案件页面",
+ "· Warranty claims · In force": "· 保修理赔 · 已生效",
+ "Invite a customer with a fingerprint": "邀请使用指纹的客户",
+ "· Warranty claims · Waiting for answers": "· 保修理赔 · 等待作答",
+ "· Warranty claims · Decided": "· 保修理赔 · 已裁决",
+ "Reviewer's reasons": "审核人的理由",
+ "The full written statement is kept by the reviewer. Its fingerprint is": "完整的书面声明由审核人保管。它的指纹是",
+ "; drop the file you were sent below to check it is identical.": "；请把你收到的文件拖到下方，核对是否一致。",
+ "Only fingerprints are recorded. Nothing is uploaded: the files stay with the people who share them.": "只记录指纹，不上传任何内容：文件保留在分享者手中。",
+ "The whole case": "整个案件",
+ "Actions for a wallet": "钱包操作",
+ "If you are the business, the reviewer or anyone closing an expired case, connect your wallet. A customer with a passkey acts at": "如果你是商家、审核人，或要关闭已过期案件的任何人，请连接你的钱包。使用通行密钥的客户则在以下页面操作：",
+ "Send a signed action": "发送已签名的操作",
+ "This link is damaged.": "这个链接已损坏。",
+ "Waiting for answers": "等待作答",
+ "Waiting for the reviewer": "等待审核人",
+ "No decision (expired)": "无决定（已过期）",
+ "Proposed, waiting for the other party": "已提出，等待对方",
+ "Proposed, waiting for the customer": "已提出，等待客户",
+ "Waiting for the customer": "等待客户",
+ "In force": "已生效",
+ "No decision": "无决定",
+ "Opener": "发起方",
+ "You": "你",
+ "Side A": "A 方",
+ "Side B": "B 方",
+ "Someone else": "其他人",
+ "Side A / Side B": "A 方 / B 方",
+ "Not decided yet": "尚未裁决",
+ "none": "无",
+ "accepted ✓": "已接受 ✓",
+ "not yet": "尚未",
+ "Copy this:": "复制这段：",
+ "Reading the case from X Layer…": "正在从 X Layer 读取案件…",
+ "Read from X Layer just now.": "刚刚从 X Layer 读取。",
+ "Could not read the case from X Layer right now.": "暂时无法从 X Layer 读取该案件。",
+ "Open it directly": "直接打开",
+ "This shows how the published rules apply to the answers given. It does not prove the answers are true, and it is not legal advice.": "这里展示的是已公布的规则如何适用于所给答案。它并不证明这些答案属实，也不构成法律意见。",
+ "We could not open that checker": "无法打开该检查器",
+ "The link may be incomplete.": "链接可能不完整。",
+ "Open the warranty example": "打开保修示例",
+ "Could not reach X Layer to confirm that these rules were published, so the result below is only a preview.": "无法连接 X Layer 来确认这些规则是否已发布，因此下面的结果仅供预览。",
+ "No rule matched, so the default applies": "没有规则匹配，因此适用默认结果",
+ "Checking…": "正在检查…",
+ "Copy link to this result": "复制此结果的链接",
+ "Start over": "重新开始",
+ "Check this result yourself": "自己核对这个结果",
+ ". The same answers go into the published rules, and anyone can run them.": "。同样的答案会输入已发布的规则，任何人都能运行。",
+ "Preview: computed in your browser": "预览：在你的浏览器中计算",
+ "✓ Confirmed on the public network (X Layer)": "✓ 已在公共网络（X Layer）上确认",
+ "The chain gave a different result. Do not rely on this page.": "链上给出了不同的结果，请不要依赖本页面。",
+ "Could not reach X Layer; showing the browser result": "无法连接 X Layer，显示的是浏览器中的结果",
+ "Enter a circuit number and answers made of 0 and 1.": "请输入电路编号，以及由 0 和 1 组成的答案。",
+ "Asking X Layer…": "正在询问 X Layer…",
+ "Could not read that circuit:": "无法读取该电路：",
+ "The case and agreement contracts are being upgraded (a security fix, agreements and evidence). This page will work once the new contracts are deployed.": "案件和协议合约正在升级（安全修复、协议和证据）。新合约部署后，本页面即可使用。",
+ "Both sides have to accept the reviewer first.": "双方必须先接受这位审核人。",
+ "The deadline has passed.": "期限已过。",
+ "Your wallet isn't allowed to do that on this case.": "你的钱包无权在这个案件上执行该操作。",
+ "Only the side itself can name its helper.": "只有当事方本人才能指定自己的助手。",
+ "Only the two parties to the agreement can do that.": "只有协议的两方当事人才能这样做。",
+ "Only the other party can accept this agreement.": "只有对方才能接受这份协议。",
+ "That agreement has not been accepted yet, or was withdrawn.": "该协议尚未被接受，或已被撤回。",
+ "You cancelled in the wallet.": "你在钱包中取消了操作。",
+ "✓ Same file as recorded": "✓ 与记录的文件一致",
+ "is identical to the evidence recorded for": "与为以下事项记录的证据完全一致：",
+ "That shows the file is unchanged since it was recorded, not that it is genuine.": "这只能说明文件自记录以来没有被改动，并不说明它是真实的。",
+ "No match": "不匹配",
+ "recorded on this case. It may be a different or edited file.": "在此案件上记录的任何证据。它可能是另一个文件，或被编辑过。",
+ "Invite the other side": "邀请对方",
+ "Copy invite": "复制邀请",
+ "Enter the decider's and the reviewer's wallet addresses.": "请输入对方和审核人的钱包地址。",
+ "Confirm in your wallet…": "请在钱包中确认…",
+ "No cases yet.": "还没有案件。",
+ "This profile belongs to a different wallet than the reviewer address above.": "这份资料属于另一个钱包，与上面的审核人地址不一致。",
+ "Added to your terms, so both sides agree to it:": "已加入你的条款，因此双方都会同意它：",
+ "Enter the other party's and the reviewer's wallet addresses.": "请输入对方和审核人的钱包地址。",
+ "No agreements yet.": "还没有协议。",
+ "Reading from X Layer…": "正在从 X Layer 读取…",
+ "That agreement doesn't exist, or X Layer could not be reached.": "该协议不存在，或无法连接 X Layer。",
+ "You have been invited to accept this agreement.": "你被邀请接受这份协议。",
+ "Read the terms below, then use the button at the bottom.": "请阅读下面的条款，然后使用底部的按钮。",
+ "If you were invited to accept this, connect the wallet for": "如果你受邀接受这份协议，请连接对应的钱包：",
+ "at the bottom of the page.": "，按钮在页面底部。",
+ "Accept this agreement": "接受这份协议",
+ "✓ This text matches the agreed terms.": "✓ 这段文字与约定的条款一致。",
+ "This text does not match the agreed terms.": "这段文字与约定的条款不一致。",
+ "Withdraw the proposal": "撤回提议",
+ "That case doesn't exist, or X Layer could not be reached.": "该案件不存在，或无法连接 X Layer。",
+ "This case uses rule set": "这个案件使用的规则集是",
+ ", which this page does not know how to display.": "，本页面不知道如何显示它。",
+ "Answers due by": "作答截止：",
+ "The reviewer has until": "审核人的裁决截止时间：",
+ ". That time has passed.": "，该时间已过。",
+ "to answer, add evidence, or review": "以作答、添加证据或审核",
+ "Propose a different reviewer: 0x…": "提议更换审核人：0x…",
+ "Propose": "提议",
+ "Enter a wallet address.": "请输入钱包地址。",
+ "Only the two sides can change the reviewer.": "只有双方当事人才能更换审核人。",
+ "Add evidence": "添加证据",
+ "Pick a photo or file to fingerprint it.": "选择一张照片或一个文件来生成指纹。",
+ "It is not uploaded anywhere.": "它不会被上传到任何地方。",
+ "Your browser works out a fingerprint here, and only that fingerprint and the short note go on X Layer. Keep the file yourself and send it to the other side and the reviewer directly.": "你的浏览器会在这里生成指纹，只有指纹和简短备注会上传到 X Layer。文件请自行保管，并直接发给对方和审核人。",
+ "Record the fingerprint on X Layer": "在 X Layer 上记录指纹",
+ "… (the file never leaves your browser)": "…（文件不会离开你的浏览器）",
+ "Helper (optional)": "助手（可选）",
+ "You can let one other wallet, such as a staff member, act for you only. It can never act for the other side. Current helper:": "你可以让另一个钱包（例如员工）只代表你行事，它永远不能代表对方行事。当前助手：",
+ "The deadline has passed. Anyone can close this case. It will end with no decision, and nobody wins by default.": "期限已过。任何人都可以关闭这个案件。案件将以“无决定”结束，没有人会自动获胜。",
+ "Close this case": "关闭这个案件",
+ "Your answers as the filer": "你作为发起方的答案",
+ "Your answers as the decider": "你作为对方的答案",
+ "Nothing for your wallet to do on this case right now.": "你的钱包目前在这个案件上无需做任何操作。",
+ "Your decision on the disputed questions only": "你对有争议问题的裁决",
+ "Both sides have to accept you as the reviewer before you can decide.": "双方必须先接受你作为审核人，你才能作出裁决。",
+ "Waiting for the reviewer to answer the disputed questions.": "正在等待审核人回答有争议的问题。",
+ "Confirm 1 of 2 in your wallet: record your reasons…": "请在钱包中确认第 1 步（共 2 步）：记录你的理由…",
+ "Answer every question shown.": "请回答所有显示的问题。",
+ "Confirm 2 of 2 in your wallet: submit your decision…": "请在钱包中确认第 2 步（共 2 步）：提交你的裁决…",
+ "Nobody wins by default. The two sides can open a new case.": "没有人会自动获胜。双方可以另开一个案件。",
+ "The reviewer did not decide in time.": "审核人没有按时裁决。",
+ "The answers were not all in on time.": "答案没有在期限内全部提交。",
+ "Re-running the published rules on X Layer…": "正在 X Layer 上重新运行已发布的规则…",
+ "Final answers:": "最终答案：",
+ ". Rule set": ". 规则集",
+ "The re-run gave a different result. Do not rely on this page.": "重新运行给出了不同的结果，请不要依赖本页面。",
+ "Could not re-run on X Layer right now": "暂时无法在 X Layer 上重新运行",
+ "unknown rule set": "未知的规则集",
+ "This case uses a rule set this page does not know how to display.": "这个案件使用的规则集，本页面不知道如何显示。",
+ "Receipt for case #": "案件回执 #",
+ "This case is": "这个案件目前",
+ ", so there is no result to print yet.": "，所以暂时没有可打印的结果。",
+ "decided it:": "裁定者：",
+ "the whole case": "整个案件",
+ "The re-run gave a different result. Do not rely on this receipt.": "重新运行给出了不同的结果，请不要依赖本回执。",
+ "Decided the disputed questions": "裁决了有争议的问题",
+ "Named by both sides; no decision in time (the reviewer's own consent is not recorded)": "双方指定；未按时裁决（审核人本人的同意未被记录）",
+ "Not accepted by both sides before time ran out": "在期限结束前未获得双方接受",
+ "Still open": "仍在进行",
+ "Not needed (both sides agreed)": "无需裁决（双方一致）",
+ "Case expired before it reached the reviewer": "案件在到达审核人之前已过期",
+ "Reading cases from X Layer…": "正在从 X Layer 读取案件…",
+ "X Layer could not be reached.": "无法连接 X Layer。",
+ "All reviewers": "所有审核人",
+ "no decision in time": "未按时裁决",
+ "never accepted": "从未被接受",
+ "This is a record of activity. It cannot show whether a decision was right: only the people involved can judge that.": "这是一份活动记录。它无法显示裁决是否正确：只有当事人才能作出判断。",
+ "A reviewer does not have to confirm anything on-chain before being named, so \"no decision in time\" can mean the reviewer was named without knowing.": "审核人在被指定之前不必在链上确认任何事，因此“未按时裁决”也可能意味着审核人被指定时并不知情。",
+ "Both sides should still decide for themselves whether to accept a reviewer, and ask them first.": "双方仍应自行决定是否接受某位审核人，并先询问对方。",
+ "Business record": "商家记录",
+ "Record of": "记录：",
+ "replaced an earlier version": "替换了早期版本",
+ "as decider": "作为对方",
+ "decided": "已裁决",
+ "needed a reviewer": "需要审核人",
+ "ended with no decision": "以无决定结束",
+ "Rules this address published": "该地址发布的规则",
+ "Each published rule set is permanent. If a business changes its rules it has to publish a new version, and that shows here.": "每个已发布的规则集都是永久的。商家如果修改规则，必须发布新版本，并会显示在这里。",
+ "This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.": "这是从链上读取的活动记录。它能显示争议发生的频率和结果，但不能说明商家是否正确。只读取最新的 200 个案件。",
+ "Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.": "通行密钥案件已开发并测试完成，但尚未部署到 X Layer，所以本页面暂时没有可连接的对象。",
+ "This browser does not support passkeys.": "这个浏览器不支持通行密钥。",
+ "That is not a claim code. It starts with lgtie1.": "这不是认领码。认领码以 lgtie1. 开头。",
+ "That claim code is damaged.": "这个认领码已损坏。",
+ "That claim code is incomplete.": "这个认领码不完整。",
+ "This passkey does not control that account, so nothing was signed for it.": "这个通行密钥并不控制该账户，因此没有为它签名任何内容。",
+ "Show the signed action": "显示已签名的操作",
+ "✓ Sent to the other side's inbox (": "✓ 已发送到对方的收件箱（",
+ "Could not reach the inbox relays. Copy the link below and send it yourself.": "无法连接收件箱中继。请复制下面的链接，自行发送。",
+ "Follow your device's prompt…": "请按照设备的提示操作…",
+ "Give this claim code to the business:": "把这个认领码交给商家：",
+ "Copy claim code": "复制认领码",
+ "Read-back code for a phone or chat check:": "用于电话或聊天核对的复述码：",
+ "Next: once the business adds you, open": "下一步：商家添加你之后，请打开",
+ "to see and act on them.": "查看并处理它们。",
+ "This passkey carries no account handle.": "这个通行密钥没有账户标识。",
+ "No account is registered for this passkey yet. Give the business your claim code from": "这个通行密钥尚未登记账户。请把你的认领码交给商家，认领码来自",
+ "Do not use this account.": "请不要使用这个账户。",
+ "An account was registered under your handle, but your passkey does not control it. Contact the business and ask them to add your claim code again.": "有人用你的标识注册了一个账户，但你的通行密钥并不控制它。请联系商家，让他们重新添加你的认领码。",
+ "Waiting for you to accept": "等待你接受",
+ ". The neutral reviewer is": "。中立审核人是",
+ ". You have": ". 你有",
+ "day(s) to answer after a dispute starts, then the reviewer has": "天在争议发起后作答，之后审核人有",
+ "day(s). Once you accept, nothing can change.": "天。你一旦接受，就无法再更改。",
+ "Accept agreement #": "接受协议 #",
+ "Signed. Not final until someone submits the link": "已签名。要等有人提交该链接后才算最终生效",
+ "Start a dispute under agreement #": "在协议下发起争议 #",
+ "Signed. Not started until someone submits the link": "已签名。要等有人提交该链接后才会开始",
+ "Photos, receipts or a written account": "照片、收据或书面说明",
+ "Evidence for case #": "案件证据 #",
+ "Answers for case #": "案件答案 #",
+ "This link does not point at an LGtie passkey contract, so it will not be sent.": "这个链接并未指向 LGtie 通行密钥合约，因此不会被发送。",
+ "A person approved the action below with their passkey. You only submit it and pay the small network fee. The contract accepts it only if the passkey signature is valid, and it can only do what was signed.": "有人用通行密钥批准了下面的操作。你只需提交它并支付微小的网络手续费。只有通行密钥签名有效时合约才会接受，而且它只能执行已签名的内容。",
+ "on X Layer. The description above comes from the link, so check the result on the case page afterwards.": "在 X Layer 上执行。上面的描述来自链接，所以请事后在案件页面核对结果。",
+ "Checking whether it would succeed…": "正在检查它能否成功…",
+ "Submit with my wallet": "用我的钱包提交",
+ "✓ This would succeed right now.": "✓ 现在提交可以成功。",
+ "This would fail right now:": "现在提交会失败：",
+ "it was rejected": "被拒绝了",
+ ". It may already have been submitted, or it may have expired.": "。它可能已经被提交，或已经过期。",
+ "✓ Submitted.": "✓ 已提交。",
+ "Nothing is uploaded. Your browser makes a fingerprint, and only that and your short note go on X Layer. Keep the file and send it to the other side and the reviewer yourself.": "不会上传任何内容。你的浏览器会生成指纹，只有指纹和你的简短备注会上传到 X Layer。文件请自行保管，并自己发给对方和审核人。",
+ "A photo or file": "照片或文件",
+ "Write an explanation": "写一段说明",
+ "Choose a photo or file": "选择照片或文件",
+ "It stays on your device": "它保留在你的设备上",
+ "Your explanation": "你的说明",
+ "What is it about?": "它涉及什么？",
+ "Short note everyone can see": "所有人都能看到的简短备注",
+ "Record the fingerprint": "记录指纹",
+ "Add a short note so people know what this is.": "请添加一条简短备注，让大家知道这是什么。",
+ "The short note is too long (60 bytes at most).": "简短备注太长（最多 60 字节）。",
+ "Write a few sentences first.": "请先写几句话。",
+ "Choose a file first.": "请先选择文件。",
+ "Download your written explanation": "下载你的书面说明",
+ "Send this file to the other side and the reviewer. They can check it against the fingerprint.": "请把这个文件发给对方和审核人。他们可以拿它与指纹核对。",
+ "Only the questions the two sides disagree on need your answer.": "只有双方有分歧的问题需要你回答。",
+ "Decide this case": "裁决这个案件",
+ ": the two sides are still answering.": "：双方仍在作答。",
+ "Waiting for you (": "等待你（",
+ "A signed action": "一项已签名的操作",
+ "Nothing waiting. This page keeps listening while it is open.": "没有待处理的内容。本页面打开期间会持续监听。",
+ ". The customer signed something earlier that has to be submitted first.": "。客户之前签署的内容需要先提交。",
+ "Listening on": "正在监听",
+ "just now": "刚刚",
+ "Enter the reviewer's wallet address.": "请输入审核人的钱包地址。",
+ "Checking whether this customer is already registered…": "正在检查这位客户是否已登记…",
+ "That passkey handle is already registered to a different key. Ask the customer to create a new passkey.": "这个通行密钥标识已被登记到另一个密钥上。请让客户创建新的通行密钥。",
+ "Confirm 1 of 2 in your wallet: register the customer's passkey…": "请在钱包中确认第 1 步（共 2 步）：登记客户的通行密钥…",
+ "Confirm 2 of 2 in your wallet: propose the agreement…": "请在钱包中确认第 2 步（共 2 步）：提出协议…",
+ "That agreement does not exist, or X Layer could not be reached.": "该协议不存在，或无法连接 X Layer。",
+ "Passkey cases": "通行密钥案件",
+ "Could not read from X Layer right now. Try again in a moment.": "暂时无法从 X Layer 读取，请稍后再试。",
+ "That case does not exist, or X Layer could not be reached.": "该案件不存在，或无法连接 X Layer。",
+ "This case uses a rule set this page does not know.": "这个案件使用的规则集，本页面不认识。",
+ "Send this file to both sides. They can drop it on this page to check it matches the recorded fingerprint.": "请把这个文件发给双方。他们可以把它拖到本页面，核对是否与记录的指纹一致。",
+ "has taken part": "已参与",
+ "has not yet confirmed taking part": "尚未确认参与",
+ "The two sides disagree on some answers and the case is waiting for you.": "双方对部分答案有分歧，案件正在等待你裁决。",
+ "The two sides are still answering. If they disagree, the case will wait for you.": "双方仍在作答。如果有分歧，案件会等待你裁决。",
+ "Answer the questions": "回答问题",
+ "Decide as the reviewer": "以审核人身份裁决",
+ "✓ Recorded on X Layer.": "✓ 已记录在 X Layer 上。",
+ "Show the updated case": "显示更新后的案件",
+ "Confirm I am taking part (reviewer)": "确认我将参与（审核人）",
+ "Close this case (the time has passed)": "关闭这个案件（期限已过）",
+ "Your wallet is not a wallet party in this case.": "你的钱包不是这个案件的钱包当事方。",
+ "Answer every question.": "请回答所有问题。",
+ "Answer every disputed question.": "请回答所有有争议的问题。",
+ "review failed:": "审核失败：",
+ "My checker": "我的检查器",
+ "← Back": "← 返回",
+ "Next →": "下一步 →",
+ "Fix the text before switching to forms": "请先修正文本，再切换到表单",
+ "Ask the assistant to fix it.": "请让助手修正。",
+ "Loaded. Review every question and rule below.": "已加载。请检查下面的每个问题和规则。",
+ "How to write the rules": "如何编写规则",
+ "Skipped row": "已跳过的行",
+ ": use conditions like Q1=no and an existing question number.": "：请使用 Q1=no 这样的条件，并使用已存在的问题编号。",
+ "✓ Published on X Layer.": "✓ 已发布到 X Layer。",
+ ", rule set #": "，规则集 #",
+ "Open your published checker": "打开你已发布的检查器",
+ "Copy the link to share": "复制链接以分享",
+ "Anyone who opens that link sees whether the rules match what you published, and the result is confirmed by the processor.": "任何人打开这个链接，都能看到规则是否与你发布的一致，结果也会由处理器确认。",
+ "This checker needs": "这个检查器需要",
+ "NAND, more than the 40 free ones, so you'll also buy a few (about 0.00066 OKB).": "个 NAND，超过免费的 40 个，所以你还需要再买几个（约 0.00066 OKB）。",
+ "Connecting your wallet…": "正在连接你的钱包…",
+ "You cancelled in the wallet. Nothing more was sent.": "你在钱包中取消了操作，之后没有再发送任何内容。",
+ "logic steps": "个逻辑步骤",
+ "answer combinations.": "种答案组合。",
+ "The checker name must be 1 to 80 characters.": "检查器名称必须为 1 到 80 个字符。",
+ "Your wallet has": "你的钱包有",
+ "OKB but about": "OKB，但大约需要",
+ "OKB is needed for the fees (plus a little gas).": "OKB 用于支付费用（外加少量 gas）。",
+ "Step 1: claiming your free NAND tokens. Confirm in your wallet…": "第 1 步：领取你的免费 NAND 代币。请在钱包中确认…",
+ "Step 2: buying": "第 2 步：购买",
+ "more NAND for": "个 NAND，花费",
+ "OKB. Confirm in your wallet…": "OKB。请在钱包中确认…",
+ "Step 3: recording your circuit permanently (fee": "第 3 步：永久记录你的电路（费用",
+ "OKB). Confirm in your wallet…": "OKB）。请在钱包中确认…",
+ "Your circuit was recorded, but its number could not be read. Find it in this transaction on the explorer:": "你的电路已记录，但无法读取它的编号。请在区块浏览器上的这笔交易中查找：",
+ "Step 4: registering the rules as a public rule set (circuit #": "第 4 步：把规则登记为公开的规则集（电路 #",
+ "). Confirm in your wallet…": "）。请在钱包中确认…",
+ "I have no financial, personal or professional relationship with either side that could affect this decision, and neither side has contacted me privately about it. I relied only on the evidence shared in this case.": "我与任何一方都没有可能影响本次裁决的经济、个人或职业关系，也没有任何一方就此私下联系过我。我只依据本案中共享的证据作出裁决。",
+ "characters). It is shown publicly.": "个字符）。它会公开显示。",
+ "Write a one-line reason (at least": "请写一句话的理由（至少",
+ "The one-line reason is too long:": "这句话的理由太长了：最多",
+ "bytes at most (accented letters count double).": "字节（带重音的字母按两个计算）。",
+ "Explain your reasons in a few sentences (at least": "请用几句话说明你的理由（至少",
+ "characters): which evidence you relied on and what you could not verify.": "个字符）：你依据了哪些证据，以及哪些内容你无法核实。",
+ "Keep the full reasons under": "完整理由请控制在以下字符以内：",
+ "Tick the declaration that you have no conflict of interest, or do not decide this case.": "请勾选你没有利益冲突的声明，否则请不要裁决这个案件。",
+ "Your reasons (required)": "你的理由（必填）",
+ "Both sides and anyone who reads this case can see that you gave reasons. Explain which evidence you relied on and what you could not verify. Do not name people.": "双方以及任何阅读本案的人都能看到你给出了理由。请说明你依据了哪些证据、哪些内容无法核实，并且不要点名具体的人。",
+ "One-line reason (public)": "一句话理由（公开）",
+ "Full reasons (kept in a file you download; only its fingerprint is recorded)": "完整理由（保存在你下载的文件里，只有它的指纹会被记录）",
+ "For example: report shows impact damage": "例如：报告显示有撞击损伤",
+ "Which evidence did you rely on, and how did it answer each disputed question?": "你依据了哪些证据？它们如何回答每个有争议的问题？",
+ "Enter your name (2 to": "请输入你的姓名（",
+ "Keep the role under": "职位请控制在以下字符以内：",
+ "Enter the address of a public page you control, starting with https:// (for example your GitHub profile or company page).": "请输入一个由你控制的公开页面地址，以 https:// 开头（例如你的 GitHub 主页或公司页面）。",
+ "The profile has no valid address.": "这份资料没有有效的地址。",
+ "The signature does not match the address, so this profile is not genuine.": "签名与地址不匹配，所以这份资料不是真实的。",
+ "That profile code could not be read.": "无法读取这个资料代码。",
+ "The page address is not a plain https:// address.": "页面地址不是普通的 https:// 地址。",
+ "The page answered with an error.": "该页面返回了错误。",
+ "The page was read, but it does not contain the signed profile.": "页面已读取，但其中没有这份签名资料。",
+ "The browser is not allowed to read that page (most sites do not allow it), or it could not be reached.": "浏览器无权读取该页面（大多数网站都不允许），或者无法访问它。",
+ "public page confirms it": "公开页面已确认",
+ "page does not show the proof": "页面上没有显示证明",
+ "page could not be read here": "此处无法读取该页面",
+ "identity signed by this wallet": "身份已由该钱包签名",
+ "Who is this reviewer?": "这位审核人是谁？",
+ "Looking for a signed identity…": "正在查找签名身份…",
+ "No signed identity was found for": "没有找到以下地址的签名身份：",
+ ". Anyone can be named reviewer by an address alone, so ask this person to add a profile before you accept them.": "。任何人只凭一个地址就能被指定为审核人，所以在接受之前，请让这个人先添加资料。",
+ "signed by this wallet": "由该钱包签名",
+ "The name was signed with the wallet": "这个名字是用以下钱包签名的：",
+ ", and anyone can re-check that signature.": "，任何人都能重新核对这个签名。",
+ "The signed profile code": "已签名的资料代码",
+ "This shows that whoever controls the wallet also controls the public page. It does not show that the person is honest or free of conflicts.": "这只能说明控制该钱包的人同时也控制着这个公开页面，并不能说明此人诚实或没有利益冲突。",
+ "Open the page and look for the code above.": "请打开该页面，查找上面的代码。",
+ "This is my address: set up my profile": "这是我的地址：设置我的资料",
+ "Connect your wallet…": "请连接你的钱包…",
+ ", not": "，而不是",
+ ". Switch accounts in your wallet and try again.": "。请在钱包中切换账户后再试。",
+ "Sign a short statement with this wallet.": "用这个钱包签署一段简短的声明。",
+ "It costs nothing and sends no transaction.": "这不花费任何费用，也不会发送交易。",
+ "Your name": "你的姓名",
+ "Role or organisation (optional)": "职位或机构（可选）",
+ "A public page you control": "你控制的公开页面",
+ "Sign with my wallet": "用我的钱包签名",
+ "Confirm the signature in your wallet…": "请在钱包中确认签名…",
+ "Your profile is signed": "你的资料已签名",
+ "Put this code on your public page (in your bio, or a note on the page), so anyone can see that the page and the wallet belong to the same person.": "把这个代码放到你的公开页面上（放在简介里，或页面上的一条备注），这样任何人都能看出这个页面和这个钱包属于同一个人。",
+ "Copy the code": "复制代码",
+ "Copied": "已复制",
+ "Publish it so both sides can see your name next to your address.": "发布它，让双方都能在你的地址旁边看到你的姓名。",
+ "Publish my profile": "发布我的资料",
+ "After you have put the code on your page, check it.": "把代码放到你的页面之后，请检查一下。",
+ "Check my public page": "检查我的公开页面",
+ "Publishing…": "正在发布…",
+ "Published to": "已发布到",
+ "No relay accepted it. Your profile is still kept on this device; try again later.": "没有中继接受它。你的资料仍保存在这台设备上，请稍后再试。",
+ "Reading your page…": "正在读取你的页面…",
+ "Both sides see you as": "双方看到的你是",
+ ", with the identity you signed.": "，使用你签名的身份。",
+ "Both sides currently see only your wallet address.": "双方目前只能看到你的钱包地址。",
+ "Add a signed identity": "添加签名身份",
+ "so they know who decided.": "这样他们就知道是谁作出了裁决。",
+ "The page was read, but it does not contain the signed profile": "页面已读取，但其中没有这份签名资料",
+ "No wallet found. Install a wallet such as OKX Wallet, then reload this page.": "没有找到钱包。请安装 OKX Wallet 之类的钱包，然后刷新本页面。",
+ "The transaction failed on-chain:": "这笔交易在链上失败了：",
+ "Timed out waiting for a transaction. It may still go through:": "等待交易超时。它仍有可能成功：",
+ "A question needs some text.": "问题需要有文字内容。",
+ "A result needs a name.": "结果需要有名称。",
+ "A rule needs at least one condition, such as Q1=no.": "规则至少需要一个条件，例如 Q1=no。",
+ "Add a name: line.": "请添加一行 name:。",
+ "Add at least one question: line.": "请至少添加一行 question:。",
+ "At most 64 questions.": "最多 64 个问题。",
+ "Add at least two result: lines.": "请至少添加两行 result:。",
+ "At most 256 results.": "最多 256 个结果。",
+ "Add a default: line (the result when no rule matches).": "请添加一行 default:（没有规则匹配时的结果）。",
+ "refers to a question that does not exist.": "引用了一个不存在的问题。",
+ "watch the circuit work": "看电路如何运转",
+ "A circuit of NAND gates": "由 NAND 门组成的电路",
+ "The product is not registered and no proof of purchase was shown.": "产品未登记，也没有出示购买凭证。",
+ "The warranty period has ended.": "保修期已结束。",
+ "This type of damage or fault is not covered by the warranty.": "这类损坏或故障不在保修范围内。",
+ "This type of repair is not covered by the warranty.": "这类维修不在保修范围内。",
+ "It was not bought from an authorised seller, so a person has to look at it.": "并非从授权卖家处购买，因此需要由人工查看。",
+ "The usage limit was exceeded, so parts are covered but labour is not.": "已超出使用限制，因此零件在保修范围内，人工费用不在保修范围内。",
+ "Language": "语言",
+ "Agreed in advance under the agreement.": "已根据协议事先约定。",
+ "Both sides accepted this reviewer.": "双方都已接受这位审核人。",
+ "The reviewer can't decide anything until both sides accept.": "在双方都接受之前，审核人无法作出任何裁决。",
+ "Cancel": "取消",
+ "Close": "关闭",
+ "Loading…": "加载中…",
+ "Start from a template": "从模板开始",
+ "Pick a common situation, try its checker for free, then make the rules your own in the builder. Templates are starting points, not legal advice.": "选择一个常见情形，免费试用它的检查器，然后在构建器里把规则改成你自己的。模板只是起点，不构成法律意见。",
+ "Try the checker": "试用检查器",
+ "Use in the builder": "在构建器中使用",
+ "Copy a message to send": "复制一条要发送的消息",
+ "Before you pay, ask for it": "付款之前，先提出这个要求",
+ "Ask the other side: \"Will you accept an LGtie agreement?\" If they will not agree the refund rules before you pay, you have learned something. If they will, you both know what happens if it goes wrong.": "向对方提出：“你愿意接受 LGtie 协议吗？”如果对方不肯在你付款之前就退款规则达成一致，你就已经看出了问题。如果对方愿意，你们双方就都清楚出问题时会怎样处理。",
+ "Selling? Show buyers the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.": "你是卖家？先把规则给买家看。已裁决案件的回执会显示双方约定了哪些规则、每个问题由谁裁定。如果支付公司或平台提出要求，它是有用的佐证材料，但是否采信由他们决定。",
+ "Trying a checker is free and needs no wallet. To use a template in an agreement or a case on X Layer, its rules have to be published first, which costs a small fee. Only the warranty rules are published today.": "试用检查器免费，也无需钱包。若要在 X Layer 上的协议或案件中使用某个模板，需要先发布它的规则，这要支付少量费用。目前只有保修规则已经发布。",
+ "Second-hand sale, freelance work, rental deposit, bug bounty or warranty: try one in a minute.": "二手交易、自由职业、租房押金、漏洞赏金或保修：一分钟就能试一个。",
+ "See the templates": "查看模板",
+ "Templates": "模板",
+ "Specialty:": "专长：",
+ "Fee:": "费用：",
+ "Agreed and paid directly between the parties and the reviewer. LGtie holds no money.": "由当事方与审核人直接约定并支付。LGtie 不托管任何资金。",
+ "What you can judge (optional)": "你擅长裁决什么（可选）",
+ "Your fee (optional)": "你的收费（可选）",
+ "For example: used electronics, smart-contract security": "例如：二手电子产品、智能合约安全",
+ "For example: US$10 per disputed question": "例如：每个有争议的问题 10 美元"
+},
+  patterns: [
+  [/^(\d+) questions? · published on X Layer$/, "{1} 个问题 · 已发布在 X Layer"],
+  [/^Specialty: (.+)$/, "专长：{1}"], [/^Fee: (.+)$/, "费用：{1}"],
+  [/^Keep the specialty under (\d+) characters\.$/, "专长请控制在 {1} 个字符以内。"], [/^Keep the fee under (\d+) characters\.$/, "收费说明请控制在 {1} 个字符以内。"],
+
+  [/^\): opener (accepted ✓|not yet), other side (accepted ✓|not yet)\. ?(.*)$/, (m, a, b, rest) => "): 发起方" + (a === "not yet" ? "尚未接受" : "已接受 ✓") + "，对方" + (b === "not yet" ? "尚未接受" : "已接受 ✓") + "。" + rest.replace("Agreed in advance under the agreement.", "已根据协议事先约定。").replace("Both sides accepted this reviewer.", "双方都已接受这位审核人。").replace("The reviewer can't decide anything until both sides accept.", "在双方都接受之前，审核人无法作出任何裁决。")],
+  [/^(\d+) of (\d+) answered$/, "已回答 {1} / {2} 题"],
+  [/^Answer to question (\d+)$/, "问题 {1} 的答案"], [/^Question (\d+)$/, "问题 {1}"], [/^Evidence for question (\d+)$/, "问题 {1} 的证据"],
+  [/^Result (\d+)$/, "结果 {1}"], [/^Delete result (\d+)$/, "删除结果 {1}"], [/^Result of rule (\d+)$/, "规则 {1} 的结果"], [/^Reason for rule (\d+)$/, "规则 {1} 的原因"],
+  [/^Rule (\d+), question (\d+): (any|yes|no)$/, (m, a, b, c) => "规则 " + a + "，问题 " + b + "：" + ({any: "任意", yes: "是", no: "否"})[c]],
+  [/^(\d+) questions?$/, "{1} 个问题"], [/^(\d+) results?$/, "{1} 个结果"], [/^(\d+) rules?$/, "{1} 条规则"], [/^(\d+) logic steps?$/, "{1} 个逻辑步骤"], [/^(\d+) NAND tokens?$/, "{1} 个 NAND 代币"],
+  [/^on all (\d+) answer combinations\.$/, "在全部 {1} 种答案组合上均一致。"],
+  [/^Technical detail: the checker program \((\d+) inputs?, (\d+) outputs?\)$/, "技术细节：检查器程序（{1} 个输入，{2} 个输出）"],
+  [/^(\d+) days?$/, "{1} 天"], [/^(\d+) day\(s\)$/, "{1} 天"],
+  [/^(\d+) agreements? so far\. Latest:$/, "目前共 {1} 份协议。最新："], [/^(\d+) cases? so far\. Latest:$/, "目前共 {1} 个案件。最新："],
+  [/^Agreement #(\d+)$/, "协议 #{1}"], [/^Case #(\d+)$/, "案件 #{1}"], [/^Case #(\d+): (.+)$/, "案件 #{1}：{2}"], [/^Case #(\d+) · (.+)$/, "案件 #{1} · {2}"],
+  [/^In force since (.+)$/, "自 {1} 起生效"], [/^\(rules #(\d+)\)$/, "（规则 #{1}）"],
+  [/^(\d+) day\(s\) to answer, then (\d+) day\(s\) for the reviewer$/, "{1} 天作答，之后 {2} 天供审核人裁决"],
+  [/^Opened by (\S+) · Other side (\S+) ·$/, "发起方 {1} · 对方 {2} ·"], [/^(\d+) evidence$/, "{1} 份证据"],
+  [/^Final answers: (.+)\. Rule set (\d+), circuit #(\d+)\. The reviewer decided (\d+) disputed question\(s\); everything else was agreed\.$/, (m, a, r, c, n) => "最终答案：" + a.replace(/=yes/g, "=是").replace(/=no/g, "=否") + "。规则集 " + r + "，电路 #" + c + "。审核人裁决了 " + n + " 个有争议的问题，其余均已一致。"],
+  [/^Final answers: (.+)\. Rule set (\d+), circuit #(\d+)\.(.*)$/, (m, a, r, c, rest) => "最终答案：" + a.replace(/=yes/g, "=是").replace(/=no/g, "=否") + "。规则集 " + r + "，电路 #" + c + "。" + rest],
+  [/^Other contracts can read this verdict \(result number (\d+)\) from the case contract, for example to release a payment\.$/, "其他合约可以从案件合约中读取这项裁决（结果编号 {1}），例如用来释放一笔付款。"],
+  [/^Result receipt · case #(\d+)$/, "结果回执 · 案件 #{1}"], [/^Receipt for case #(\d+)$/, "案件 #{1} 的回执"],
+  [/^#(\d+) \(rules, reviewer and time limits fixed in advance\)$/, "#{1}（规则、审核人和时间限制均已事先确定）"], [/^#(\d+) · public logic #(\d+) on X Layer$/, "#{1} · X Layer 上的公开逻辑 #{2}"],
+  [/^or read case (\d+) on the$/, "或读取案件 {1}，位于"],
+  [/^(\d+) cases? read\. A case counts for the reviewer currently named on it\.$/, "已读取 {1} 个案件。案件计入其当前指定的审核人。"],
+  [/^Showing the latest (\d+) of (\d+) cases\. (\d+) cases? read\. A case counts for the reviewer currently named on it\.$/, "显示 {2} 个案件中的最新 {1} 个。已读取 {3} 个案件。案件计入其当前指定的审核人。"],
+  [/^Based on all (\d+) cases?\.$/, "基于全部 {1} 个案件。"], [/^Based on the latest (\d+) of (\d+) cases\.$/, "基于 {2} 个案件中的最新 {1} 个。"],
+  [/^passkey account #(\d+)$/, "通行密钥账户 #{1}"], [/^Opened by passkey account #(\d+) · Other side$/, "发起方：通行密钥账户 #{1} · 对方"], [/^Reviewer's reason: “(.+)”$/, "审核人的理由：“{1}”"],
+  [/^(\d+) min ago$/, "{1} 分钟前"], [/^(\d+) h ago$/, "{1} 小时前"], [/^(\d+) days ago$/, "{1} 天前"],
+  [/^(.+)\. (\d+) of (\d+) answers were agreed, and the reviewer decided the other (\d+)\. Read from X Layer just now\.$/, "{1}。{3} 个答案中有 {2} 个达成一致，其余 {4} 个由审核人裁决。刚刚从 X Layer 读取。"],
+  [/^(.+)\. Both sides agreed on all (\d+) answers\. Read from X Layer just now\.$/, "{1}。双方对全部 {2} 个答案达成一致。刚刚从 X Layer 读取。"],
+  [/^(.+)\. Read from X Layer just now\.$/, "{1}。刚刚从 X Layer 读取。"],
+  [/^✓ These rules match rules #(\d+) published on X Layer\.$/, "✓ 这些规则与 X Layer 上已发布的规则 #{1} 一致。"],
+  [/^These rules do not match rules #(\d+) on X Layer, so the result below is only a preview\. Ask the business for the original link\.$/, "这些规则与 X Layer 上的规则 #{1} 不一致，所以下面的结果仅供预览。请向商家索取原始链接。"],
+  [/^Circuit #(\d+) has (\d+) inputs, but you gave (\d+) answers\.$/, "电路 #{1} 有 {2} 个输入，但你给出了 {3} 个答案。"],
+  [/^Result number: (\d+)$/, "结果编号：{1}"],
+  [/^\(circuit #(\d+) has (\d+) inputs and (\d+) outputs; owner (.+)\)$/, "（电路 #{1} 有 {2} 个输入和 {3} 个输出；所有者 {4}）"],
+  [/^Open the checker that matches this circuit to see what result number (\d+) means\.$/, "打开与这个电路对应的检查器，即可了解结果编号 {1} 的含义。"],
+  [/^✓ Account #(\d+) is controlled by your passkey\.$/, "✓ 账户 #{1} 由你的通行密钥控制。"],
+  [/^Accept agreement #(\d+)$/, "接受协议 #{1}"], [/^Start a dispute under agreement #(\d+)$/, "在协议 #{1} 下发起争议"], [/^Evidence for case #(\d+)$/, "案件 #{1} 的证据"], [/^Answers for case #(\d+)$/, "案件 #{1} 的答案"],
+  [/^You have been named the neutral reviewer for agreement #(\d+) \((.+)\) on LGtie\.$/, "你已被指定为 LGtie 上协议 #{1}（{2}）的中立审核人。"],
+  [/^If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons\.$/, "如果双方对任何答案有分歧，案件就会等待你，你只需裁决他们有分歧的问题，并写明理由。"],
+  [/^Open (\S+), connect your wallet, and any case waiting for you appears there\.$/, "打开 {1}，连接你的钱包，所有等待你的案件都会显示在那里。"],
+  [/^You pay a small network fee\.$/, "你需要支付微小的网络手续费。"], [/^Nothing is held in escrow\.$/, "不托管任何资金。"],
+  [/^(\d+) of (\d+) bytes$/, "{1} / {2} 字节"], [/^Published to (\d+) relays?\.$/, "已发布到 {1} 个中继。"],
+  [/^Write a one-line reason \(at least (\d+) characters\)\. It is shown publicly\.$/, "请写一句话的理由（至少 {1} 个字符）。它会公开显示。"],
+  [/^The one-line reason is too long: (\d+) bytes at most \(accented letters count double\)\.$/, "这句话的理由太长了：最多 {1} 字节（带重音的字母按两个计算）。"],
+  [/^Explain your reasons in a few sentences \(at least (\d+) characters\): which evidence you relied on and what you could not verify\.$/, "请用几句话说明你的理由（至少 {1} 个字符）：你依据了哪些证据，以及哪些内容你无法核实。"],
+  [/^Keep the full reasons under (\d+) characters\.$/, "完整理由请控制在 {1} 个字符以内。"], [/^Enter your name \(2 to (\d+) characters\)\.$/, "请输入你的姓名（2 到 {1} 个字符）。"], [/^Keep the role under (\d+) characters\.$/, "职位请控制在 {1} 个字符以内。"],
+  [/^That is not a reviewer profile code \(it should start with (.+)\)\.$/, "这不是审核人资料代码（它应以 {1} 开头）。"],
+  [/^No signed identity was found for (\S+)\. Anyone can be named reviewer by an address alone, so ask this person to add a profile before you accept them\.$/, "没有找到 {1} 的签名身份。任何人只凭一个地址就能被指定为审核人，所以在接受之前，请让这个人先添加资料。"],
+  [/^The connected wallet is (\S+), not (\S+)\. Switch accounts in your wallet and try again\.$/, "当前连接的钱包是 {1}，而不是 {2}。请在钱包中切换账户后再试。"],
+  [/^Both sides see you as (.+), with the identity you signed\.$/, "双方看到的你是 {1}，使用的是你签名的身份。"],
+  [/^Your wallet has ([\d.]+) OKB but about ([\d.]+) OKB is needed for the fees \(plus a little gas\)\.$/, "你的钱包有 {1} OKB，但费用大约需要 {2} OKB（外加少量 gas）。"],
+  [/^Step 2: buying (\d+) more NAND for ([\d.]+) OKB\. Confirm in your wallet…$/, "第 2 步：花费 {2} OKB 再购买 {1} 个 NAND。请在钱包中确认…"],
+  [/^Step 3: recording your circuit permanently \(fee ([\d.]+) OKB\)\. Confirm in your wallet…$/, "第 3 步：永久记录你的电路（费用 {1} OKB）。请在钱包中确认…"],
+  [/^Step 4: registering the rules as a public rule set \(circuit #(\d+)\)\. Confirm in your wallet…$/, "第 4 步：把规则登记为公开的规则集（电路 #{1}）。请在钱包中确认…"],
+  [/^This checker needs (\d+) NAND, more than the 40 free ones, so you'll also buy a few \(about ([\d.]+) OKB\)\.$/, "这个检查器需要 {1} 个 NAND，超过免费的 40 个，所以你还需要再买几个（约 {2} OKB）。"],
+  [/^Listening on (\d+) relays? for (.+)$/, "正在监听 {1} 个中继，对象：{2}"],
+  ]
+};
+
+</script><script>/* lang.js */
+// Two languages: Chinese (the default) and English. The app's logic, rule text and on-chain data stay in English; this layer translates what is shown.
+//  - The language is remembered on this device (localStorage "lgtie.lang"); `?lang=en` or `?lang=zh` in the address sets it.
+//  - In Chinese, every piece of text that appears on the page (and every placeholder, title and aria-label) is looked up in zh.js: first as a whole
+//    string, then as a pattern with numbers and names filled in, then phrase by phrase inside longer text (so dates, numbers and addresses survive).
+//    A MutationObserver translates pages as they are drawn, so no page needs to know about languages. Text with no entry stays in English.
+//  - In English nothing is changed or observed.
+(function () {
+  "use strict";
+  const KEY = "lgtie.lang";
+  let lang = null; try { lang = localStorage.getItem(KEY); } catch (e) {}
+  const q = /[?&]lang=(en|zh)\b/.exec(location.search); if (q) { lang = q[1]; try { localStorage.setItem(KEY, lang); } catch (e) {} }
+  if (lang !== "en" && lang !== "zh") lang = "zh";                       // Chinese is the default
+  const root = document.documentElement; root.lang = lang === "zh" ? "zh-CN" : "en";
+  const set = l => { try { localStorage.setItem(KEY, l); } catch (e) {} location.reload(); };
+  window.TB_I18N = {lang, set};
+
+  // the language switch in the header
+  const nav = document.getElementById("nav");
+  if (nav) {
+    const w = document.createElement("span"); w.className = "langsw"; w.setAttribute("role", "group"); w.setAttribute("aria-label", "Language");
+    [["zh", "中文"], ["en", "EN"]].forEach(([l, t]) => { const b = document.createElement("button"); b.type = "button"; b.textContent = t; b.lang = l; b.dataset.notr = "1"; b.setAttribute("aria-pressed", l === lang ? "true" : "false"); if (l === lang) b.className = "on"; b.onclick = () => l !== lang && set(l); w.appendChild(b); });
+    nav.appendChild(w);
+  }
+  if (lang === "en") return;
+
+  const Z = window.TB_ZH || {dict: {}, patterns: []}, dict = Z.dict, patterns = Z.patterns;
+  const gloss = Object.keys(dict).filter(k => k.length >= 12 || (k.length >= 6 && k.includes(" "))).sort((a, b) => b.length - a.length);   // phrases only: single short words would corrupt longer text
+  const cache = new Map(), HAS = /[A-Za-z]/;
+  const norm = s => s.replace(/\s+/g, " ");
+  const fill = (tpl, g) => tpl.replace(/\{(\d)\}/g, (m, i) => { const c = g[i - 1]; return c !== undefined && dict[c] ? dict[c] : c; });
+  // 1) the whole string, 2) a pattern with numbers and names, 3) sentence by sentence, 4) known phrases inside the text
+  function exact(c) { let out = dict[c]; if (out !== undefined) return out; for (const [re, rep] of patterns) { const m = re.exec(c); if (m) return typeof rep === "function" ? rep(...m) : fill(rep, m.slice(1)); } }
+  const phrases = c => { let s = c; for (const k of gloss) if (s.includes(k)) s = s.split(k).join(dict[k]); return s; };
+  function tr(core) {
+    if (cache.has(core)) return cache.get(core);
+    let out = exact(core);
+    if (out === undefined) {
+      const parts = core.split(/(?<=[.!?])\s+/);
+      if (parts.length > 1) { const t = parts.map(x => { const e = exact(x); return e !== undefined ? e : phrases(x); }); out = t.reduce((a, x, i) => a + (i && (/[\u4e00-\u9fff。！？”）]$/.test(a) || /^[\u4e00-\u9fff]/.test(x)) ? "" : (i ? " " : "")) + x, ""); }
+      else out = phrases(core);
+    }
+    if (cache.size > 5000) cache.clear(); cache.set(core, out); return out;
+  }
+  const trim = s => { const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(s); const core = norm(m[2]); if (!core || !HAS.test(core)) return s; const t = tr(core); return t === core ? s : m[1] + t + m[3]; };
+
+  // dates in the user's language (the app asks for "the browser's language")
+  const tls = Date.prototype.toLocaleString; Date.prototype.toLocaleString = function (loc, o) { return tls.call(this, loc === undefined || (Array.isArray(loc) && !loc.length) ? "zh-CN" : loc, o); };
+
+  const SKIP = /^(SCRIPT|STYLE|CODE|PRE|NOSCRIPT)$/i, ATTRS = ["placeholder", "title", "aria-label", "alt", "data-l"];
+  const done = new WeakMap(), adone = new WeakMap();
+  const skipNode = n => { for (let e = n; e && e.nodeType === 1; e = e.parentNode) if (e.dataset && e.dataset.notr) return true; return false; };
+  function text(n) { const p = n.parentNode; if (!p || SKIP.test(p.nodeName) || skipNode(p)) return; const s = n.data; if (done.get(n) === s) return; const t = trim(s); if (t !== s) { done.set(n, t); n.data = t; } }
+  function attr(e, a) { const v = e.getAttribute(a); if (!v || /\bQ\d=/.test(v)) return;   // rule-syntax examples stay as written
+    const rec = adone.get(e) || {}; if (rec[a] === v) return; const t = trim(v); if (t !== v) { rec[a] = t; adone.set(e, rec); e.setAttribute(a, t); } }
+  function walk(n) {
+    if (n.nodeType === 3) return text(n); if (n.nodeType !== 1) return;
+    if (/^(SCRIPT|STYLE|NOSCRIPT)$/i.test(n.nodeName) || skipNode(n)) return;
+    for (const a of ATTRS) if (n.hasAttribute(a)) attr(n, a);
+    if (/^(CODE|PRE)$/i.test(n.nodeName)) return;
+    for (let c = n.firstChild; c; c = c.nextSibling) walk(c);
+  }
+  new MutationObserver(muts => { for (const m of muts) { if (m.type === "childList") m.addedNodes.forEach(walk); else if (m.type === "characterData") text(m.target); else if (m.type === "attributes") attr(m.target, m.attributeName); } })
+    .observe(root, {childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS});
+  walk(root);
+})();
+
+</script><script>/* rules.js */
 // LGtie rule engine: parse a plain-text policy, run it, compile it to a TapeOut NAND netlist, prove the two agree.
 // Works in the browser (window.TB) and in Node (require). No dependencies.
 (function (root) {
@@ -580,6 +1634,210 @@ default: Low : It is reproducible and in scope, but there is no loss of funds an
 
   const API = {parse, run, compile, verify, resultBits, encodeAnswers, decodeAnswers, canonical, hexOf, evalGates, TEMPLATES, Net};
   if (typeof module !== "undefined" && module.exports) module.exports = API; else root.TB = API;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script><script>/* templates.js */
+// One-click rule templates for common arguments, in English and Chinese, and the #templates page.
+//  - Every template is ordinary rules text (the same format the builder reads), so each one gets a free checker (#check/<key>) and can be
+//    opened in the builder (#build/<key>) and changed. Nothing is published on X Layer until the person using it publishes it.
+//  - English is the canonical text. The published warranty rules are always checked in English, because their fingerprint is recorded on-chain.
+//    Everything else follows the page language, so a Chinese-speaking user starts from Chinese questions.
+//  - Rules are checked top to bottom and the first match decides. Questions are worded so that "yes" is the good answer.
+// Pure data and functions work in Node (module.exports) for tests; the page uses the browser.
+(function (root) {
+  "use strict";
+  const TB = root.TB || (typeof require !== "undefined" ? require("./rules.js") : null);
+
+  const LIBRARY = [
+    {key: "secondhand",
+      en: {chip: "Second-hand sale", title: "Second-hand sale", blurb: "A used phone, laptop or part is not as described.", text: `name: Second-hand sale
+about: Agree a refund or return in advance, for when a used item is not as described.
+question: Does the item match the description and photos in the listing? | Listing screenshot and photos of what arrived
+question: Does the item switch on and work normally? | Video of the item being switched on
+question: Is the IMEI or serial number clean, not blocked, locked or reported lost? | IMEI or serial number check
+question: Was the problem reported within 48 hours of delivery? | Delivery confirmation and the message with its time
+question: If the item is being returned, is it sent back in the condition it arrived in? | Photos taken before sending it back
+result: Full refund
+result: No refund
+rule: Q4=no -> No refund : The problem was not reported within 48 hours of delivery.
+rule: Q5=no -> No refund : The item was not returned in the condition it arrived in.
+rule: Q3=no -> Full refund : The item is blocked, locked or reported lost, which the seller should have said.
+rule: Q1=no -> Full refund : The item does not match the listing.
+rule: Q2=no -> Full refund : The item does not work and the listing did not say so.
+default: No refund : The item matches the listing, works, and has no lock or block.
+`},
+      zh: {chip: "二手交易", title: "二手交易", blurb: "二手手机、电脑或配件与描述不符。", text: `name: 二手交易
+about: 在交易前先约定好：二手物品与描述不符时如何退款或退货。
+question: 物品与商品页面的描述和照片相符吗？ | 商品页面截图和收到物品的照片
+question: 物品能正常开机并正常使用吗？ | 物品开机的视频
+question: IMEI 或序列号是干净的，没有被拉黑、锁定或报失吗？ | IMEI 或序列号查询结果
+question: 是否在收货后 48 小时内反馈了问题？ | 签收确认，以及带时间的聊天记录
+question: 如果需要退货，物品是否以收到时的状态寄回？ | 寄回前拍摄的照片
+result: 全额退款
+result: 不退款
+rule: Q4=no -> 不退款 : 没有在收货后 48 小时内反馈问题。
+rule: Q5=no -> 不退款 : 物品没有以收到时的状态退回。
+rule: Q3=no -> 全额退款 : 物品被拉黑、锁定或报失，卖家本应事先说明。
+rule: Q1=no -> 全额退款 : 物品与商品描述不符。
+rule: Q2=no -> 全额退款 : 物品无法使用，而且商品描述中没有说明。
+default: 不退款 : 物品与描述相符，能正常使用，也没有锁定或拉黑。
+`}},
+    {key: "freelance",
+      en: {chip: "Freelance milestone", title: "Freelance milestone", blurb: "The client and the freelancer disagree about delivered work.", text: `name: Freelance milestone
+about: Agree in advance how a milestone is paid when the client and the freelancer disagree about the work.
+question: Was the work delivered by the agreed deadline? | Delivery message with its time
+question: Does the delivered work match the agreed brief or spec? | The brief next to the deliverable
+question: Does it work as described (it opens, builds or runs)? | Test run or screen recording
+question: Were the agreed number of revisions completed? | Revision requests and replies
+result: Pay in full
+result: Pay half
+result: Do not pay
+rule: Q2=no & Q3=no -> Do not pay : The work neither matches the brief nor works.
+rule: Q2=no -> Pay half : The work runs, but does not match the agreed brief.
+rule: Q3=no -> Pay half : The work matches the brief, but does not work properly.
+rule: Q1=no -> Pay half : The work was delivered after the deadline.
+rule: Q4=no -> Pay half : The agreed revisions were not completed.
+default: Pay in full : Delivered on time, matches the brief, works, and the revisions are done.
+`},
+      zh: {chip: "自由职业里程碑", title: "自由职业里程碑付款", blurb: "客户与自由职业者对交付的成果有分歧。", text: `name: 自由职业里程碑付款
+about: 事先约定：当客户与自由职业者对成果有分歧时，这一阶段的款项怎么付。
+question: 成果是否在约定的截止时间前交付？ | 带时间的交付消息
+question: 交付的成果是否符合约定的需求说明？ | 需求说明与交付物对照
+question: 成果能按描述正常使用吗（能打开、能构建或能运行）？ | 测试运行或屏幕录像
+question: 约定次数的修改是否已完成？ | 修改请求和回复记录
+result: 全额支付
+result: 支付一半
+result: 不支付
+rule: Q2=no & Q3=no -> 不支付 : 成果既不符合需求说明，也无法正常使用。
+rule: Q2=no -> 支付一半 : 成果能运行，但不符合约定的需求说明。
+rule: Q3=no -> 支付一半 : 成果符合需求说明，但无法正常使用。
+rule: Q1=no -> 支付一半 : 成果在截止时间之后才交付。
+rule: Q4=no -> 支付一半 : 约定的修改没有完成。
+default: 全额支付 : 按时交付，符合需求说明，能正常使用，修改也已完成。
+`}},
+    {key: "rental",
+      en: {chip: "Rental deposit", title: "Rental deposit", blurb: "How much of the deposit goes back when a tenancy ends.", text: `name: Rental security deposit
+about: Agree in advance how much of the deposit is returned when a tenancy ends. A starting point only: local law may set its own rules.
+question: Were the keys and access cards returned on the agreed date? | Handover message or receipt
+question: Is the property free of damage beyond normal wear and tear? | Move-in and move-out photos
+question: Are the items on the inventory all there and working? | Inventory list with photos
+question: Was the property left reasonably clean, as it was at move-in? | Move-in and move-out photos
+question: Is all rent and all bills paid up to the end date? | Payment records
+result: Return the full deposit
+result: Keep part of the deposit
+result: Needs review
+rule: Q5=no -> Keep part of the deposit : Rent or bills are unpaid.
+rule: Q2=no -> Keep part of the deposit : There is damage beyond normal wear and tear.
+rule: Q3=no -> Keep part of the deposit : Items from the inventory are missing or not working.
+rule: Q4=no -> Keep part of the deposit : The property was not left reasonably clean.
+rule: Q1=no -> Needs review : The keys were not returned on the agreed date, so a person should look at it.
+default: Return the full deposit : Keys returned, no damage, inventory complete, clean, and everything paid.
+`},
+      zh: {chip: "租房押金", title: "租房押金", blurb: "租期结束时押金退多少。", text: `name: 租房押金
+about: 事先约定：租期结束时押金退多少。这只是一个起点，当地法律可能另有规定。
+question: 钥匙和门禁卡是否在约定日期归还？ | 交接消息或收据
+question: 房屋是否没有超出正常损耗的损坏？ | 入住和退租时的照片
+question: 清单上的物品是否齐全且能正常使用？ | 带照片的物品清单
+question: 房屋是否保持了入住时那样的基本整洁？ | 入住和退租时的照片
+question: 租金和各项费用是否已付清至结束日期？ | 付款记录
+result: 全额退还押金
+result: 扣留部分押金
+result: 需要复核
+rule: Q5=no -> 扣留部分押金 : 租金或费用尚未付清。
+rule: Q2=no -> 扣留部分押金 : 存在超出正常损耗的损坏。
+rule: Q3=no -> 扣留部分押金 : 清单上的物品缺失或无法使用。
+rule: Q4=no -> 扣留部分押金 : 房屋没有保持基本整洁。
+rule: Q1=no -> 需要复核 : 钥匙没有在约定日期归还，因此需要由人工查看。
+default: 全额退还押金 : 钥匙已归还、无损坏、清单齐全、整洁，且款项已付清。
+`}},
+    {key: "bounty",
+      en: {chip: "Bug bounty example", title: "Bug bounty severity", blurb: "How serious is a reported vulnerability?", text: null},
+      zh: {chip: "漏洞赏金示例", title: "漏洞赏金严重程度", blurb: "所报告的漏洞有多严重？", text: `name: 漏洞赏金严重程度
+about: 通过回答简单的问题，而不是争论等级标签，来商定所报告漏洞的严重程度。
+question: 攻击者无需任何特殊角色或权限就能发起吗？ | 来自无特权账户的复现步骤
+question: 它会导致未经授权的资金或资产损失吗？ | 概念验证或交易追踪
+question: 它会影响多个用户或资金池吗？ | 展示第二个受害者的概念验证
+question: 它无需任何受害者签名或点击就能生效吗？ | 无需受害者操作的演示
+question: 攻击者能以同样效果重复实施吗？ | 在同一分叉上再运行一次
+question: 损害是永久性的，项目无法逆转吗？ | 恢复方案分析
+question: 审核人能在分叉网络或测试网上复现吗？ | 审核人的复现记录
+question: 受影响的资产在项目公布的范围清单内吗？ | 范围条目链接
+result: 驳回
+result: 低危
+result: 中危
+result: 高危
+result: 严重
+rule: Q8=no -> 驳回 : 受影响的资产不在项目的范围内。
+rule: Q7=no -> 驳回 : 该问题无法复现。
+rule: Q1=yes & Q2=yes & Q4=yes & Q6=yes -> 严重 : 任何人都能在没有受害者操作的情况下永久窃取资金。
+rule: Q2=yes & Q6=yes -> 高危 : 资金可能被永久损失，但攻击需要特殊角色或受害者的操作。
+rule: Q2=yes -> 中危 : 资金可能损失，但损失可以逆转。
+rule: Q6=yes -> 中危 : 造成永久性损害，但没有资金损失。
+default: 低危 : 可以复现且在范围内，但没有资金损失，也没有永久性损害。
+`}},
+    {key: "warranty",
+      en: {chip: "Warranty example", title: "Warranty claim", blurb: "Is a repair covered? These rules are published on X Layer.", text: null},
+      zh: {chip: "保修示例", title: "保修理赔", blurb: "维修是否在保修范围内？这套规则已发布在 X Layer 上。", text: `name: 保修理赔
+about: 在提交理赔之前，先查明维修是否在保修范围内。
+question: 产品是否已登记，或者你能否出示购买凭证？ | 登记号或收据
+question: 是否仍在保修期内？ | 购买日期
+question: 是否从授权卖家处购买？ | 收据上的卖家名称
+question: 此类损坏或故障是否属于保修范围？ | 故障描述和照片
+question: 是否不存在免责原因，例如进水、摔落或未经授权的维修？ | 维修中心检测记录
+question: 产品是否未超出使用限制？ | 使用读数或使用时长
+question: 你需要的维修是否属于保修范围？ | 维修中心报价
+result: 不予保修
+result: 需要复核
+result: 部分保修（零件，不含人工）
+result: 予以保修
+rule: Q1=no -> 不予保修 : 产品未登记，也没有出示购买凭证。
+rule: Q2=no -> 不予保修 : 保修期已结束。
+rule: Q4=no -> 不予保修 : 这类损坏或故障不在保修范围内。
+rule: Q5=no -> 不予保修 : 发现了免责原因（例如进水、摔落或未经授权的维修）。
+rule: Q7=no -> 不予保修 : 这类维修不在保修范围内。
+rule: Q3=no -> 需要复核 : 并非从授权卖家处购买，因此需要由人工查看。
+rule: Q6=no -> 部分保修（零件，不含人工） : 已超出使用限制，因此零件在保修范围内，人工费用不在保修范围内。
+default: 予以保修 : 保修的所有条件均已满足。
+`}}
+  ];
+
+  // English text of warranty and bounty already lives in rules.js; the new templates are added to TB.TEMPLATES so every code path can find them.
+  LIBRARY.forEach(t => { if (t.en.text === null) t.en.text = TB.TEMPLATES[t.key]; else TB.TEMPLATES[t.key] = t.en.text; });
+  const find = key => LIBRARY.find(t => t.key === key);
+  const lang = () => (root.TB_I18N && root.TB_I18N.lang) || "en";
+  const published = key => !!(root.TB_CONFIG && root.TB_CONFIG.published && root.TB_CONFIG.published[key]);
+  // The rules text to use for a template. `forCheck`: a checker page, where a PUBLISHED template must stay in English (its fingerprint is on-chain).
+  function templateText(key, forCheck) {
+    const t = find(key); if (!t) return TB.TEMPLATES[key];
+    if (forCheck && published(key)) return t.en.text;
+    return lang() === "zh" ? t.zh.text : t.en.text;
+  }
+  const info = key => { const t = find(key); return t ? (lang() === "zh" ? t.zh : t.en) : null; };
+  TB.LIBRARY = LIBRARY; TB.templateText = templateText; TB.templateInfo = info;
+
+  const api = {LIBRARY, templateText, info, find};
+  if (typeof module !== "undefined" && module.exports) { module.exports = api; return; }
+
+  // ---------- the #templates page ----------
+  const main = document.querySelector("#main"), esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const base = () => location.href.split("#")[0];
+  const message = key => lang() === "zh"
+    ? `在开始之前，我们能不能先约定好万一出问题怎么处理？这是我们双方都会回答的问题，以及决定结果的规则：${base()}#check/${key}\n如果将来有分歧，只有我们答案不一致的问题才会交给中立的第三方。你接受 LGtie 协议吗？`
+    : `Before we go ahead, can we agree in advance what happens if something goes wrong? Here are the questions we would both answer, and the rules that decide the result: ${base()}#check/${key}\nIf we ever disagree, only the questions we answer differently go to a neutral person. Do you accept an LGtie agreement?`;
+  function page() {
+    const cards = LIBRARY.map(t => {
+      const i = info(t.key), n = TB.parse(templateText(t.key, true)).policy.questions.length;
+      return `<div class="card"><h3>${esc(i.title)}</h3><p class="small">${esc(i.blurb)}</p><p class="small mute">${n} questions${published(t.key) ? " · published on X Layer" : ""}</p>
+        <div class="row"><a class="btn small" href="#check/${t.key}">Try the checker</a><a class="btn small ghost" href="#build/${t.key}">Use in the builder</a><button class="btn small ghost" data-msg="${t.key}" type="button">Copy a message to send</button></div></div>`;
+    }).join("");
+    main.innerHTML = `<h1>Start from a template</h1><p class="lede">Pick a common situation, try its checker for free, then make the rules your own in the builder. Templates are starting points, not legal advice.</p>
+      <div class="grid2">${cards}</div>
+      <div class="card"><h3>Before you pay, ask for it</h3><p class="small">Ask the other side: "Will you accept an LGtie agreement?" If they will not agree the refund rules before you pay, you have learned something. If they will, you both know what happens if it goes wrong.</p>
+        <p class="small">Selling? Show buyers the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.</p></div>
+      <div class="note">Trying a checker is free and needs no wallet. To use a template in an agreement or a case on X Layer, its rules have to be published first, which costs a small fee. Only the warranty rules are published today.</div>`;
+    main.querySelectorAll("[data-msg]").forEach(b => b.onclick = async () => { const t = message(b.dataset.msg); try { await navigator.clipboard.writeText(t); const o = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = o, 1400); } catch { prompt("Copy:", t); } });
+  }
+  root.TB_TEMPLATES = Object.assign(api, {page});
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script><script>/* pkcore.js */
@@ -928,11 +2186,12 @@ How it works: rules are checked from top to bottom and the first one that matche
 MY POLICY:
 [paste your policy text here]`;
 
-  function build() {
-    let tryAns = [], S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
+  function build(startKey) {
+    const tpl = k => TB.parse(TB.templateText ? TB.templateText(k) : TB.TEMPLATES[k]).policy;
+    let tryAns = [], S = fromPolicy(tpl(startKey && TB.TEMPLATES[startKey] ? startKey : "warranty")), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
     main.innerHTML = `<h1>Publish your policy as a checker</h1><p class="lede">Turn your policy into a claim check your customers can use. Four short steps: questions, rules, test, publish.</p>
       <ol class="stepper" id="stepper">${["Questions", "Rules", "Test", "Publish"].map((t, i) => `<li><button type="button" data-step-btn="${i + 1}"><span class="sn">${i + 1}</span><span class="st">${t}</span></button></li>`).join("")}</ol>
-      <div class="row" data-s="1"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
+      <div class="row" data-s="1"><span class="mute small">Start from:</span>${(TB.LIBRARY || []).map(t => `<button class="btn small ghost" data-t="${t.key}" type="button">${esc(TB.templateInfo(t.key).chip)}</button>`).join("")}<button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
       <details class="card" id="ai" data-s="1"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
         <p class="small">Copy this request, paste it into any AI assistant (with your policy at the bottom), then paste its reply below. Always read the result: assistants can make mistakes.</p>
         <pre id="prompt">${esc(PROMPT)}</pre><div class="row"><button class="btn small ghost" id="cpprompt" type="button">Copy the request</button></div>
@@ -954,7 +2213,7 @@ MY POLICY:
     const setMode = m => { mode = m; $("#tabv").classList.toggle("ghost", m !== "visual"); $("#tabt").classList.toggle("ghost", m !== "text"); $("#tabv").setAttribute("aria-pressed", m === "visual"); $("#tabt").setAttribute("aria-pressed", m === "text"); applyStep(false); drawEditor(); };
     $("#tabv").onclick = () => { if (mode === "text") { const r = TB.parse($("#src").value); if (r.errors.length) { $("#out").innerHTML = errBox(r.errors, "Fix the text before switching to forms"); return; } S = fromPolicy(r.policy); } setMode("visual"); };
     $("#tabt").onclick = () => setMode("text");
-    $$("[data-t]").forEach(b => b.onclick = () => { S = b.dataset.t === "blank" ? blank() : fromPolicy(TB.parse(TB.TEMPLATES[b.dataset.t]).policy); setMode(mode); });
+    $$("[data-t]").forEach(b => b.onclick = () => { S = b.dataset.t === "blank" ? blank() : fromPolicy(tpl(b.dataset.t)); setMode(mode); });
     $("#cpprompt").onclick = e => copy(PROMPT, e.target);
     $("#aiuse").onclick = () => { const r = TB.parse($("#aiin").value), m = $("#aimsg"); if (r.errors.length) { m.className = "small err"; m.textContent = r.errors.slice(0, 3).map(e => (e.line ? "Line " + e.line + ": " : "") + e.message).join(" ") + " Ask the assistant to fix it."; return; } S = fromPolicy(r.policy); m.className = "small ok"; m.textContent = "Loaded. Review every question and rule below."; setMode("visual"); };
 
@@ -1243,7 +2502,7 @@ MY POLICY:
 
   // The extra fields on the reviewer's decision form.
   function fields() {
-    return `<div class="rvfields"><h4>Your reasons (required)</h4>
+    return `<div class="rvfields"><div id="rv-idnote"></div><h4>Your reasons (required)</h4>
       <p class="small mute">Both sides and anyone who reads this case can see that you gave reasons. Explain which evidence you relied on and what you could not verify. Do not name people.</p>
       <div class="wide"><label><span>One-line reason (public)</span><input id="rv-one" type="text" maxlength="60" placeholder="For example: report shows impact damage" autocomplete="off"></label></div><p class="small mute" id="rv-count"></p>
       <label class="small">Full reasons (kept in a file you download; only its fingerprint is recorded)</label><textarea id="rv-full" rows="5" placeholder="Which evidence did you rely on, and how did it answer each disputed question? What could you not verify?"></textarea>
@@ -1368,17 +2627,23 @@ MY POLICY:
         <div class="wide"><label><span>Neutral reviewer</span><input id="rv" type="text" placeholder="0x… (not you and not the other party)" autocomplete="off"></label></div>
         <div class="row"><label>Time to answer after a dispute starts <select id="aw">${opts(7)}</select></label><label>Time for the reviewer <select id="rw">${opts(7)}</select></label></div>
         <div class="wide"><label><span>Your written terms (optional)</span><textarea id="terms" rows="4" placeholder="Paste the agreement text. Only its fingerprint goes on-chain; keep the text yourselves."></textarea></label></div>
+        <div class="wide"><label><span>Reviewer's signed identity (recommended)</span><textarea id="rvp" rows="2" placeholder="Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page, so you know who you are agreeing to."></textarea></label><div id="rvpmsg" class="small mute"></div></div>
         <p class="small mute">Your wallet proposes; the other party's wallet accepts. Nothing is held in escrow.</p>
         <div class="row"><button class="btn" id="prop" type="button">Propose the agreement</button><span id="msg" class="small"></span></div></div>
       <div class="card"><h3>Your customer has no wallet?</h3><p class="small">Invite them by passkey instead: they approve with their fingerprint or face, and you submit it. <a href="#pk/agree">Invite a customer by passkey</a>.</p></div>
       <div class="card"><h3>Look up an agreement</h3><div class="row"><input id="agn" type="number" min="1" placeholder="Agreement number" style="width:180px"><button class="btn ghost" id="aggo" type="button">Open</button></div><div id="recent" class="small mute"></div></div>`;
     $("#aggo").onclick = () => { const n = Number($("#agn").value); if (n) location.hash = "#agreement/" + n; };
+    // The reviewer's identity line is added to the written terms, so it is part of what both sides fingerprint and accept.
+    const rvLine = () => { const code = $("#rvp").value.trim(); if (!code) return {line: ""}; const r = window.TB_RID.parse(code); if (!r.ok) return {error: r.error}; if (r.profile.address !== $("#rv").value.trim().toLowerCase()) return {error: "This profile belongs to a different wallet than the reviewer address above."}; return {line: window.TB_RID.termsLine(r.profile)}; };
+    const showLine = () => { const r = rvLine(), m = $("#rvpmsg"); m.className = "small " + (r.error ? "err" : "mute"); m.textContent = r.error ? r.error : r.line ? "Added to your terms, so both sides agree to it: " + r.line : ""; };
+    $("#rvp").oninput = showLine; $("#rv").oninput = showLine;
     $("#prop").onclick = async () => {
       const msg = $("#msg"), cp = $("#cp").value.trim(), rv = $("#rv").value.trim();
       if (!ADDR.test(cp) || !ADDR.test(rv)) { msg.innerHTML = `<span class="err">Enter the other party's and the reviewer's wallet addresses.</span>`; return; }
+      const idl = rvLine(); if (idl.error) { msg.innerHTML = `<span class="err">${esc(idl.error)}</span>`; return; }
       try {
         msg.textContent = "Confirm in your wallet…"; await window.TB_WALLET.connect();
-        const terms = $("#terms").value.trim(), hash = terms ? await hashText(terms) : "0x" + "0".repeat(64);
+        const terms = [$("#terms").value.trim(), idl.line].filter(Boolean).join("\n\n"), hash = terms ? await hashText(terms) : "0x" + "0".repeat(64);
         const rc = await asend(ASEL.propose + addrW(cp) + w($("#rs").value) + hash.slice(2) + addrW(rv) + w(Number($("#aw").value) * DAY) + w(Number($("#rw").value) * DAY));
         location.hash = "#agreement/" + Number(BigInt(rc.logs.find(l => l.address.toLowerCase() === CFG.agreements.toLowerCase() && l.topics[0] === AG_PROPOSED).topics[1]));
       } catch (e) { msg.innerHTML = `<span class="err">${esc(friendly(e))}</span>`; }
@@ -1396,7 +2661,7 @@ MY POLICY:
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody>
         <tr><td>Proposed by</td><td><code>${a.proposer}</code>${isProp ? " (you)" : ""}</td></tr><tr><td>Other party</td><td><code>${a.counterparty}</code>${isCp ? " (you)" : ""}</td></tr>
         <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rules #${a.ruleSetId})</td></tr>
-        <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance</td></tr>
+        <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
         <tr><td>Terms fingerprint (a short code of the written terms)</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note${isCp ? " ok-note" : ""}">${isCp ? "<b>You have been invited to accept this agreement.</b> Read the terms below, then use the button at the bottom." : !me ? `If you were invited to accept this, connect the wallet for <code>${short(a.counterparty)}</code> at the bottom of the page.` : ""}</div>` : ""}
@@ -1404,7 +2669,7 @@ MY POLICY:
       <div class="card"><h3>Check the written terms</h3><p class="small">Paste the terms text to see whether it is exactly what was agreed.</p><textarea id="tt" rows="3" placeholder="Paste the agreement text"></textarea><div class="row"><span id="tm" class="small"></span></div></div>
       <div id="acts"></div>`;
     bindInvite();
-    let t = 0; $("#tt").oninput = () => { clearTimeout(t); t = setTimeout(async () => { const v = $("#tt").value.trim(), m = $("#tm"); if (!v) { m.textContent = ""; return; } const h = await hashText(v); if (h === a.termsHash) { m.className = "small ok"; m.textContent = "✓ This text matches the agreed terms."; } else { m.className = "small err"; m.textContent = "This text does not match the agreed terms."; } }, 250); };
+    let t = 0; $("#tt").oninput = () => { clearTimeout(t); t = setTimeout(async () => { const v = $("#tt").value.trim(), m = $("#tm"); if (!v) { m.textContent = ""; return; } const prof = window.TB_RID && await window.TB_RID.lookup(a.reviewer), h = await hashText(v), h2 = prof ? await hashText(v + "\n\n" + window.TB_RID.termsLine(prof)) : ""; if (h === a.termsHash || h2 === a.termsHash) { m.className = "small ok"; m.textContent = "✓ This text matches the agreed terms."; } else { m.className = "small err"; m.textContent = "This text does not match the agreed terms."; } }, 250); };
     const acts = $("#acts"), say = (h) => { acts.innerHTML = h; };
     if (!me) { say(`<div class="row"><button class="btn" id="cw" type="button">Connect wallet</button><span class="small mute">to accept, withdraw or open a case</span></div>`); $("#cw").onclick = async () => { try { await window.TB_WALLET.connect(); agreement(id); } catch (e) { $("#cw").insertAdjacentHTML("afterend", `<span class="err small"> ${esc(friendly(e))}</span>`); } }; return; }
     const buttons = [];
@@ -1440,7 +2705,7 @@ MY POLICY:
       <p><span class="badge${c.status === 3 ? " warn" : ""}">${STATUS[c.status]}</span> <span class="small mute">${blind ? "Side A opened the case · Side B is the other side" : "Opened by " + short(c.filer) + " · Other side " + short(c.decider)}${c.agreementId ? ` · <a href="#agreement/${c.agreementId}">Agreement #${c.agreementId}</a>` : " · no agreement"}${me ? " · You are " + (blind ? "the reviewer" : short(me)) : ""}</span></p>
       ${live ? `<p class="small ${late ? "err" : "mute"}">${c.status === 0 ? "Answers due by " : "The reviewer has until "}${when(deadline)}${late ? ". That time has passed." : "."}</p>` : ""}
       <div class="card"><table class="ctab"><thead><tr><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): opener ${ok(c.filerOk)}, other side ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><div id="rv"></div></div>
+      <div class="card"><h3>Reviewer</h3><p class="small"><a href="#reviewer/${c.reviewer}">${short(c.reviewer)}</a> (<a href="#reviewer/${c.reviewer}">record</a>): opener ${ok(c.filerOk)}, other side ${ok(c.deciderOk)}. ${c.agreementId ? "Agreed in advance under the agreement. " : ""}${live ? (agreed ? "Both sides accepted this reviewer." : "The reviewer can't decide anything until both sides accept.") : ""}</p><p class="small" style="margin:4px 0"><span data-rid="${c.reviewer}"></span></p><div id="rv"></div></div>
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
       ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       <div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded here. Nothing is uploaded: the files stay with the people who share them, and the reviewer checks what they receive against the fingerprint. A fingerprint shows a file hasn't changed since; it does not show the file is genuine.</p>
@@ -1507,7 +2772,7 @@ MY POLICY:
       await send(SEL.evidence + w(id) + w(WHOLE) + hash.slice(2) + w(128) + w(bytes.length) + nh.padEnd(Math.ceil(bytes.length / 32) * 64, "0")); f.dataset.attached = hash;
     }
     document.querySelectorAll("[data-form]").forEach(f => {
-      if (f.dataset.form === "review") window.TB_REVIEW.bind(f);
+      if (f.dataset.form === "review") { window.TB_REVIEW.bind(f); if (window.TB_RID) window.TB_RID.noteFor(f.querySelector("#rv-idnote"), window.TB_WALLET.account()); }
       const vals = {}; f.querySelectorAll(".yn").forEach(g => g.querySelectorAll("button").forEach(b => b.onclick = () => { vals[g.dataset.i] = b.dataset.v === "1"; g.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === vals[g.dataset.i]))); }));
       f.querySelector("[data-send]").onclick = async () => {
         const kind = f.dataset.form, need = [...f.querySelectorAll(".yn")].map(g => Number(g.dataset.i)), msg = f.querySelector("[data-msg]");
@@ -1528,9 +2793,9 @@ MY POLICY:
         <p class="small">Final answers: ${P.questions.map((q, i) => (i + 1) + "=" + (fin[i] ? "yes" : "no")).join(", ")}. Rule set ${c.ruleSetId}, circuit #${CFG.published[K.key].circuitId}. ${c.disputed ? "The reviewer decided " + bitsToArr(c.disputed, nQ).filter(Boolean).length + " disputed question(s); everything else was agreed." : "Both sides agreed on every question."}</p>
         <p class="small mute">Other contracts can read this verdict (result number ${c.result}) from the case contract, for example to release a payment.</p>${RV.isReviewer(me, c) && RV.saved(CFG.chainId, CFG.caseContract, id) ? `<div class="row">${RV.downloadLink(RV.saved(CFG.chainId, CFG.caseContract, id), id)}<span class="small">Send this file to both sides. They can drop it on this page to check it matches the recorded fingerprint.</span></div>` : ""}</div>`;
       $("#cl").onclick = async e => { try { await navigator.clipboard.writeText(location.href); e.target.textContent = "Copied"; } catch { prompt("Copy:", location.href); } };
-      call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp");
+      call(SEL.replay + w(id)).then(h => { const {N} = dec(h), re = Number(N(0)), same = N(2) === 1n, b = $("#rp"); if (!b) return;   // the page may have been left while this ran
         if (same && re === c.result && re === r.result) { b.className = "badge ok"; b.textContent = "✓ Re-checked just now on the public network: same result"; } else { b.className = "badge warn"; b.textContent = "The re-run gave a different result. Do not rely on this page."; } })
-        .catch(() => { const b = $("#rp"); b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; });
+        .catch(() => { const b = $("#rp"); if (b) { b.className = "badge warn"; b.textContent = "Could not re-run on X Layer right now"; } });
     }
   }
 
@@ -1559,7 +2824,7 @@ MY POLICY:
       <div class="rhead"><span class="rbrand"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</span><span class="small mute">Result receipt · case #${esc(id)}</span></div>
       <p class="small mute rk">${esc(P.name)}</p><h1 class="rres">${esc(P.results[c.result])}</h1><p class="rwhy">${esc(r.why)}</p><p class="small mute">${esc(fired)}</p>${rr.length ? `<p class="rreason">Reviewer's reason: “${esc(rr[rr.length - 1].note)}” <span class="small mute">(written statement fingerprint <code>${rr[rr.length - 1].hash.slice(0, 14)}…</code>)</span></p>` : ""}
       <table class="rt"><thead><tr><th>Question</th><th>Opened the case</th><th>Other side</th><th>Final</th><th>Settled by</th></tr></thead><tbody>${rows}</tbody></table>
-      <dl class="rd"><dt>Filer</dt><dd><code>${c.filer}</code></dd><dt>Decider</dt><dd><code>${c.decider}</code></dd><dt>Reviewer</dt><dd><code>${c.reviewer}</code></dd>
+      <dl class="rd"><dt>Filer</dt><dd><code>${c.filer}</code></dd><dt>Decider</dt><dd><code>${c.decider}</code></dd><dt>Reviewer</dt><dd><code>${c.reviewer}</code><br><span data-rid="${c.reviewer}"></span></dd>
         <dt>Agreement</dt><dd>${c.agreementId ? "#" + c.agreementId + " (rules, reviewer and time limits fixed in advance)" : "none"}</dd><dt>Opened</dt><dd>${when(c.openedAt)}</dd>
         <dt>Rule set</dt><dd>#${c.ruleSetId} · public logic #${CFG.published[K.key].circuitId} on X Layer</dd></dl>
       ${ev.length ? `<h4>Evidence fingerprints</h4><table class="rt"><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(e.question === WHOLE ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 50) : "?"))}</td><td data-l="Note">${esc(e.note)}</td><td data-l="Fingerprint"><code>${e.hash.slice(0, 18)}…</code></td></tr>`).join("")}</tbody></table><p class="small mute">The files are not stored by LGtie. Each fingerprint shows a file hasn't changed since it was recorded.</p>` : ""}
@@ -1589,7 +2854,7 @@ MY POLICY:
     main.innerHTML = `<h1>Reviewers</h1><p class="mute">Reading cases from X Layer…</p>`;
     let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewers</h1><p class="err">X Layer could not be reached.</p>`; return; }
     const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
-    const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
+    const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a><br><span class="small" data-rid="${a}"></span></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
     main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that.</p>
       <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Not accepted by both sides</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
       <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
@@ -1602,10 +2867,12 @@ MY POLICY:
     const mine = sc.cases.filter(c => c.reviewer.toLowerCase() === addr.toLowerCase()).sort((a, b) => b.id - a.id), t = tally(mine);
     const rows = mine.map(c => { const k = classify(c), P = (policyOf(c.ruleSetId) || {}).policy; return `<tr><td><a href="#case/${c.id}">#${c.id}</a></td><td>${esc(P ? P.name : "Rule set " + c.ruleSetId)}</td><td>${LABEL[k]}</td><td>${c.status === 2 && P ? esc(P.results[c.result]) : ""}</td></tr>`; }).join("");
     main.innerHTML = `<h1>Reviewer ${short(addr)}</h1><p class="small mute"><code>${addr}</code> · <a href="#reviewer">All reviewers</a></p>
+      <div class="card" id="ridcard"></div>
       <div class="stats"><span>${mine.length} case${mine.length === 1 ? "" : "s"}</span><span>${t.decided} decided</span><span>${t.ghosted} no decision in time</span><span>${t.neverAccepted} never accepted</span><span>${t.pending} open</span></div>
       <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Case</th><th>Rule set</th><th>What happened</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">This address has not been named reviewer on any case yet.</p>`}</div>
       <div class="note">This is a record of activity. It cannot show whether a decision was right: only the people involved can judge that. A reviewer does not have to confirm anything on-chain before being named, so "no decision in time" can mean the reviewer was named without knowing. Both sides should still decide for themselves whether to accept a reviewer, and ask them first.</div>
       <p class="small mute">${sc.truncated ? `Based on the latest 200 of ${sc.total} cases.` : `Based on all ${sc.total} case${sc.total === 1 ? "" : "s"}.`}</p>`;
+    if (window.TB_RID) window.TB_RID.profileCard(document.getElementById("ridcard"), addr);
   }
 
   // A business's public record: the rule sets it published (and whether it replaced any) and how its cases went.
@@ -1720,6 +2987,211 @@ MY POLICY:
 
   const api = {KIND, DEFAULT_RELAYS, pubkeyOf, sign, verify, idOf, makeEvent, checkEvent, addrTag, publish, listen, filterFor, relaysConfigured, hex, unhex};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_NOSTR = api;
+})();
+
+</script><script>/* reviewerid.js */
+// Named reviewers. A reviewer used to appear only as a wallet address. This lets a reviewer attach a real, checkable identity, with no contract
+// change and no server of ours:
+//  1. The reviewer signs a short statement with their wallet (personal_sign): their name, role and the address of a public page they control.
+//  2. The signature is checked in the browser by recovering the signer's address (secp256k1), so a profile cannot be forged for someone else's wallet.
+//  3. The reviewer pastes the same signed "profile code" on their public page (a GitHub profile or gist, a company page). Anyone can fetch that page
+//     and see that the person who controls the page also controls the wallet. Where the browser is not allowed to read a page, the site says so and
+//     links to it, so the check can be done by eye.
+//  4. The profile code is also posted to a few public relays (the same ones the inbox uses, under a different tag), so both sides can see the
+//     name next to the address on the agreement, the case and the receipt. A relay can drop a profile but cannot change one: any change breaks the signature.
+// What this does NOT prove: that the person is honest, qualified or free of conflicts. It proves the wallet and the public page share an owner.
+// Pure functions are testable in Node (module.exports); the page helpers use the browser (window.TB_RID).
+(function () {
+  "use strict";
+  const K = typeof module !== "undefined" && module.exports ? require("./pkcore.js") : window.TB_PK;
+  const NOSTR = () => (typeof module !== "undefined" && module.exports ? require("./nostr.js") : window.TB_NOSTR);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 60, fee: 60};
+
+  // ---------- secp256k1 public-key recovery (what ecrecover does), with BigInt ----------
+  const P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn, N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
+  const G = [0x79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798n, 0x483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8n];
+  const mod = (a, m = P) => ((a % m) + m) % m;
+  function inv(a, m = P) { let [lo, hi, x0, x1] = [mod(a, m), m, 1n, 0n]; while (hi) { const q = lo / hi; [lo, hi, x0, x1] = [hi, lo - q * hi, x1, x0 - q * x1]; } return mod(x0, m); }
+  const add = (a, b) => {
+    if (!a) return b; if (!b) return a;
+    if (a[0] === b[0]) { if (mod(a[1] + b[1]) === 0n) return null; const l = mod(3n * a[0] * a[0] * inv(2n * a[1])), x = mod(l * l - 2n * a[0]); return [x, mod(l * (a[0] - x) - a[1])]; }
+    const l = mod((b[1] - a[1]) * inv(b[0] - a[0])), x = mod(l * l - a[0] - b[0]); return [x, mod(l * (a[0] - x) - a[1])];
+  };
+  const mul = (pt, k) => { let r = null, q = pt; for (k = mod(k, N); k > 0n; k >>= 1n) { if (k & 1n) r = add(r, q); q = add(q, q); } return r; };
+  const pow = (b, e, m) => { let r = 1n; b = mod(b, m); for (; e > 0n; e >>= 1n) { if (e & 1n) r = (r * b) % m; b = (b * b) % m; } return r; };
+  const big = u8 => u8.reduce((a, x) => (a << 8n) | BigInt(x), 0n);
+  const be32 = n => { const o = new Uint8Array(32); for (let i = 31; i >= 0; i--) { o[i] = Number(n & 255n); n >>= 8n; } return o; };
+  const unhex = h => Uint8Array.from((String(h).replace(/^0x/, "").match(/../g) || []), x => parseInt(x, 16));
+  const hexOf = u8 => [...u8].map(x => x.toString(16).padStart(2, "0")).join("");
+
+  // The address that signed `hash32` (32 bytes) with a 65-byte signature r||s||v. Returns a lowercase 0x address, or null if the signature is not valid.
+  function recover(hash32, sigHex) {
+    try {
+      const sig = unhex(sigHex); if (sig.length !== 65) return null;
+      const r = big(sig.slice(0, 32)), s = big(sig.slice(32, 64)); let v = sig[64]; if (v >= 27) v -= 27; if (v > 1) return null;
+      if (r <= 0n || r >= N || s <= 0n || s >= N) return null;
+      const y2 = mod(r * r * r + 7n), y0 = pow(y2, (P + 1n) / 4n, P); if (mod(y0 * y0) !== y2) return null;
+      const R = [r, Number(y0 & 1n) === v ? y0 : P - y0], e = big(hash32) % N;
+      const Q = mul(add(mul(R, s), mul(G, N - e)), inv(r, N)); if (!Q) return null;
+      return "0x" + hexOf(K.keccak256(K.concat([be32(Q[0]), be32(Q[1])])).slice(12));
+    } catch (e) { return null; }
+  }
+  // What a wallet signs for personal_sign (EIP-191): keccak256("\x19Ethereum Signed Message:\n" + length + message).
+  const personalHash = text => { const m = K.utf8(text); return K.keccak256(K.concat([K.utf8("\x19Ethereum Signed Message:\n" + m.length), m])); };
+
+  // ---------- the profile ----------
+  const clean = s => String(s || "").replace(/\s+/g, " ").trim();
+  const urlOk = u => /^https:\/\/[^\s<>"']+$/i.test(u) && u.length <= LIM.url;
+  // The exact text the reviewer's wallet signs. Deterministic: the same fields always give the same text.
+  const statement = ({name, role, specialty, fee, url, address}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
+  function validate({name, role, url, specialty, fee}) {
+    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee);
+    if (name.length < 2 || name.length > LIM.name) return {ok: false, error: "Enter your name (2 to " + LIM.name + " characters)."};
+    if (role.length > LIM.role) return {ok: false, error: "Keep the role under " + LIM.role + " characters."};
+    if (!urlOk(url)) return {ok: false, error: "Enter the address of a public page you control, starting with https:// (for example your GitHub profile or company page)."};
+    if (specialty.length > LIM.specialty) return {ok: false, error: "Keep the specialty under " + LIM.specialty + " characters."};
+    if (fee.length > LIM.fee) return {ok: false, error: "Keep the fee under " + LIM.fee + " characters."};
+    return {ok: true, name, role, url, specialty, fee};
+  }
+  const b64u = s => btoa(String.fromCharCode(...K.utf8(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const unb64u = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
+  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
+  // Read a profile code and check its signature. Returns {ok, profile} or {ok: false, error}.
+  function parse(code) {
+    try {
+      code = clean(code); if (!code.startsWith(PREFIX)) return {ok: false, error: "That is not a reviewer profile code (it should start with " + PREFIX + ")."};
+      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
+      const v = validate(profile); if (!v.ok) return v; if (!ADDR.test(profile.address)) return {ok: false, error: "The profile has no valid address."};
+      const signer = recover(personalHash(statement(profile)), profile.sig);
+      if (!signer || signer !== profile.address) return {ok: false, error: "The signature does not match the address, so this profile is not genuine."};
+      return {ok: true, profile, code: makeCode(profile)};
+    } catch (e) { return {ok: false, error: "That profile code could not be read."}; }
+  }
+  // The line added to the written terms of an agreement, so the identity is part of what both sides fingerprinted.
+  const termsLine = p => "Reviewer identity: " + p.name + (p.role ? ", " + p.role : "") + (p.specialty ? ", specialty " + p.specialty : "") + (p.fee ? ", fee " + p.fee : "") + ", " + p.url + " (signed profile fingerprint " + K.hex(K.keccak256(K.utf8(statement(p) + "\n" + p.sig))).slice(0, 18) + ")";
+
+  // ---------- checking the public page ----------
+  // Does the page the reviewer named really carry their signed profile? status: "verified" | "missing" | "unreadable".
+  async function checkPage(profile, fetchFn, ms = 7000) {
+    if (!urlOk(profile.url)) return {status: "unreadable", why: "The page address is not a plain https:// address."};
+    const f = fetchFn || (typeof fetch !== "undefined" ? fetch : null); if (!f) return {status: "unreadable", why: "No network."};
+    try {
+      const ctl = typeof AbortController !== "undefined" ? new AbortController() : null, t = ctl && setTimeout(() => ctl.abort(), ms);
+      const res = await f(profile.url, {mode: "cors", credentials: "omit", signal: ctl && ctl.signal}); if (t) clearTimeout(t);
+      if (!res.ok) return {status: "unreadable", why: "The page answered with an error."};
+      const text = (await res.text()).slice(0, 2000000), code = makeCode(profile);
+      return text.includes(code) || text.includes(profile.sig) ? {status: "verified"} : {status: "missing", why: "The page was read, but it does not contain the signed profile."};
+    } catch (e) { return {status: "unreadable", why: "The browser is not allowed to read that page (most sites do not allow it), or it could not be reached."}; }
+  }
+
+  // ---------- relays: store and find a profile ----------
+  const tagOf = addr => "lgtie-rid-" + String(addr).toLowerCase();
+  async function publish(profile, relays) {
+    const N_ = NOSTR(), sk = crypto.getRandomValues(new Uint8Array(32)), code = makeCode(profile);
+    const ev = {pubkey: N_.pubkeyOf(sk), created_at: Math.floor(Date.now() / 1000), kind: N_.KIND, tags: [["d", "rid-" + profile.address], ["t", "lgtie"], ["t", tagOf(profile.address)]], content: JSON.stringify({code})};
+    ev.id = await N_.idOf(ev); ev.sig = await N_.sign(N_.unhex(ev.id), sk);
+    return N_.publish(relays || N_.relaysConfigured(), ev);
+  }
+  const mem = new Map();
+  const localKey = a => "lgtie.rid." + String(a).toLowerCase();
+  // Find the newest valid profile for an address. Looks at this device first, then asks the relays for a few seconds.
+  function lookup(addr, {relays, ms = 3500, fresh = false} = {}) {
+    const a = String(addr).toLowerCase(); if (!fresh && mem.has(a)) return mem.get(a);
+    const p = new Promise(resolve => {
+      let best = null, done = false, stop = null; const finish = () => { if (done) return; done = true; try { stop && stop(); } catch (e) {} resolve(best ? best.profile : null); };
+      try { const c = localStorage.getItem(localKey(a)); const r = c && parse(c); if (r && r.ok && r.profile.address === a) best = {at: 0, profile: r.profile}; } catch (e) {}
+      const N_ = NOSTR(); let t0 = Date.now();
+      try {
+        stop = N_.listen(relays || N_.relaysConfigured(), {kinds: [N_.KIND], "#t": [tagOf(a)], limit: 20}, ev => {
+          try { const r = parse(JSON.parse(ev.content).code); if (r.ok && r.profile.address === a && (!best || ev.created_at > best.at)) { best = {at: ev.created_at, profile: r.profile}; setTimeout(finish, Math.max(300, 900 - (Date.now() - t0))); } } catch (e) {}
+        });
+      } catch (e) {}
+      setTimeout(finish, ms);
+    });
+    mem.set(a, p); p.then(v => { if (!v) mem.delete(a); }); return p;
+  }
+  const remember = profile => { try { localStorage.setItem(localKey(profile.address), makeCode(profile)); } catch (e) {} mem.delete(profile.address); };
+
+  // ---------- browser UI ----------
+  const short = a => a.slice(0, 6) + "…" + a.slice(-4), link = u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.replace(/^https:\/\//, ""))}</a>`;
+  const pageBadge = r => r.status === "verified" ? `<span class="badge ok">public page confirms it</span>` : r.status === "missing" ? `<span class="badge warn">page does not show the proof</span>` : `<span class="badge">page could not be read here</span>`;
+  const nameHtml = p => `<b>${esc(p.name)}</b>${p.role ? ", " + esc(p.role) : ""}`;
+  const extraHtml = p => (p.specialty ? `<span class="small">Specialty: ${esc(p.specialty)}</span> ` : "") + (p.fee ? `<span class="small">Fee: ${esc(p.fee)}</span>` : "");
+  // Fill every <span data-rid="0x…"> on the page with the reviewer's name (or a note that only an address is known).
+  async function decorate(root) {
+    for (const el of root.querySelectorAll("[data-rid]")) {
+      const addr = el.getAttribute("data-rid"); if (!ADDR.test(addr) || el.dataset.done) continue; el.dataset.done = "1";
+      el.innerHTML = `<span class="small mute">looking for a signed identity…</span>`;
+      lookup(addr).then(p => {
+        if (!el.isConnected) return;
+        el.innerHTML = p ? `${nameHtml(p)} <span class="badge ok">identity signed by this wallet</span> <span class="small">${link(p.url)}</span>${extraHtml(p) ? "<br>" + extraHtml(p) : ""}`
+          : `<span class="badge warn">address only</span> <span class="small mute">no signed identity found. <a href="#reviewer/${addr}">Ask the reviewer to add one</a>.</span>`;
+      });
+    }
+  }
+  const field = (id, label, ph, extra = "") => `<label class="field"><span>${label}</span><input id="${id}" type="text" placeholder="${ph}" autocomplete="off" ${extra}></label>`;
+  // The "who is this reviewer" card on #reviewer/<address>. If the connected wallet is this address, it also offers the setup.
+  async function profileCard(el, addr) {
+    addr = addr.toLowerCase();
+    el.innerHTML = `<h3>Who is this reviewer?</h3><div id="rid-view"><p class="small mute">Looking for a signed identity…</p></div><div id="rid-setup"></div>`;
+    const view = el.querySelector("#rid-view"), setup = el.querySelector("#rid-setup");
+    async function show(p) {
+      if (!p) { view.innerHTML = `<p><span class="badge warn">address only</span> No signed identity was found for <code>${addr}</code>. Anyone can be named reviewer by an address alone, so ask this person to add a profile before you accept them.</p>`; return; }
+      view.innerHTML = `<p style="font-size:20px;margin:0 0 6px">${nameHtml(p)}</p><p class="small">Public page: ${link(p.url)} <span id="rid-pg" class="mute">checking…</span></p>
+        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
+        <p class="small"><span class="badge ok">signed by this wallet</span> The name was signed with the wallet <code>${addr}</code>, and anyone can re-check that signature.</p>
+        <details class="small"><summary>The signed profile code</summary><textarea readonly rows="3" style="width:100%">${esc(makeCode(p))}</textarea></details>
+        <p class="small mute">This shows that whoever controls the wallet also controls the public page. It does not show that the person is honest or free of conflicts.</p>`;
+      const r = await checkPage(p); const pg = view.querySelector("#rid-pg"); if (pg) pg.innerHTML = pageBadge(r) + (r.status === "unreadable" ? ` <span class="small mute">Open the page and look for the code above.</span>` : "");
+    }
+    show(await lookup(addr, {fresh: true}));
+    setup.innerHTML = `<div class="row"><button class="btn small ghost" id="rid-me" type="button">This is my address: set up my profile</button><span id="rid-msg" class="small"></span></div>`;
+    setup.querySelector("#rid-me").onclick = async () => {
+      const msg = setup.querySelector("#rid-msg");
+      try {
+        msg.textContent = "Connect your wallet…"; const acct = await window.TB_WALLET.connect();
+        if (acct.toLowerCase() !== addr) { msg.innerHTML = `<span class="err">The connected wallet is ${short(acct)}, not ${short(addr)}. Switch accounts in your wallet and try again.</span>`; return; }
+        msg.textContent = "";
+        setup.innerHTML = `<div class="note"><b>Sign a short statement with this wallet.</b> It costs nothing and sends no transaction.</div>
+          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional)", "For example: used electronics, smart-contract security", 'maxlength="60"')}${field("rid-fee", "Your fee (optional)", "For example: US$10 per disputed question", 'maxlength="60"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
+          <div class="row"><button class="btn small" id="rid-sign" type="button">Sign with my wallet</button><span id="rid-m2" class="small"></span></div><div id="rid-out"></div>`;
+        setup.querySelector("#rid-sign").onclick = async () => {
+          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, url: setup.querySelector("#rid-url").value});
+          if (!v.ok) { m2.innerHTML = `<span class="err">${esc(v.error)}</span>`; return; }
+          try {
+            m2.textContent = "Confirm the signature in your wallet…";
+            const text = statement({...v, address: addr}), sig = await window.ethereum.request({method: "personal_sign", params: [K.hex(K.utf8(text)), addr]});
+            const profile = {...v, address: addr, sig}, r = parse(makeCode(profile)); if (!r.ok) throw new Error(r.error);
+            remember(r.profile); m2.textContent = "";
+            setup.querySelector("#rid-out").innerHTML = `<div class="card"><h4>Your profile is signed</h4>
+              <p class="small"><b>1.</b> Put this code on your public page (in your bio, or a note on the page), so anyone can see that the page and the wallet belong to the same person.</p>
+              <textarea id="rid-code" readonly rows="3" style="width:100%">${esc(r.code)}</textarea>
+              <div class="row"><button class="btn small ghost" id="rid-copy" type="button">Copy the code</button></div>
+              <p class="small"><b>2.</b> Publish it so both sides can see your name next to your address.</p>
+              <div class="row"><button class="btn small" id="rid-pub" type="button">Publish my profile</button><span id="rid-m3" class="small"></span></div>
+              <p class="small"><b>3.</b> After you have put the code on your page, check it.</p>
+              <div class="row"><button class="btn small ghost" id="rid-chk" type="button">Check my public page</button><span id="rid-m4" class="small"></span></div></div>`;
+            const q = s => setup.querySelector(s);
+            q("#rid-copy").onclick = async () => { try { await navigator.clipboard.writeText(r.code); q("#rid-copy").textContent = "Copied"; } catch (e) { q("#rid-code").select(); } };
+            q("#rid-pub").onclick = async () => { q("#rid-m3").textContent = "Publishing…"; const n = await publish(r.profile).catch(() => 0); q("#rid-m3").innerHTML = n ? `<span class="ok">Published to ${n} relay${n === 1 ? "" : "s"}.</span>` : `<span class="err">No relay accepted it. Your profile is still kept on this device; try again later.</span>`; if (n) { mem.delete(addr); show(r.profile); } };
+            q("#rid-chk").onclick = async () => { q("#rid-m4").textContent = "Reading your page…"; const c = await checkPage(r.profile); q("#rid-m4").innerHTML = pageBadge(c) + (c.why ? ` <span class="small mute">${esc(c.why)}</span>` : ""); };
+          } catch (e) { m2.innerHTML = `<span class="err">${esc(e && e.message ? e.message : String(e))}</span>`; }
+        };
+      } catch (e) { msg.innerHTML = `<span class="err">${esc(e && e.message ? e.message : String(e))}</span>`; }
+    };
+  }
+  // On the reviewer's own decision form: say plainly whether the people they are deciding for can see who they are.
+  async function noteFor(el, addr) {
+    if (!el || !ADDR.test(addr || "")) return; const p = await lookup(addr);
+    el.innerHTML = p ? `<p class="small">Both sides see you as ${nameHtml(p)}, with the identity you signed.</p>` : `<p class="small"><span class="badge warn">address only</span> Both sides currently see only your wallet address. <a href="#reviewer/${addr}">Add a signed identity</a> so they know who decided.</p>`;
+  }
+
+  // Pages are drawn at different times; fill any [data-rid] span that appears.
+  if (typeof document !== "undefined" && typeof MutationObserver !== "undefined") { let t = 0; new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => decorate(document), 120); }).observe(document.documentElement, {childList: true, subtree: true}); }
+
+  const api = {recover, personalHash, statement, validate, makeCode, parse, termsLine, checkPage, publish, lookup, remember, decorate, profileCard, noteFor, PREFIX, tagOf};
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_RID = api;
 })();
 
 </script><script>/* passkeys.js */
@@ -1885,7 +3357,7 @@ MY POLICY:
   function agreementCard(a, accountId, credentialId) {
     const P = policyOf(a.ruleSetId), inForce = a.acceptedAt !== 0 && !a.cancelled, state = a.cancelled ? "Withdrawn" : inForce ? "In force since " + when(a.acceptedAt) : "Waiting for you to accept", div = document.createElement("div"); div.className = "card";
     div.innerHTML = `<h3>Agreement #${a.id}: ${esc(P ? P.name : "rule set " + a.ruleSetId)}</h3><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
-      <p class="small">Proposed by <code>${short(a.proposer.wallet)}</code>. The neutral reviewer is <code>${short(a.reviewer)}</code>. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
+      <p class="small">Proposed by <code>${short(a.proposer.wallet)}</code>. The neutral reviewer is <code>${short(a.reviewer)}</code> <span data-rid="${a.reviewer}"></span>. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="row"><button class="btn" data-act="accept" type="button">Accept with my passkey</button></div>` : ""}
       ${inForce ? `<div class="row"><button class="btn ghost" data-act="open" type="button">Start a dispute under this agreement</button></div>` : ""}<div class="act"></div>`;
     $("#ags").appendChild(div);
@@ -2053,17 +3525,22 @@ MY POLICY:
           <label class="field"><span>Time for the reviewer</span><select id="rw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label>
         </div>
         <label class="field"><span>Written terms (optional)</span><textarea id="terms" rows="3" placeholder="Only a fingerprint of this text goes on-chain"></textarea></label>
+        <label class="field"><span>Reviewer's signed identity (recommended)</span><textarea id="rvp" rows="2" placeholder="Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page."></textarea><em class="small mute" id="rvpmsg"></em></label>
         <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button></div><p id="msg" class="small"></p></div>`;
     if (prefill) $("#cc").value = prefill;
+    // The reviewer's identity line is added to the written terms, so it is part of what both sides fingerprint and accept.
+    const rvLine = () => { const code = $("#rvp").value.trim(); if (!code) return {line: ""}; const r = window.TB_RID.parse(code); if (!r.ok) return {error: r.error}; if (r.profile.address !== $("#rv").value.trim().toLowerCase()) return {error: "This profile belongs to a different wallet than the reviewer address above."}; return {line: window.TB_RID.termsLine(r.profile)}; };
+    const showLine = () => { const r = rvLine(), m = $("#rvpmsg"); m.className = "small " + (r.error ? "err" : "mute"); m.textContent = r.error ? r.error : r.line ? "Added to your terms, so both sides agree to it: " + r.line : ""; };
+    $("#rvp").oninput = showLine; $("#rv").oninput = showLine;
     $("#go").onclick = async () => {
       const msg = $("#msg"), say = (t, cls) => { msg.className = "small " + (cls || "mute"); msg.textContent = t; };
       try {
-        const claim = parseClaim($("#cc").value), rv = $("#rv").value.trim(); if (!isAddr(rv)) throw new Error("Enter the reviewer's wallet address.");
+        const claim = parseClaim($("#cc").value), rv = $("#rv").value.trim(); if (!isAddr(rv)) throw new Error("Enter the reviewer's wallet address."); const idl = rvLine(); if (idl.error) throw new Error(idl.error);
         await needWallet(); say("Checking whether this customer is already registered…");
         let id = Number(await readAccountByHandle(claim.handleHash));
         if (id) { const k = await readKey(id, 0); if (k.x !== claim.x || k.y !== claim.y) throw new Error("That passkey handle is already registered to a different key. Ask the customer to create a new passkey."); }
         else { say("Confirm 1 of 2 in your wallet: register the customer's passkey…"); const rc = await W().send(V4().passkeys, enc("create", ["bytes32", K.KEY], [claim.handleHash, [claim.x, claim.y, claim.rpIdHash]])); id = logTopic(rc, V4().passkeys); if (!id) id = Number(await readAccountByHandle(claim.handleHash)); }
-        const terms = $("#terms").value.trim(), th = terms ? await hashText(terms) : "0x" + "0".repeat(64);
+        const terms = [$("#terms").value.trim(), idl.line].filter(Boolean).join("\n\n"), th = terms ? await hashText(terms) : "0x" + "0".repeat(64);
         say("Confirm 2 of 2 in your wallet: propose the agreement…");
         const rc2 = await W().send(V4().agreements, enc("propose", [K.PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], [[ZERO, id], Number($("#rs").value), th, rv, Number($("#aw").value) * DAY, Number($("#rw").value) * DAY]));
         const aid = logTopic(rc2, V4().agreements); location.hash = "#pk/agreement/" + aid;
@@ -2078,7 +3555,7 @@ MY POLICY:
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody><tr><td>Proposed by</td><td><code>${a.proposer.wallet}</code></td></tr>
         <tr><td>Customer</td><td>${a.counterparty.passkey ? `passkey account #${a.counterparty.passkey}` : `<code>${a.counterparty.wallet}</code>`}</td></tr>
-        <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)}</td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance</td></tr>
+        <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)}</td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr><tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code></td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</div>` : ""}
       ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
@@ -2097,7 +3574,7 @@ MY POLICY:
       const [ags, cs] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase)]);
       $("#pkl").outerHTML = `<div class="card"><h3>Agreements</h3>${ags.length ? ags.map(a => { const P = policyOf(a.ruleSetId); return `<p><a href="#pk/agreement/${a.id}">Agreement #${a.id}</a> · ${esc(P ? P.name : "rule set " + a.ruleSetId)} · ${a.cancelled ? "Withdrawn" : a.acceptedAt ? "In force" : "Waiting for the customer"}</p>`; }).join("") : `<p class="mute">None yet.</p>`}<p class="small"><a href="#pk/agree">Invite a customer with a fingerprint</a></p></div>
         <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
-    } catch (e) { $("#pkl").textContent = "Could not read from X Layer right now. Try again in a moment."; }
+    } catch (e) { const l = $("#pkl"); if (l) l.textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkCase(id, opts) {
     if (opts === true) opts = {review: true};
@@ -2115,6 +3592,7 @@ MY POLICY:
     main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">${blind ? "Side A opened the case · Side B is the other side" : "Opened by " + who(c.filer) + " · Other side " + who(c.decider)} · <a href="#pk/agreement/${c.agreementId}">Agreement #${c.agreementId}</a></span></p>
       <div class="card"><table class="ctab"><thead><tr><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td data-l="${blind ? "Side A" : "Opener"}">${c.filerIn ? yn(fa[i]) : "…"}</td><td data-l="${blind ? "Side B" : "Other side"}">${c.deciderIn ? yn(da[i]) : "…"}</td><td>${c.filerIn && c.deciderIn ? (dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`) : ""}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`).join("")}</tbody></table></div>
       ${c.status === 2 ? `<div class="res static" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(TB.run(P, fin).why || "")}</div>${reasons.length ? `<p class="small">Reviewer's reason: “${esc(reasons[reasons.length - 1].note)}”</p>` : ""}${RV.isReviewer(W().account(), cc) && RV.saved(CFG.chainId, V4().cases, id) ? `<div class="row">${RV.downloadLink(RV.saved(CFG.chainId, V4().cases, id), id)}<span class="small">Send this file to both sides. They can drop it on this page to check it matches the recorded fingerprint.</span></div>` : ""}</div>` : ""}
+      <p class="small">Reviewer: <code>${short(c.reviewer)}</code> <span data-rid="${c.reviewer}"></span></p>
       ${c.status === 0 ? `<p class="small mute">Answers due by ${when(c.answerBy)}.</p>` : c.status === 1 ? `<p class="small mute">The reviewer has until ${when(c.reviewBy)}. Reviewer ${c.reviewerAcked ? "has taken part" : "has not yet confirmed taking part"}.</p>` : ""}
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
       ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
@@ -2157,7 +3635,7 @@ MY POLICY:
         if (!ev.some(e => String(e.by).toLowerCase() === me && e.hash.toLowerCase() === hash.toLowerCase())) { msg.className = "small mute"; msg.textContent = "Confirm 1 of 2 in your wallet: record your reasons…"; await W().send(V4().cases, enc("attachEvidence", ["uint256", "uint8", "bytes32", "string"], [Number(id), 255, hash, rd.oneLine])); }
         const mask = P.questions.reduce((m, _, i) => m + (dis[i] && vals[i] ? 1n << BigInt(i) : 0n), 0n); msg.className = "small mute"; msg.textContent = "Confirm 2 of 2 in your wallet: submit your decision…";
         await W().send(V4().cases, enc("review", ["uint256", "uint64"], [Number(id), mask])); pkCase(id);
-      } catch (e) { msg.className = "small err"; msg.textContent = (e && e.message) || String(e); }
+      } catch (e) { console.error("review failed:", e && e.stack || e); msg.className = "small err"; msg.textContent = (e && e.message) || String(e); }
     };
   }
 
@@ -2195,7 +3673,7 @@ MY POLICY:
   }
   // ---------- policies ----------
   function loadPolicy(key) {
-    if (TB.TEMPLATES[key]) { const r = TB.parse(TB.TEMPLATES[key]); return {key, policy: r.policy, text: TB.TEMPLATES[key]}; }
+    if (TB.TEMPLATES[key]) { const text = TB.templateText ? TB.templateText(key, true) : TB.TEMPLATES[key], r = TB.parse(text); return {key, policy: r.policy, text}; }   // a published template stays in English: its fingerprint is on-chain
     if (key.startsWith("c=")) { try { const text = b64d(key.slice(2)), r = TB.parse(text); if (!r.errors.length) return {key, policy: r.policy, text, custom: true}; } catch {} }
     return null;
   }
@@ -2394,6 +3872,7 @@ MY POLICY:
   function forBusiness() {
     main.innerHTML = `<h1>For businesses</h1><p class="lede">Publish clear rules, invite your customers, and settle disagreements fairly. Pick what you need.</p>
     ${window.TB_GFX.paths([
+      ["publish", "Start from a template", "Second-hand sale, freelance work, rental deposit, bug bounty or warranty: try one in a minute.", "#templates", "See the templates"],
       ["publish", "Publish your rules", "Turn your policy into a claim check your customers can use.", "#build", "Open the builder"],
       ["invite", "Invite a customer with no wallet", "They approve with their fingerprint or face. You send it in and pay the tiny fee.", "#pk/agree", "Invite by fingerprint"],
       ["wallet", "Invite a customer with a wallet", "Propose an agreement that fixes the rules, the neutral person and the time limits.", "#agree", "Make an agreement"],
@@ -2485,7 +3964,8 @@ MY POLICY:
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
     if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
-    if (view === "build") return window.TB_BUILD.build();
+    if (view === "build") return window.TB_BUILD.build(key);
+    if (view === "templates") return window.TB_TEMPLATES.page();
     if (view === "verify") return verify();
     if (view === "about") return about();
     home();

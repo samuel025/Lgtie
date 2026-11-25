@@ -73,3 +73,15 @@ This is a prototype. If you find a problem, open an issue on the repository.
 - Signature deadlines are taken from the chain's latest block, not the browser clock.
 
 **Not covered, and open:** this is my own review, not an independent audit. Passkey recovery after losing every device is not built. One real-phone run by the builder worked; Safari and Firefox are untested. The page can only show a person what it displays, since WebAuthn cannot show the signed hash, so a compromised page could show one thing and sign another. The business creates the customer's account and can stall by not submitting a signed action (the signed action can be submitted by anyone, so the customer can ask another wallet holder).
+
+## Named reviewers
+
+A reviewer used to be shown only as a wallet address, so neither side could tell who they were agreeing to. A reviewer can now attach an identity, with no contract change and no server.
+
+How it works: the reviewer signs a short statement with their wallet (`personal_sign`: name, role, the address of a public page they control). The page recovers the signer in the browser and shows the name only if the signature matches the address. The reviewer puts the same signed code on their public page, and the page can fetch it to confirm that the page and the wallet share an owner (where a site does not allow the browser to read it, the page says so and links to it). The code is also posted to public relays under its own tag so both sides can see it. An agreement form can add the identity to the written terms, so it is part of what both sides fingerprint.
+
+A profile can also state what the reviewer can judge (a specialty) and what they charge (a fee). Both are signed with the rest, so they cannot be changed afterwards, but they are the reviewer's own claims: the signature proves they said it, not that it is true. LGtie holds no money, so any fee is agreed and paid directly between the parties and the reviewer.
+
+What it proves: that the person who controls the wallet also controls the public page, and that the name was signed by that wallet. What it does not prove: that the person is honest, qualified or free of conflicts. The written reasons and conflict declaration still do that work.
+
+Limits: a relay can drop a profile (it cannot change one, because any change breaks the signature), so a profile may take a moment to appear or may need republishing. A profile code kept on one device is found on that device first. A person can sign a new profile later; the newest valid one found is shown, and an agreement's terms keep the fingerprint of the one that was signed when it was made. The reviewer's address is still fixed on-chain by the agreement; the identity is not on-chain.

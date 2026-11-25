@@ -4,6 +4,7 @@ const BASE = process.env.BASE || "http://localhost:8090/index.html";
 const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser", "/snap/bin/chromium"].find(p => fs.existsSync(p));
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]});
 const p = await b.newPage(); const errs = []; p.on("pageerror", e => errs.push("pageerror: " + e.message)); p.on("console", m => { if (m.type() === "error") errs.push("console: " + m.text()); });
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });   // the tests read English text; the app defaults to Chinese
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + x)); if (!c) fails++; };
 const T = sel => p.$eval(sel, e => e.textContent).catch(() => "");
 await p.setViewport({width: 1000, height: 900});

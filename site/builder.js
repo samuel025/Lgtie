@@ -37,11 +37,12 @@ How it works: rules are checked from top to bottom and the first one that matche
 MY POLICY:
 [paste your policy text here]`;
 
-  function build() {
-    let tryAns = [], S = fromPolicy(TB.parse(TB.TEMPLATES.warranty).policy), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
+  function build(startKey) {
+    const tpl = k => TB.parse(TB.templateText ? TB.templateText(k) : TB.TEMPLATES[k]).policy;
+    let tryAns = [], S = fromPolicy(tpl(startKey && TB.TEMPLATES[startKey] ? startKey : "warranty")), mode = "visual", timer = 0, pasteOpen = false, publishing = false, done = null, lastErr = "";
     main.innerHTML = `<h1>Publish your policy as a checker</h1><p class="lede">Turn your policy into a claim check your customers can use. Four short steps: questions, rules, test, publish.</p>
       <ol class="stepper" id="stepper">${["Questions", "Rules", "Test", "Publish"].map((t, i) => `<li><button type="button" data-step-btn="${i + 1}"><span class="sn">${i + 1}</span><span class="st">${t}</span></button></li>`).join("")}</ol>
-      <div class="row" data-s="1"><span class="mute small">Start from:</span><button class="btn small ghost" data-t="warranty" type="button">Warranty example</button><button class="btn small ghost" data-t="bounty" type="button">Bug bounty example</button><button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
+      <div class="row" data-s="1"><span class="mute small">Start from:</span>${(TB.LIBRARY || []).map(t => `<button class="btn small ghost" data-t="${t.key}" type="button">${esc(TB.templateInfo(t.key).chip)}</button>`).join("")}<button class="btn small ghost" data-t="blank" type="button">Blank</button></div>
       <details class="card" id="ai" data-s="1"><summary>Have your policy as a document? Let an AI assistant draft the rules</summary>
         <p class="small">Copy this request, paste it into any AI assistant (with your policy at the bottom), then paste its reply below. Always read the result: assistants can make mistakes.</p>
         <pre id="prompt">${esc(PROMPT)}</pre><div class="row"><button class="btn small ghost" id="cpprompt" type="button">Copy the request</button></div>
@@ -63,7 +64,7 @@ MY POLICY:
     const setMode = m => { mode = m; $("#tabv").classList.toggle("ghost", m !== "visual"); $("#tabt").classList.toggle("ghost", m !== "text"); $("#tabv").setAttribute("aria-pressed", m === "visual"); $("#tabt").setAttribute("aria-pressed", m === "text"); applyStep(false); drawEditor(); };
     $("#tabv").onclick = () => { if (mode === "text") { const r = TB.parse($("#src").value); if (r.errors.length) { $("#out").innerHTML = errBox(r.errors, "Fix the text before switching to forms"); return; } S = fromPolicy(r.policy); } setMode("visual"); };
     $("#tabt").onclick = () => setMode("text");
-    $$("[data-t]").forEach(b => b.onclick = () => { S = b.dataset.t === "blank" ? blank() : fromPolicy(TB.parse(TB.TEMPLATES[b.dataset.t]).policy); setMode(mode); });
+    $$("[data-t]").forEach(b => b.onclick = () => { S = b.dataset.t === "blank" ? blank() : fromPolicy(tpl(b.dataset.t)); setMode(mode); });
     $("#cpprompt").onclick = e => copy(PROMPT, e.target);
     $("#aiuse").onclick = () => { const r = TB.parse($("#aiin").value), m = $("#aimsg"); if (r.errors.length) { m.className = "small err"; m.textContent = r.errors.slice(0, 3).map(e => (e.line ? "Line " + e.line + ": " : "") + e.message).join(" ") + " Ask the assistant to fix it."; return; } S = fromPolicy(r.policy); m.className = "small ok"; m.textContent = "Loaded. Review every question and rule below."; setMode("visual"); };
 

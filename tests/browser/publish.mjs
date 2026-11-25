@@ -8,6 +8,7 @@ const call = (to, data) => arpc("eth_call", [{to, data}, "latest"]);
 const regCount = async () => Number(BigInt(await call("0x25E87D367316038a2d3B6A4fe3d58AA453D4c219", "0x06661abd")));
 const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(p => fs.existsSync(p));
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage();
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });   // the tests read English text; the app defaults to Chinese
 const errs = []; p.on("pageerror", e => errs.push(e.message));
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 400))); if (!c) fails++; };
 const go = async n => { await p.evaluate(n => document.querySelector(`[data-step-btn="${n}"]`).click(), n); await w(350); };

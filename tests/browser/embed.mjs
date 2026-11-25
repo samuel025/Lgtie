@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer-core"; import fs from "node:fs";
 const BASE = "http://localhost:8090/", chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(p => fs.existsSync(p));
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage(); const errs = []; p.on("pageerror", e => errs.push(e.message));
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });   // the tests read English text; the app defaults to Chinese
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 300))); if (!c) fails++; };
 const w = ms => new Promise(r => setTimeout(r, ms));
 await p.setViewport({width: 1000, height: 900});

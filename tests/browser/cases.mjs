@@ -9,6 +9,7 @@ const V3 = /Deployed to: (0x[0-9a-fA-F]{40})/.exec(forge(["create", "src/Tiebrea
 console.log("AgreementRegistry", AG, "| TiebreakCaseV3", V3, "on the fork");
 const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(p => fs.existsSync(p));
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage();
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });   // the tests read English text; the app defaults to Chinese
 const errs = []; p.on("pageerror", e => errs.push("pageerror: " + e.message));
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 300))); if (!c) fails++; };
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));

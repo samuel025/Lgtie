@@ -53,7 +53,7 @@
 
   // The extra fields on the reviewer's decision form.
   function fields() {
-    return `<div class="rvfields"><h4>Your reasons (required)</h4>
+    return `<div class="rvfields"><div id="rv-idnote"></div><h4>Your reasons (required)</h4>
       <p class="small mute">Both sides and anyone who reads this case can see that you gave reasons. Explain which evidence you relied on and what you could not verify. Do not name people.</p>
       <div class="wide"><label><span>One-line reason (public)</span><input id="rv-one" type="text" maxlength="60" placeholder="For example: report shows impact damage" autocomplete="off"></label></div><p class="small mute" id="rv-count"></p>
       <label class="small">Full reasons (kept in a file you download; only its fingerprint is recorded)</label><textarea id="rv-full" rows="5" placeholder="Which evidence did you rely on, and how did it answer each disputed question? What could you not verify?"></textarea>

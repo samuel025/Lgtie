@@ -28,7 +28,7 @@
   }
   // ---------- policies ----------
   function loadPolicy(key) {
-    if (TB.TEMPLATES[key]) { const r = TB.parse(TB.TEMPLATES[key]); return {key, policy: r.policy, text: TB.TEMPLATES[key]}; }
+    if (TB.TEMPLATES[key]) { const text = TB.templateText ? TB.templateText(key, true) : TB.TEMPLATES[key], r = TB.parse(text); return {key, policy: r.policy, text}; }   // a published template stays in English: its fingerprint is on-chain
     if (key.startsWith("c=")) { try { const text = b64d(key.slice(2)), r = TB.parse(text); if (!r.errors.length) return {key, policy: r.policy, text, custom: true}; } catch {} }
     return null;
   }
@@ -227,6 +227,7 @@
   function forBusiness() {
     main.innerHTML = `<h1>For businesses</h1><p class="lede">Publish clear rules, invite your customers, and settle disagreements fairly. Pick what you need.</p>
     ${window.TB_GFX.paths([
+      ["publish", "Start from a template", "Second-hand sale, freelance work, rental deposit, bug bounty or warranty: try one in a minute.", "#templates", "See the templates"],
       ["publish", "Publish your rules", "Turn your policy into a claim check your customers can use.", "#build", "Open the builder"],
       ["invite", "Invite a customer with no wallet", "They approve with their fingerprint or face. You send it in and pay the tiny fee.", "#pk/agree", "Invite by fingerprint"],
       ["wallet", "Invite a customer with a wallet", "Propose an agreement that fixes the rules, the neutral person and the time limits.", "#agree", "Make an agreement"],
@@ -318,7 +319,8 @@
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
     if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
-    if (view === "build") return window.TB_BUILD.build();
+    if (view === "build") return window.TB_BUILD.build(key);
+    if (view === "templates") return window.TB_TEMPLATES.page();
     if (view === "verify") return verify();
     if (view === "about") return about();
     home();

@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer-core"; import fs from "node:fs";
 const BASE = "http://localhost:8090/index.html", chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium"].find(p => fs.existsSync(p));
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), p = await b.newPage(); const errs = []; p.on("pageerror", e => errs.push(e.message));
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });   // the tests read English text; the app defaults to Chinese
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 300))); if (!c) fails++; };
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
 await p.setViewport({width: 1280, height: 900}); await p.goto(BASE); await w(1500);
@@ -24,7 +25,7 @@ ok("the home page asks where to start and offers three doors", /Where do you wan
 ok("the hero says what the product is for without jargon", !/X Layer|circuit|NAND|reviewer/.test(await p.$eval(".hcopy", e => e.textContent)), await p.$eval(".hcopy", e => e.textContent));
 await p.goto(BASE + "#for-business"); await w(800);
 const hubLinks = await p.$$eval(".paths .path", a => a.map(x => x.getAttribute("href")));
-ok("the For businesses page lists every business task as a card that links somewhere real", hubLinks.length === 10 && ["https://github.com/samuel025/Lgtie/tree/main/bridge", "#build", "#inbox", "#pk/cases", "#pk/agree", "#agree", "#case", "#reviewer", "#verify", "embed-demo.html"].every(h => hubLinks.includes(h)), hubLinks.join(","));
+ok("the For businesses page lists every business task as a card that links somewhere real", hubLinks.length === 11 && ["https://github.com/samuel025/Lgtie/tree/main/bridge", "#templates", "#build", "#inbox", "#pk/cases", "#pk/agree", "#agree", "#case", "#reviewer", "#verify", "embed-demo.html"].every(h => hubLinks.includes(h)), hubLinks.join(","));
 await p.goto(BASE); await w(1200);
 // ---- graphics: the flow diagram, the illustrated How-it-works page, and reduced motion
 ok("the home page has the animated flow diagram with five stages", (await p.$$(".flowsec .fnode")).length === 5 && (await p.$$(".flowsec .flab")).length === 5);

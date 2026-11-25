@@ -17,9 +17,14 @@ npm i puppeteer-core            # in any folder; then run: node <path>/checker.m
 | `hero.mjs` | the home hero draws the real 39-gate circuit, tapping an answer changes the result, autoplay, the count-up facts, the card icons, and the circuit on checker pages | network |
 | `builder.mjs` | the visual rule builder: forms, text view, spreadsheet paste, AI-reply loading | none |
 | `embed.mjs` | the embeddable checker and its demo page | network |
+| `templates.mjs` | the #templates page, a free checker for a template, opening it in the builder, and all of it in Chinese (the published warranty checker stays in English rules) | none |
+| `i18n.mjs` | languages: Chinese by default on a fresh profile, the 中文 / EN switch and its persistence, translated results, counters, dates and placeholders, and a real case read from mainnet | network (reads X Layer) |
+| `reviewerid.mjs` | named reviewers: a real wallet signature (made with `cast`), profile setup, publishing to a local relay, the public-page check against a fake page, a stranger's browser finding the name, and the agreement form refusing a profile for the wrong address | `cast`, `ws`; reads mainnet for the case list only |
 | `bridge.mjs` | the optional bridge (`bridge/`): notify-only mode, auto-submit and ordering, reviewer pings, garbage ignored, daily cap; starts a local relay and webhook receiver and needs `npm install` inside `bridge/` | anvil fork, forge |
 | `publish.mjs` | one-click publish with a simulated wallet (claim, mint, tape-out, register) and the verified published link | `anvil --fork-url https://rpc.xlayer.tech --port 8547` |
 | `cases.mjs` | agreements (propose, terms check, accept), a case under an agreement, evidence hashing of a real file, an agreed reviewer deciding at once, helpers acting only for their side, "no decision" after a deadline, and the reviewer and business records (it deploys `AgreementRegistry` and `TiebreakCaseV3` on the fork itself) | the same anvil fork, and `forge` |
+
+The app defaults to Chinese, so the other browser tests set `localStorage["lgtie.lang"] = "en"` before the page loads and read English text.
 
 The simulated wallet signs with anvil's impersonated accounts, so these tests spend nothing. A real-wallet run (for example OKX Wallet on mainnet) has not been done.
 
@@ -27,4 +32,4 @@ The simulated wallet signs with anvil's impersonated accounts, so these tests sp
 
 `passkeys.mjs` also covers the business inbox (a customer's signed action is posted to a relay and submitted from `#inbox`, including queued actions and the relays-unreachable fallback), passkey evidence, and the reviewer's written reasons with the Side A / Side B view. It starts a tiny local Nostr relay from `nostr-relay.mjs`, which needs the `ws` package next to `puppeteer-core` (`npm i ws`). Set `SHOTS=/some/dir` to save screenshots.
 
-Unit tests (no browser): `node tests/rules.test.mjs`, `node tests/pkcore.test.mjs`, `node tests/reviewer.test.mjs` and `node tests/nostr.test.mjs` (BIP-340 signatures against the official vectors).
+Unit tests (no browser): `node tests/rules.test.mjs`, `node tests/pkcore.test.mjs`, `node tests/reviewer.test.mjs` and `node tests/nostr.test.mjs` (BIP-340 signatures against the official vectors) `node tests/templates.test.mjs` (every template, English and Chinese) and `node tests/reviewerid.test.mjs` (wallet-signature recovery against a real signature, profile codes, the page check).
