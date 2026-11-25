@@ -74,6 +74,10 @@ This is a prototype. If you find a problem, open an issue on the repository.
 
 **Not covered, and open:** this is my own review, not an independent audit. Passkey recovery after losing every device is not built. One real-phone run by the builder worked; Safari and Firefox are untested. The page can only show a person what it displays, since WebAuthn cannot show the signed hash, so a compromised page could show one thing and sign another. The business creates the customer's account and can stall by not submitting a signed action (the signed action can be submitted by anyone, so the customer can ask another wallet holder).
 
+## Checking the compiler
+
+The circuit that runs on X Layer is produced by LGtie's rule compiler. A bug there would silently change what the rules mean, so the circuit is checked against the rules by a separate, formal method (`site/verify.js`, described in [VERIFICATION.md](VERIFICATION.md)): a symbolic proof, for every possible set of answers, that the two agree, runnable on any published circuit by anyone. It proves the circuit implements the rules as written; it does not prove the rules are fair, the answers true, or the contracts safe.
+
 ## What is public
 
 Everything LGtie records is on a public blockchain and cannot be deleted: answers, fingerprints of evidence, the reviewer's written reasons and one-line reason, wallet addresses, times and results. Files are never uploaded and reasons must not name people, but the case and its outcome are visible to anyone. Do not use LGtie for matters that must stay confidential. See `docs/USING-WITH-CONTRACTS.md` for the legal questions this raises.

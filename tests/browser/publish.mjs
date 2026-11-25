@@ -47,7 +47,8 @@ await go(4); await p.click("#pubgo");
 ok("publish succeeds", await until(async () => /Published on X Layer/.test(await T("#out"))), await T("#pubmsg") || await T("#out"));
 const outTxt = await T("#out"), circuitId = Number(/Circuit #(\d+)/.exec(outTxt)[1]), rsId = Number(/rule set #(\d+)/.exec(outTxt)[1]);
 ok("registry gained one rule set with the new id", (await regCount()) === n0 + 1 && rsId === n0 + 1, `${await regCount()} vs ${n0 + 1}, rs ${rsId}`);
-ok("the transaction list includes claim, tapeout, register", /claim/.test(outTxt) && /tapeout/.test(outTxt) && /register/.test(outTxt), outTxt.slice(0, 400));
+// NAND comes from the free faucet claim when it is available, otherwise it is bought (mint): both are correct, so accept either
+ok("the transaction list includes getting NAND (claim or mint), tapeout, register", /(claim|mint)/.test(outTxt) && /tapeout/.test(outTxt) && /register/.test(outTxt), outTxt.slice(-400));
 const link = await p.$eval(".note.ok-note a.btn", a => a.href);
 // ---- 2. open the published link as a customer: banner + on-chain confirmation
 await asUser(A2); await p.goto(link); await w(1500);

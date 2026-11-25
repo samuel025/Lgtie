@@ -951,9 +951,23 @@ window.TB_ZH = {
  "It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.": "它持续有效：你们任何一方都可以按需在它之下发起任意多个案件，每个案件都适用同样的规则、审核人和时间限制。每一次索赔都不需要重新订立协议。",
  "Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.": "双方接受之后，这就是一份常设协议：你们可以按需在它之下发起任意多个案件，每次都适用同样的规则、审核人和时间限制。",
  "Cases under this agreement": "这份协议下的案件",
- "No cases yet under this agreement.": "这份协议下还没有案件。"
+ "No cases yet under this agreement.": "这份协议下还没有案件。",
+ "Formal check of the published circuit": "对已发布电路的形式化检查",
+ "Read the circuit from X Layer and prove, for every possible set of answers, that it gives the same result as these rules. This checks what was actually published, not a copy made in your browser.": "从 X Layer 读取电路，并对每一种可能的答案组合证明它与这些规则给出相同的结果。这检查的是实际发布的电路，而不是在你浏览器里生成的副本。",
+ "Verify against the chain": "对照链上检查",
+ "Reading the circuit from X Layer…": "正在从 X Layer 读取电路…",
+ "Download the verification report": "下载验证报告",
+ "Circuit fingerprint": "电路指纹",
+ "Check a circuit against its rules": "对照规则检查电路",
+ "Pick the rules (or paste your own) and a circuit number. This reads the circuit's netlist from X Layer and proves, for every possible set of answers, that it gives the same result as the rules. You do not have to trust this page's compiler: the check builds the rules and the circuit separately and compares them.": "选择规则（或粘贴你自己的规则）并输入电路编号。这会从 X Layer 读取电路的网表，并对每一种可能的答案组合证明它与规则给出相同的结果。你不必信任本页面的编译器：检查会分别构建规则和电路，再把它们进行比较。",
+ "Warranty claims (published rules)": "保修理赔（已发布的规则）",
+ "Paste my own rules": "粘贴我自己的规则",
+ "Check against the chain": "对照链上检查",
+ "Enter a circuit number.": "请输入电路编号。"
 },
   patterns: [
+  [/^\((\d+) gates\)$/, "（{1} 个门）"],
+
   [/^(\d+) cases?$/, "{1} 个案件"], [/^(\d+) decided$/, "{1} 个已裁决"], [/^(\d+) open$/, "{1} 个进行中"], [/^(\d+) no decision$/, "{1} 个无决定"],
 
   [/^(\d+) to fix$/, "{1} 项需处理"], [/^(\d+) to consider$/, "{1} 项可考虑"], [/^Rule (\d+)$/, "规则 {1}"],

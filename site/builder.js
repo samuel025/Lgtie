@@ -179,6 +179,8 @@ MY POLICY:
       const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
       if (mode === "text") S = fromPolicy(P);
       const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
+      // formal proof that the compiled circuit equals the rules for every answer combination (see verify.js)
+      const FV = window.TB_VERIFY, fres = FV ? FV.check(P, C.hex) : null, fdesc = fres ? FV.describe(fres, P, window.TB_I18N ? window.TB_I18N.lang : "en") : null;
       // the rule check: warnings only, never a block (see lint.js)
       const LT = window.TB_LINT, found = LT ? LT.lint(P, {lang: window.TB_I18N ? window.TB_I18N.lang : "en"}) : [], sum = LT ? LT.summary(found) : {fix: 0, consider: 0};
       const lfItem = f => `<li class="lf ${f.level}"><span class="lvl">${f.level === "warn" ? "Fix" : "Consider"}</span><span class="lmsg">${f.q !== undefined ? `<b>Q${f.q + 1}</b> ` : f.rule !== undefined ? `<b>Rule ${f.rule + 1}</b> ` : ""}${esc(f.msg)}</span><span class="lact">${f.q !== undefined ? `<button class="btn small ghost" type="button" data-lshow="${f.q}">Show</button>` : f.rule !== undefined ? `<button class="btn small ghost" type="button" data-lrule="${f.rule}">Show</button>` : ""}${f.fix ? `<button class="btn small" type="button" data-lfix="${f.q}" data-val="${esc(f.fix.hint)}">Use this evidence</button>` : ""}</span></li>`;
@@ -188,6 +190,7 @@ MY POLICY:
         <div class="card" data-s="3"><h3>${esc(P.name)}</h3>
         <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} logic steps</span></div>
         <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The finished checker gives the same answer as your rules" : "✗ The finished checker does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
+        ${fdesc ? `<div class="fproof"><p class="${fdesc.level === "ok" ? "ok" : fdesc.level === "err" ? "err" : "mute"}"><b>${esc(fdesc.headline)}</b></p><p class="small">${esc(fdesc.detail)}</p><div class="row"><button class="btn small ghost" id="dlrep" type="button">Download the verification report</button></div></div>` : ""}
         <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
         <div class="card" data-s="3"><h3>Try it</h3>
           <div class="tryit"><div class="qs" id="tq">${P.questions.map((q, i) => `<div class="qa"><span>${i + 1}. ${esc(q.text)}</span><span class="tg" data-i="${i}"><button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></span></div>`).join("")}</div>
@@ -210,6 +213,7 @@ MY POLICY:
         if (circ) circ.update(ans); const run = TB.run(P, ans); $("#tr").textContent = P.results[run.result] || ""; $("#tw").textContent = run.why || ""; $("#tf").textContent = run.ruleIndex >= 0 ? "Rule " + (run.ruleIndex + 1) + " decided this." : "No rule matched, so the default applies.";
         $$(".rrow").forEach(tr => tr.classList.remove("hit")); const hit = run.ruleIndex >= 0 ? $(`.rrow[data-ui="${run.ruleIndex}"]`) : $(".rrow.def"); if (hit) hit.classList.add("hit"); };
       $$("#tq .tg button").forEach(bt => bt.onclick = () => { ans[Number(bt.closest(".tg").dataset.i)] = bt.dataset.v === "1"; paintTry(); }); paintTry();
+      if (fres && $("#dlrep")) $("#dlrep").onclick = async () => { const rep = FV.report(P, fres, {compiler: TB.COMPILER_VERSION, policyHash: h, netlistHash: await FV.netlistFingerprint(C.hex), source: "built in this browser by the LGtie compiler", simulated: v.exhaustive ? {combinations: v.checked, allMatch: v.ok} : null}); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(rep, null, 2)], {type: "application/json"})); a.download = "lgtie-verification-report.json"; document.body.appendChild(a); a.click(); a.remove(); };
       $("#cplink").onclick = e => copy(link, e.target); $("#cphex").onclick = e => copy(C.hex, e.target);
       $("#dl").onclick = () => { const blob = new Blob([JSON.stringify({rules: canon, definitionsHashSha256: h, nQuestions: nQ, nResultBits: C.nOut, netlist: C.hex, gates: C.gates.length}, null, 2)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (P.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "rules") + ".json"; a.click(); };
     }

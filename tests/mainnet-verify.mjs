@@ -16,5 +16,10 @@ for (let m = 0; m < 128; m++) {
   const got = parseInt(out.slice(off + 64, off + 66) || "0", 16) & 3, want = TB.run(P, TB.decodeAnswers(m, 7)).result;
   if (got !== want) { bad++; if (bad < 4) console.log("MISMATCH", m, want, got); }
 }
-console.log(bad ? `FAIL: ${bad} mismatches on mainnet` : "OK: circuit #" + CID + " on X Layer matches the warranty rules on all 128 combinations");
+// Also read the circuit's netlist back from the processor and prove it equal to the rules symbolically (the independent checker in site/verify.js).
+const V = createRequire(import.meta.url)("../site/verify.js"), nl = (await call(PROC, "0x3fc4be56" + w(CID))).replace("0x", ""), noff = Number(BigInt("0x" + nl.slice(0, 64))) * 2, nlen = Number(BigInt("0x" + nl.slice(noff, noff + 64)));
+const formal = V.check(P, "0x" + nl.slice(noff + 64, noff + 64 + nlen * 2));
+console.log(`formal check of the on-chain netlist (${formal.nGates} gates): ${formal.result}`);
+if (formal.result !== "equivalent") bad++;
+console.log(bad ? `FAIL: ${bad} problem(s) on mainnet` : "OK: circuit #" + CID + " on X Layer matches the warranty rules on all 128 combinations, and its netlist is formally equivalent to the rules");
 process.exit(bad ? 1 : 0);

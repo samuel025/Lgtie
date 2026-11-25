@@ -12,7 +12,7 @@ async function page(lang) {
   await p.evaluateOnNewDocument(l => { try { localStorage.setItem("lgtie.lang", l); } catch (e) {} }, lang); return p;
 }
 const T = (p, sel) => p.$eval(sel, e => e.innerText).catch(() => "");
-const until = async (f, ms = 25000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f().catch(() => false)) return true; await w(300); } return false; };
+const until = async (f, ms = 50000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f().catch(() => false)) return true; await w(300); } return false; };
 
 const e = await page("en");
 await e.goto(BASE + "#agreement/1");

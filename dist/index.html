@@ -443,6 +443,7 @@ h3 .badge{letter-spacing:0;word-spacing:.08em;white-space:nowrap;margin-left:8px
 @media(max-width:700px){.lf{grid-template-columns:1fr}.lf .lact{justify-content:flex-start}}
 .rrow.flash{outline:2px solid #ff5b2e;outline-offset:-2px}
 .agc{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:6px}.agc li{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--warm,#ddd);border-radius:12px;padding:9px 14px;font-size:14px}.agc a{font-weight:500}
+.fproof{margin:14px 0 4px;padding:12px 16px;background:#fff;border:1px solid var(--warm,#ddd);border-radius:12px}.fproof p{margin:0 0 6px}.fv .fvh{font:500 15px var(--sans);letter-spacing:0;margin:14px 0 4px}.fv code,.fproof code{word-break:break-all}
 /* language: Chinese needs system CJK fonts (the embedded Inter has Latin only) and looser tracking */
 html[lang^="zh"]{--serif:"InterEmbedded","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","WenQuanYi Micro Hei",ui-sans-serif,system-ui,sans-serif;--sans:var(--serif)}
 html[lang^="zh"] body{letter-spacing:0;line-height:1.65;line-break:strict}
@@ -1415,9 +1416,23 @@ window.TB_ZH = {
  "It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.": "它持续有效：你们任何一方都可以按需在它之下发起任意多个案件，每个案件都适用同样的规则、审核人和时间限制。每一次索赔都不需要重新订立协议。",
  "Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.": "双方接受之后，这就是一份常设协议：你们可以按需在它之下发起任意多个案件，每次都适用同样的规则、审核人和时间限制。",
  "Cases under this agreement": "这份协议下的案件",
- "No cases yet under this agreement.": "这份协议下还没有案件。"
+ "No cases yet under this agreement.": "这份协议下还没有案件。",
+ "Formal check of the published circuit": "对已发布电路的形式化检查",
+ "Read the circuit from X Layer and prove, for every possible set of answers, that it gives the same result as these rules. This checks what was actually published, not a copy made in your browser.": "从 X Layer 读取电路，并对每一种可能的答案组合证明它与这些规则给出相同的结果。这检查的是实际发布的电路，而不是在你浏览器里生成的副本。",
+ "Verify against the chain": "对照链上检查",
+ "Reading the circuit from X Layer…": "正在从 X Layer 读取电路…",
+ "Download the verification report": "下载验证报告",
+ "Circuit fingerprint": "电路指纹",
+ "Check a circuit against its rules": "对照规则检查电路",
+ "Pick the rules (or paste your own) and a circuit number. This reads the circuit's netlist from X Layer and proves, for every possible set of answers, that it gives the same result as the rules. You do not have to trust this page's compiler: the check builds the rules and the circuit separately and compares them.": "选择规则（或粘贴你自己的规则）并输入电路编号。这会从 X Layer 读取电路的网表，并对每一种可能的答案组合证明它与规则给出相同的结果。你不必信任本页面的编译器：检查会分别构建规则和电路，再把它们进行比较。",
+ "Warranty claims (published rules)": "保修理赔（已发布的规则）",
+ "Paste my own rules": "粘贴我自己的规则",
+ "Check against the chain": "对照链上检查",
+ "Enter a circuit number.": "请输入电路编号。"
 },
   patterns: [
+  [/^\((\d+) gates\)$/, "（{1} 个门）"],
+
   [/^(\d+) cases?$/, "{1} 个案件"], [/^(\d+) decided$/, "{1} 个已裁决"], [/^(\d+) open$/, "{1} 个进行中"], [/^(\d+) no decision$/, "{1} 个无决定"],
 
   [/^(\d+) to fix$/, "{1} 项需处理"], [/^(\d+) to consider$/, "{1} 项可考虑"], [/^Rule (\d+)$/, "规则 {1}"],
@@ -1724,7 +1739,8 @@ default: Low : It is reproducible and in scope, but there is no loss of funds an
 `
   };
 
-  const API = {parse, run, compile, verify, resultBits, encodeAnswers, decodeAnswers, canonical, hexOf, evalGates, TEMPLATES, Net};
+  const COMPILER_VERSION = "lgtie-nand-compiler/1";   // named in verification reports; bump it if the compiler's output for the same rules ever changes
+  const API = {COMPILER_VERSION, parse, run, compile, verify, resultBits, encodeAnswers, decodeAnswers, canonical, hexOf, evalGates, TEMPLATES, Net};
   if (typeof module !== "undefined" && module.exports) module.exports = API; else root.TB = API;
 })(typeof window !== "undefined" ? window : globalThis);
 
@@ -2124,6 +2140,174 @@ default: 予以保修 : 保修的所有条件均已满足。
   const summary = f => ({fix: f.filter(x => x.level === "warn").length, consider: f.filter(x => x.level === "info").length});
   const api = {lint, summary};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else root.TB_LINT = api;
+})(typeof window !== "undefined" ? window : globalThis);
+
+</script><script>/* verify.js */
+// Formal check that a circuit implements a policy, for EVERY combination of answers (not a sample), without trying them one by one.
+//
+// How: both sides are turned into reduced ordered binary decision diagrams (ROBDDs), a canonical form of a boolean function, so two functions are the
+// same exactly when their diagrams are the same node. If they differ, a satisfying path through the XOR of the two gives a concrete answer set where
+// the circuit and the rules disagree (a counterexample).
+//   - The POLICY side is built straight from the parsed rules (questions, conditions, result numbers, first match wins, then the default). It does not call
+//     the compiler or the reference evaluator (rules.js compile/run), so a bug in either of those cannot hide itself.
+//   - The CIRCUIT side is built from the raw netlist records (7 bytes each: a type byte, then two 3-byte references; type 0 is NAND, references 0 and 1 are the
+//     constants 0 and 1, inputs start at 2, and the outputs are the last gates), the same bytes the TapeOut processor stores and runs. It can come from the
+//     compiler in this page or be read back from X Layer, which checks what was actually published.
+// What this proves: the circuit and the rules compute the same result for all 2^n answers. What it does NOT prove: that the rules are fair or complete, that
+// the answers are true, or that the questions mean what the business thinks. A BDD can in theory grow very large for unusual logic; there is a size limit, and
+// then the result is "inconclusive" rather than a guess.
+// Pure, so it can be tested in Node (module.exports); the page uses window.TB_VERIFY.
+(function (root) {
+  "use strict";
+  const VERSION = "lgtie-verify/1";
+
+  class BDD {
+    constructor(nVars, limit) { this.n = nVars; this.limit = limit || 1500000; this.v = [nVars, nVars]; this.lo = [0, 1]; this.hi = [0, 1]; this.uniq = new Map(); this.memo = new Map(); }
+    get size() { return this.v.length; }
+    mk(v, lo, hi) {
+      if (lo === hi) return lo;
+      const k = v + "," + lo + "," + hi, f = this.uniq.get(k); if (f !== undefined) return f;
+      if (this.v.length >= this.limit) throw new Error("size-limit");
+      const id = this.v.length; this.v.push(v); this.lo.push(lo); this.hi.push(hi); this.uniq.set(k, id); return id;
+    }
+    variable(i) { return this.mk(i, 0, 1); }
+    ite(f, g, h) {
+      if (f === 1) return g; if (f === 0) return h; if (g === h) return g; if (g === 1 && h === 0) return f;
+      const k = f + "," + g + "," + h, m = this.memo.get(k); if (m !== undefined) return m;
+      const top = Math.min(this.v[f], this.v[g], this.v[h]);
+      const co = (x, b) => this.v[x] === top ? (b ? this.hi[x] : this.lo[x]) : x;
+      const r = this.mk(top, this.ite(co(f, 0), co(g, 0), co(h, 0)), this.ite(co(f, 1), co(g, 1), co(h, 1)));
+      this.memo.set(k, r); return r;
+    }
+    not(f) { return this.ite(f, 0, 1); }
+    and(f, g) { return this.ite(f, g, 0); }
+    or(f, g) { return this.ite(f, 1, g); }
+    xor(f, g) { return this.ite(f, this.not(g), g); }
+    // one assignment (array of booleans, true = the variable is 1) that makes f true, or null. Variables the path does not mention are left at false.
+    satisfy(f) {
+      if (f === 0) return null; const a = new Array(this.n).fill(false);
+      while (f > 1) { if (this.lo[f] !== 0) f = this.lo[f]; else { a[this.v[f]] = true; f = this.hi[f]; } }
+      return a;
+    }
+  }
+
+  // ---- reading a netlist ----
+  // Netlist hex: records of 7 bytes: type (1), a (3), b (3). Type 0 = NAND. Returns {gates: [{type, a, b}]} or {error}.
+  function decodeNetlist(hex) {
+    const h = String(hex || "").replace(/^0x/i, "");
+    if (!/^[0-9a-fA-F]*$/.test(h) || h.length % 2) return {error: "The netlist is not valid hex."};
+    if (h.length === 0) return {error: "The netlist is empty."};
+    if ((h.length / 2) % 7) return {error: "The netlist is " + h.length / 2 + " bytes, which is not a whole number of 7-byte records."};
+    const gates = []; for (let i = 0; i < h.length; i += 14) gates.push({type: parseInt(h.slice(i, i + 2), 16), a: parseInt(h.slice(i + 2, i + 8), 16), b: parseInt(h.slice(i + 8, i + 14), 16)});
+    return {gates};
+  }
+  const outBits = n => { let b = 1; while ((1 << b) < n) b++; return b; };
+
+  // The circuit's output functions (one per result bit), by symbolic NAND evaluation. {outs, dead} or throws {message}.
+  function circuitFunctions(bdd, gates, nIn, nOut) {
+    if (gates.length < nOut) throw new Error("The circuit has fewer gates (" + gates.length + ") than outputs (" + nOut + ").");
+    const val = new Array(2 + nIn + gates.length); val[0] = 0; val[1] = 1; for (let k = 0; k < nIn; k++) val[2 + k] = bdd.variable(k);
+    const used = new Uint8Array(gates.length);
+    gates.forEach((g, i) => {
+      if (g.type !== 0) throw new Error("Record " + (i + 1) + " has type " + g.type + ", not NAND. This checker only handles NAND records (it does not handle REF or LATCH).");
+      const self = 2 + nIn + i;
+      if (g.a >= self || g.b >= self) throw new Error("Gate " + (i + 1) + " refers to a node that does not exist yet (" + (g.a >= self ? g.a : g.b) + ").");
+      val[self] = bdd.not(bdd.and(val[g.a], val[g.b]));
+      if (g.a >= 2 + nIn) used[g.a - 2 - nIn] = 1; if (g.b >= 2 + nIn) used[g.b - 2 - nIn] = 1;
+    });
+    const outs = []; for (let o = 0; o < nOut; o++) { const gi = gates.length - nOut + o; outs.push(val[2 + nIn + gi]); used[gi] = 1; }
+    return {outs, dead: used.reduce((n, u) => n + (u ? 0 : 1), 0)};
+  }
+
+  // The policy's output functions, straight from the parsed rules: first matching rule wins, otherwise the default.
+  function policyFunctions(bdd, P) {
+    const nR = P.results.length, R = new Array(nR).fill(0); let before = 0;
+    P.rules.forEach(r => {
+      let match = 1; r.conds.forEach(c => { const lit = bdd.variable(c.q); match = bdd.and(match, c.yes ? lit : bdd.not(lit)); });
+      R[r.result] = bdd.or(R[r.result], bdd.and(match, bdd.not(before))); before = bdd.or(before, match);
+    });
+    R[P.def.result] = bdd.or(R[P.def.result], bdd.not(before));
+    const nOut = outBits(nR), outs = [];
+    for (let b = 0; b < nOut; b++) { let f = 0; for (let r = 0; r < nR; r++) if ((r >> b) & 1) f = bdd.or(f, R[r]); outs.push(f); }
+    return outs;
+  }
+
+  // Simulate the netlist for one set of answers (used only to double-check a counterexample).
+  function simulate(gates, nIn, nOut, answers) {
+    const v = {0: 0, 1: 1}; for (let k = 0; k < nIn; k++) v[2 + k] = answers[k] ? 1 : 0;
+    gates.forEach((g, i) => { v[2 + nIn + i] = 1 - (v[g.a] & v[g.b]); });
+    let out = 0; for (let o = 0; o < nOut; o++) out += v[2 + nIn + gates.length - nOut + o] * 2 ** o; return out;
+  }
+  function policyResult(P, answers) {
+    for (const r of P.rules) if (r.conds.every(c => !!answers[c.q] === c.yes)) return r.result;
+    return P.def.result;
+  }
+
+  // P: a parsed policy. netlist: hex string or {gates}. Returns a plain object (see report()).
+  function check(P, netlist, opts) {
+    const t0 = Date.now(), nQ = P.questions.length, nOut = outBits(P.results.length), out = {version: VERSION, nQuestions: nQ, nResults: P.results.length, nRules: P.rules.length, nOut};
+    const dec = typeof netlist === "string" ? decodeNetlist(netlist) : {gates: netlist.gates.map(g => ({type: g.type === undefined ? 0 : g.type, a: g.a, b: g.b}))};
+    if (dec.error) return Object.assign(out, {result: "unsupported", reason: dec.error});
+    const gates = dec.gates; out.nGates = gates.length; out.records = {NAND: gates.filter(g => g.type === 0).length, other: gates.filter(g => g.type !== 0).length};
+    try {
+      const bdd = new BDD(nQ, opts && opts.limit), want = policyFunctions(bdd, P);
+      let got, dead; try { ({outs: got, dead} = circuitFunctions(bdd, gates, nQ, nOut)); } catch (e) { if (e.message === "size-limit") throw e; return Object.assign(out, {result: "unsupported", reason: e.message}); }
+      out.deadGates = dead; out.bddNodes = bdd.size;
+      let diff = 0; for (let b = 0; b < nOut; b++) diff = bdd.or(diff, bdd.xor(want[b], got[b]));
+      out.ms = Date.now() - t0;
+      if (diff === 0) return Object.assign(out, {result: "equivalent", counterexample: null});
+      const a = bdd.satisfy(diff), w = policyResult(P, a), g = simulate(gates, nQ, nOut, a);
+      return Object.assign(out, {result: "different", counterexample: {answers: a, policyResult: w, circuitResult: g, confirmed: w !== g}});
+    } catch (e) {
+      if (e && e.message === "size-limit") return Object.assign(out, {result: "inconclusive", reason: "The diagram grew past its size limit before the comparison finished, so no claim is made.", ms: Date.now() - t0});
+      throw e;
+    }
+  }
+
+  // A report that can be saved and re-checked. extras: {policyHash, netlistHash, source, generatedAt, policyHashMethod}
+  function report(P, res, extras) {
+    const x = extras || {};
+    return {
+      tool: VERSION, compiler: x.compiler || null, generatedAt: x.generatedAt || new Date().toISOString(),
+      method: "ROBDD symbolic equivalence over all 2^" + res.nQuestions + " answer combinations",
+      policy: {name: P.name, questions: res.nQuestions, results: res.nResults, rules: res.nRules, rulesFingerprintSha256: x.policyHash || null},
+      circuit: {source: x.source || "unspecified", records: res.nGates, nand: res.records ? res.records.NAND : null, otherRecords: res.records ? res.records.other : null, deadGates: res.deadGates === undefined ? null : res.deadGates, netlistFingerprintSha256: x.netlistHash || null},
+      result: res.result, reason: res.reason || null,
+      counterexample: res.counterexample ? {answers: res.counterexample.answers.map((a, i) => "Q" + (i + 1) + "=" + (a ? "yes" : "no")), policyResult: P.results[res.counterexample.policyResult], circuitResult: P.results[res.counterexample.circuitResult] !== undefined ? P.results[res.counterexample.circuitResult] : "code " + res.counterexample.circuitResult} : null,
+      stats: {bddNodes: res.bddNodes === undefined ? null : res.bddNodes, milliseconds: res.ms === undefined ? null : res.ms},
+      alsoSimulated: x.simulated || null,
+      proves: res.result === "equivalent" ? "The circuit and the rules compute the same result for every one of the 2^" + res.nQuestions + " possible answer combinations." : null,
+      doesNotProve: ["That the rules are fair, complete or sensible.", "That any answer is true.", "That the questions mean what the business intends.", "Anything about the contracts that run the case: they are unaudited."]
+    };
+  }
+
+
+  // SHA-256 of the netlist bytes (what the report calls the netlist fingerprint). Works in the browser and in Node 19+.
+  async function netlistFingerprint(hex) {
+    const h = String(hex).replace(/^0x/i, ""), bytes = Uint8Array.from(h.match(/../g) || [], x => parseInt(x, 16));
+    return "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  const big = n => (2n ** BigInt(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  // Plain words for a result, in English or Chinese: {level: "ok" | "err" | "mute", headline, detail}
+  function describe(res, P, lang) {
+    const zh = lang === "zh", n = res.nQuestions;
+    if (res.result === "equivalent") return {level: "ok",
+      headline: zh ? "✓ 已证明：电路与你的规则始终一致" : "✓ Proved: the circuit and the rules always agree",
+      detail: zh ? `对全部 ${big(n)} 种（2^${n}）可能的答案组合都做了符号化检查，而不是抽样。这证明电路确实实现了所写的规则；它并不证明规则公平，也不证明答案属实。`
+        : `Checked symbolically for all ${big(n)} possible answer combinations (2^${n}), not a sample. This proves the circuit implements the rules as written. It does not prove the rules are fair or the answers are true.`};
+    if (res.result === "different") { const c = res.counterexample, ans = c.answers.map((a, i) => "Q" + (i + 1) + "=" + (zh ? (a ? "是" : "否") : (a ? "yes" : "no"))).join(", "), nm = i => P.results[i] !== undefined ? P.results[i] : (zh ? "代码 " : "code ") + i;
+      return {level: "err", headline: zh ? "✗ 电路与规则不一致" : "✗ The circuit and the rules disagree",
+        detail: zh ? `例如当答案为 ${ans} 时：规则给出“${nm(c.policyResult)}”，电路给出“${nm(c.circuitResult)}”。请不要依赖这个电路。` : `For example when the answers are ${ans}: the rules give "${nm(c.policyResult)}" but the circuit gives "${nm(c.circuitResult)}". Do not rely on this circuit.`}; }
+    if (res.result === "unsupported") return {level: "mute", headline: zh ? "无法检查这个电路" : "This circuit cannot be checked", detail: res.reason};
+    return {level: "mute", headline: zh ? "未作出结论" : "No conclusion", detail: zh ? "比较过程中图的规模超过了上限，因此不作任何结论。" : res.reason};
+  }
+  function describeMismatch(have, want, lang) {
+    return lang === "zh" ? `这个电路有 ${have.nIn} 个输入和 ${have.nOut} 个输出，而这些规则有 ${want.nQ} 个问题（需要 ${want.nOut} 个输出）。它不是这套规则对应的电路。`
+      : `This circuit has ${have.nIn} inputs and ${have.nOut} outputs, but these rules have ${want.nQ} questions (and need ${want.nOut} outputs). It is not the circuit for these rules.`;
+  }
+
+  const api = {VERSION, BDD, decodeNetlist, check, report, netlistFingerprint, describe, describeMismatch, circuitFunctions, policyFunctions, simulate, policyResult, outBits};
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else root.TB_VERIFY = api;
 })(typeof window !== "undefined" ? window : globalThis);
 
 </script><script>/* pkcore.js */
@@ -2614,6 +2798,8 @@ MY POLICY:
       const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
       if (mode === "text") S = fromPolicy(P);
       const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
+      // formal proof that the compiled circuit equals the rules for every answer combination (see verify.js)
+      const FV = window.TB_VERIFY, fres = FV ? FV.check(P, C.hex) : null, fdesc = fres ? FV.describe(fres, P, window.TB_I18N ? window.TB_I18N.lang : "en") : null;
       // the rule check: warnings only, never a block (see lint.js)
       const LT = window.TB_LINT, found = LT ? LT.lint(P, {lang: window.TB_I18N ? window.TB_I18N.lang : "en"}) : [], sum = LT ? LT.summary(found) : {fix: 0, consider: 0};
       const lfItem = f => `<li class="lf ${f.level}"><span class="lvl">${f.level === "warn" ? "Fix" : "Consider"}</span><span class="lmsg">${f.q !== undefined ? `<b>Q${f.q + 1}</b> ` : f.rule !== undefined ? `<b>Rule ${f.rule + 1}</b> ` : ""}${esc(f.msg)}</span><span class="lact">${f.q !== undefined ? `<button class="btn small ghost" type="button" data-lshow="${f.q}">Show</button>` : f.rule !== undefined ? `<button class="btn small ghost" type="button" data-lrule="${f.rule}">Show</button>` : ""}${f.fix ? `<button class="btn small" type="button" data-lfix="${f.q}" data-val="${esc(f.fix.hint)}">Use this evidence</button>` : ""}</span></li>`;
@@ -2623,6 +2809,7 @@ MY POLICY:
         <div class="card" data-s="3"><h3>${esc(P.name)}</h3>
         <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} logic steps</span></div>
         <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The finished checker gives the same answer as your rules" : "✗ The finished checker does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
+        ${fdesc ? `<div class="fproof"><p class="${fdesc.level === "ok" ? "ok" : fdesc.level === "err" ? "err" : "mute"}"><b>${esc(fdesc.headline)}</b></p><p class="small">${esc(fdesc.detail)}</p><div class="row"><button class="btn small ghost" id="dlrep" type="button">Download the verification report</button></div></div>` : ""}
         <div class="row"><a class="btn" href="${link}">Try your checker</a><button class="btn ghost" id="cplink" type="button">Copy shareable link</button></div></div>
         <div class="card" data-s="3"><h3>Try it</h3>
           <div class="tryit"><div class="qs" id="tq">${P.questions.map((q, i) => `<div class="qa"><span>${i + 1}. ${esc(q.text)}</span><span class="tg" data-i="${i}"><button type="button" data-v="1">Yes</button><button type="button" data-v="0">No</button></span></div>`).join("")}</div>
@@ -2645,6 +2832,7 @@ MY POLICY:
         if (circ) circ.update(ans); const run = TB.run(P, ans); $("#tr").textContent = P.results[run.result] || ""; $("#tw").textContent = run.why || ""; $("#tf").textContent = run.ruleIndex >= 0 ? "Rule " + (run.ruleIndex + 1) + " decided this." : "No rule matched, so the default applies.";
         $$(".rrow").forEach(tr => tr.classList.remove("hit")); const hit = run.ruleIndex >= 0 ? $(`.rrow[data-ui="${run.ruleIndex}"]`) : $(".rrow.def"); if (hit) hit.classList.add("hit"); };
       $$("#tq .tg button").forEach(bt => bt.onclick = () => { ans[Number(bt.closest(".tg").dataset.i)] = bt.dataset.v === "1"; paintTry(); }); paintTry();
+      if (fres && $("#dlrep")) $("#dlrep").onclick = async () => { const rep = FV.report(P, fres, {compiler: TB.COMPILER_VERSION, policyHash: h, netlistHash: await FV.netlistFingerprint(C.hex), source: "built in this browser by the LGtie compiler", simulated: v.exhaustive ? {combinations: v.checked, allMatch: v.ok} : null}); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(rep, null, 2)], {type: "application/json"})); a.download = "lgtie-verification-report.json"; document.body.appendChild(a); a.click(); a.remove(); };
       $("#cplink").onclick = e => copy(link, e.target); $("#cphex").onclick = e => copy(C.hex, e.target);
       $("#dl").onclick = () => { const blob = new Blob([JSON.stringify({rules: canon, definitionsHashSha256: h, nQuestions: nQ, nResultBits: C.nOut, netlist: C.hex, gates: C.gates.length}, null, 2)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (P.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "rules") + ".json"; a.click(); };
     }
@@ -3981,6 +4169,36 @@ MY POLICY:
     return (parseInt(data.slice(0, 2) || "0", 16)) & (2 ** nOut - 1);
   }
   const circuitInfo = async id => { const h = (await rpc("eth_call", [{to: CFG.processor, data: "0x084d60f1" + w(id)}, "latest"])).replace("0x", ""); return {nIn: Number(BigInt("0x" + h.slice(0, 64))), nOut: Number(BigInt("0x" + h.slice(64, 128)))}; };
+
+  // ---------- formal check of a published circuit (see verify.js) ----------
+  const LANG = () => (window.TB_I18N && window.TB_I18N.lang) || "en";
+  const netlistOf = async id => { const x = (await rpc("eth_call", [{to: CFG.processor, data: "0x3fc4be56" + w(id)}, "latest"])).replace("0x", ""), off = Number(BigInt("0x" + x.slice(0, 64))) * 2, len = Number(BigInt("0x" + x.slice(off, off + 64))); return "0x" + x.slice(off + 64, off + 64 + len * 2); };
+  async function formalOnChain(P, id) {
+    const [info, hex] = await Promise.all([circuitInfo(id), netlistOf(id)]), V = window.TB_VERIFY, nQ = P.questions.length, nOut = V.outBits(P.results.length);
+    if (info.nIn !== nQ || info.nOut !== nOut) return {mismatch: V.describeMismatch(info, {nQ, nOut}, LANG())};
+    const res = V.check(P, hex), src = `X Layer circuit #${id} on processor ${CFG.processor}`;
+    const rep = V.report(P, res, {compiler: TB.COMPILER_VERSION, policyHash: await sha256(TB.canonical(P)), netlistHash: await V.netlistFingerprint(hex), source: src});
+    return {res, rep, hex};
+  }
+  const downloadJson = (obj, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], {type: "application/json"})); a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
+  function showFormal(el, P, out) {
+    if (out.mismatch) { el.innerHTML = `<p class="err">${esc(out.mismatch)}</p>`; return; }
+    const d = window.TB_VERIFY.describe(out.res, P, LANG());
+    el.innerHTML = `<p class="${d.level === "ok" ? "ok" : d.level === "err" ? "err" : "mute"}"><b>${esc(d.headline)}</b></p><p class="small">${esc(d.detail)}</p>
+      <p class="small mute">Rules fingerprint <code>${esc(out.rep.policy.rulesFingerprintSha256)}</code><br>Circuit fingerprint <code>${esc(out.rep.circuit.netlistFingerprintSha256)}</code> (${out.res.nGates} gates)</p>
+      <div class="row"><button class="btn small ghost" type="button" data-dlrep="1">Download the verification report</button></div>`;
+    el.querySelector("[data-dlrep]").onclick = () => downloadJson(out.rep, "lgtie-verification-report.json");
+  }
+  // A "verify against the chain" box: reads the published netlist from X Layer and checks it against the rules on this page.
+  function formalBox(el, P, circuitId) {
+    el.innerHTML = `<h4 class="fvh">Formal check of the published circuit</h4><p class="small">Read the circuit from X Layer and prove, for every possible set of answers, that it gives the same result as these rules. This checks what was actually published, not a copy made in your browser.</p>
+      <div class="row"><button class="btn small" type="button" data-fv="1">Verify against the chain</button></div><div class="fvout" aria-live="polite"></div>`;
+    el.querySelector("[data-fv]").onclick = async e => {
+      const out = el.querySelector(".fvout"); e.target.disabled = true; out.innerHTML = `<p class="mute">Reading the circuit from X Layer…</p>`;
+      try { showFormal(out, P, await formalOnChain(P, circuitId)); } catch (err) { out.innerHTML = `<p class="err">Could not read that circuit: ${esc(err.message)}</p>`; }
+      e.target.disabled = false;
+    };
+  }
   const circuitOwner = async id => "0x" + (await rpc("eth_call", [{to: CFG.processor, data: "0x6352211e" + w(id)}, "latest"])).slice(-40);
 
   // Reads one RuleSetRegistry entry (the dynamic name string is skipped): -> {publisher, processor, circuitId, nQ, nOut, hash, previousId, publishedAt}
@@ -4155,8 +4373,9 @@ MY POLICY:
           <p class="small">${esc(rule)}. The same answers go into the published rules, and anyone can run them.</p>
           ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
             : `<p class="small">This checker has not been published on X Layer yet, so the result above is computed in your browser from the same rules. Once published, the page asks the TapeOut processor and shows a confirmation.</p>`}
-          <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre></details>
+          <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre>${published && window.TB_VERIFY ? `<div class="fv" id="fv"></div>` : ""}</details>
         ${embed ? "" : `<details id="packbox"><summary>Claim pack to attach to your report or claim</summary><p class="small">Plain text you can paste into an email, a support ticket or a bug report. It lists your answers, the rule that decided the result, and a link anyone can use to re-run it.</p><pre id="packtxt">Preparing…</pre><div class="row"><button class="btn small ghost" id="cpk" type="button">Copy claim pack</button></div></details>`}</div>`;
+      if (published && window.TB_VERIFY && $("#fv")) formalBox($("#fv"), P, published.circuitId);
       $("#cp").onclick = e => copy(link, e.target); $("#rs").onclick = () => { ans = Array(nQ).fill(null); history.replaceState(null, "", pre.replace(/[/&]$/, "")); paint(); window.scrollTo({top: 0, behavior: "smooth"}); };
       history.replaceState(null, "", pre + "a=" + m);
       if (!embed && $("#packtxt")) {
@@ -4175,7 +4394,19 @@ MY POLICY:
   function verify() {
     main.innerHTML = `<h1>Verify a published circuit</h1><p class="lede">Look up any circuit on the TapeOut processor and run it yourself. This asks X Layer directly, so you do not have to trust this page.</p>
       <div class="card"><div class="row"><label>Circuit number <input id="cid" type="number" min="1" style="width:120px"></label><label>Answers, one digit per question, question 1 first <input id="bits" type="text" placeholder="1111111" style="width:220px" autocomplete="off"></label><button class="btn" id="go" type="button">Run it</button></div><div id="vout"></div></div>
+      <div class="card"><h3>Check a circuit against its rules</h3><p class="small">Pick the rules (or paste your own) and a circuit number. This reads the circuit's netlist from X Layer and proves, for every possible set of answers, that it gives the same result as the rules. You do not have to trust this page's compiler: the check builds the rules and the circuit separately and compares them.</p>
+        <div class="row"><label>Rules <select id="frs"><option value="warranty">Warranty claims (published rules)</option><option value="bounty">Bug bounty example</option><option value="custom">Paste my own rules</option></select></label><label>Circuit number <input id="fcid" type="number" min="1" placeholder="13" style="width:120px"></label></div>
+        <textarea id="frt" rows="7" class="mono" hidden placeholder="name: …" spellcheck="false" style="min-height:140px"></textarea>
+        <div class="row"><button class="btn" id="fgo" type="button">Check against the chain</button></div><div id="fout" aria-live="polite"></div></div>
       <p class="small mute">Processor: <code>${CFG.processor}</code></p>`;
+    $("#frs").onchange = () => { $("#frt").hidden = $("#frs").value !== "custom"; };
+    $("#fgo").onclick = async () => {
+      const out = $("#fout"), id = Number($("#fcid").value); if (!id) { out.innerHTML = `<p class="err">Enter a circuit number.</p>`; return; }
+      const key = $("#frs").value, parsed = TB.parse(key === "custom" ? $("#frt").value : TB.TEMPLATES[key]);
+      if (parsed.errors.length) { out.innerHTML = `<p class="err">${esc(parsed.errors.slice(0, 3).map(e => (e.line ? "Line " + e.line + ": " : "") + e.message).join(" "))}</p>`; return; }
+      out.innerHTML = `<p class="mute">Reading the circuit from X Layer…</p>`;
+      try { showFormal(out, parsed.policy, await formalOnChain(parsed.policy, id)); } catch (e) { out.innerHTML = `<p class="err">Could not read that circuit: ${esc(e.message)}</p>`; }
+    };
     $("#go").onclick = async () => {
       const id = Number($("#cid").value), bits = $("#bits").value.trim(), out = $("#vout"); if (!id || !/^[01]+$/.test(bits)) { out.innerHTML = `<p class="err">Enter a circuit number and answers made of 0 and 1.</p>`; return; }
       out.innerHTML = `<p class="mute">Asking X Layer…</p>`;

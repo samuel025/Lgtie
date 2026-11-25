@@ -169,6 +169,7 @@ default: Low : It is reproducible and in scope, but there is no loss of funds an
 `
   };
 
-  const API = {parse, run, compile, verify, resultBits, encodeAnswers, decodeAnswers, canonical, hexOf, evalGates, TEMPLATES, Net};
+  const COMPILER_VERSION = "lgtie-nand-compiler/1";   // named in verification reports; bump it if the compiler's output for the same rules ever changes
+  const API = {COMPILER_VERSION, parse, run, compile, verify, resultBits, encodeAnswers, decodeAnswers, canonical, hexOf, evalGates, TEMPLATES, Net};
   if (typeof module !== "undefined" && module.exports) module.exports = API; else root.TB = API;
 })(typeof window !== "undefined" ? window : globalThis);

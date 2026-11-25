@@ -18,6 +18,36 @@
     return (parseInt(data.slice(0, 2) || "0", 16)) & (2 ** nOut - 1);
   }
   const circuitInfo = async id => { const h = (await rpc("eth_call", [{to: CFG.processor, data: "0x084d60f1" + w(id)}, "latest"])).replace("0x", ""); return {nIn: Number(BigInt("0x" + h.slice(0, 64))), nOut: Number(BigInt("0x" + h.slice(64, 128)))}; };
+
+  // ---------- formal check of a published circuit (see verify.js) ----------
+  const LANG = () => (window.TB_I18N && window.TB_I18N.lang) || "en";
+  const netlistOf = async id => { const x = (await rpc("eth_call", [{to: CFG.processor, data: "0x3fc4be56" + w(id)}, "latest"])).replace("0x", ""), off = Number(BigInt("0x" + x.slice(0, 64))) * 2, len = Number(BigInt("0x" + x.slice(off, off + 64))); return "0x" + x.slice(off + 64, off + 64 + len * 2); };
+  async function formalOnChain(P, id) {
+    const [info, hex] = await Promise.all([circuitInfo(id), netlistOf(id)]), V = window.TB_VERIFY, nQ = P.questions.length, nOut = V.outBits(P.results.length);
+    if (info.nIn !== nQ || info.nOut !== nOut) return {mismatch: V.describeMismatch(info, {nQ, nOut}, LANG())};
+    const res = V.check(P, hex), src = `X Layer circuit #${id} on processor ${CFG.processor}`;
+    const rep = V.report(P, res, {compiler: TB.COMPILER_VERSION, policyHash: await sha256(TB.canonical(P)), netlistHash: await V.netlistFingerprint(hex), source: src});
+    return {res, rep, hex};
+  }
+  const downloadJson = (obj, name) => { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(obj, null, 2)], {type: "application/json"})); a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
+  function showFormal(el, P, out) {
+    if (out.mismatch) { el.innerHTML = `<p class="err">${esc(out.mismatch)}</p>`; return; }
+    const d = window.TB_VERIFY.describe(out.res, P, LANG());
+    el.innerHTML = `<p class="${d.level === "ok" ? "ok" : d.level === "err" ? "err" : "mute"}"><b>${esc(d.headline)}</b></p><p class="small">${esc(d.detail)}</p>
+      <p class="small mute">Rules fingerprint <code>${esc(out.rep.policy.rulesFingerprintSha256)}</code><br>Circuit fingerprint <code>${esc(out.rep.circuit.netlistFingerprintSha256)}</code> (${out.res.nGates} gates)</p>
+      <div class="row"><button class="btn small ghost" type="button" data-dlrep="1">Download the verification report</button></div>`;
+    el.querySelector("[data-dlrep]").onclick = () => downloadJson(out.rep, "lgtie-verification-report.json");
+  }
+  // A "verify against the chain" box: reads the published netlist from X Layer and checks it against the rules on this page.
+  function formalBox(el, P, circuitId) {
+    el.innerHTML = `<h4 class="fvh">Formal check of the published circuit</h4><p class="small">Read the circuit from X Layer and prove, for every possible set of answers, that it gives the same result as these rules. This checks what was actually published, not a copy made in your browser.</p>
+      <div class="row"><button class="btn small" type="button" data-fv="1">Verify against the chain</button></div><div class="fvout" aria-live="polite"></div>`;
+    el.querySelector("[data-fv]").onclick = async e => {
+      const out = el.querySelector(".fvout"); e.target.disabled = true; out.innerHTML = `<p class="mute">Reading the circuit from X Layer…</p>`;
+      try { showFormal(out, P, await formalOnChain(P, circuitId)); } catch (err) { out.innerHTML = `<p class="err">Could not read that circuit: ${esc(err.message)}</p>`; }
+      e.target.disabled = false;
+    };
+  }
   const circuitOwner = async id => "0x" + (await rpc("eth_call", [{to: CFG.processor, data: "0x6352211e" + w(id)}, "latest"])).slice(-40);
 
   // Reads one RuleSetRegistry entry (the dynamic name string is skipped): -> {publisher, processor, circuitId, nQ, nOut, hash, previousId, publishedAt}
@@ -192,8 +222,9 @@
           <p class="small">${esc(rule)}. The same answers go into the published rules, and anyone can run them.</p>
           ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
             : `<p class="small">This checker has not been published on X Layer yet, so the result above is computed in your browser from the same rules. Once published, the page asks the TapeOut processor and shows a confirmation.</p>`}
-          <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre></details>
+          <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre>${published && window.TB_VERIFY ? `<div class="fv" id="fv"></div>` : ""}</details>
         ${embed ? "" : `<details id="packbox"><summary>Claim pack to attach to your report or claim</summary><p class="small">Plain text you can paste into an email, a support ticket or a bug report. It lists your answers, the rule that decided the result, and a link anyone can use to re-run it.</p><pre id="packtxt">Preparing…</pre><div class="row"><button class="btn small ghost" id="cpk" type="button">Copy claim pack</button></div></details>`}</div>`;
+      if (published && window.TB_VERIFY && $("#fv")) formalBox($("#fv"), P, published.circuitId);
       $("#cp").onclick = e => copy(link, e.target); $("#rs").onclick = () => { ans = Array(nQ).fill(null); history.replaceState(null, "", pre.replace(/[/&]$/, "")); paint(); window.scrollTo({top: 0, behavior: "smooth"}); };
       history.replaceState(null, "", pre + "a=" + m);
       if (!embed && $("#packtxt")) {
@@ -212,7 +243,19 @@
   function verify() {
     main.innerHTML = `<h1>Verify a published circuit</h1><p class="lede">Look up any circuit on the TapeOut processor and run it yourself. This asks X Layer directly, so you do not have to trust this page.</p>
       <div class="card"><div class="row"><label>Circuit number <input id="cid" type="number" min="1" style="width:120px"></label><label>Answers, one digit per question, question 1 first <input id="bits" type="text" placeholder="1111111" style="width:220px" autocomplete="off"></label><button class="btn" id="go" type="button">Run it</button></div><div id="vout"></div></div>
+      <div class="card"><h3>Check a circuit against its rules</h3><p class="small">Pick the rules (or paste your own) and a circuit number. This reads the circuit's netlist from X Layer and proves, for every possible set of answers, that it gives the same result as the rules. You do not have to trust this page's compiler: the check builds the rules and the circuit separately and compares them.</p>
+        <div class="row"><label>Rules <select id="frs"><option value="warranty">Warranty claims (published rules)</option><option value="bounty">Bug bounty example</option><option value="custom">Paste my own rules</option></select></label><label>Circuit number <input id="fcid" type="number" min="1" placeholder="13" style="width:120px"></label></div>
+        <textarea id="frt" rows="7" class="mono" hidden placeholder="name: …" spellcheck="false" style="min-height:140px"></textarea>
+        <div class="row"><button class="btn" id="fgo" type="button">Check against the chain</button></div><div id="fout" aria-live="polite"></div></div>
       <p class="small mute">Processor: <code>${CFG.processor}</code></p>`;
+    $("#frs").onchange = () => { $("#frt").hidden = $("#frs").value !== "custom"; };
+    $("#fgo").onclick = async () => {
+      const out = $("#fout"), id = Number($("#fcid").value); if (!id) { out.innerHTML = `<p class="err">Enter a circuit number.</p>`; return; }
+      const key = $("#frs").value, parsed = TB.parse(key === "custom" ? $("#frt").value : TB.TEMPLATES[key]);
+      if (parsed.errors.length) { out.innerHTML = `<p class="err">${esc(parsed.errors.slice(0, 3).map(e => (e.line ? "Line " + e.line + ": " : "") + e.message).join(" "))}</p>`; return; }
+      out.innerHTML = `<p class="mute">Reading the circuit from X Layer…</p>`;
+      try { showFormal(out, parsed.policy, await formalOnChain(parsed.policy, id)); } catch (e) { out.innerHTML = `<p class="err">Could not read that circuit: ${esc(e.message)}</p>`; }
+    };
     $("#go").onclick = async () => {
       const id = Number($("#cid").value), bits = $("#bits").value.trim(), out = $("#vout"); if (!id || !/^[01]+$/.test(bits)) { out.innerHTML = `<p class="err">Enter a circuit number and answers made of 0 and 1.</p>`; return; }
       out.innerHTML = `<p class="mute">Asking X Layer…</p>`;
