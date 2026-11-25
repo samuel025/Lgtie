@@ -179,7 +179,12 @@ MY POLICY:
       const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
       if (mode === "text") S = fromPolicy(P);
       const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
-      out.innerHTML = `<div class="sthead" data-s="3"><h2>Does it behave the way you mean?</h2><p class="lede">Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.</p></div>
+      // the rule check: warnings only, never a block (see lint.js)
+      const LT = window.TB_LINT, found = LT ? LT.lint(P, {lang: window.TB_I18N ? window.TB_I18N.lang : "en"}) : [], sum = LT ? LT.summary(found) : {fix: 0, consider: 0};
+      const lfItem = f => `<li class="lf ${f.level}"><span class="lvl">${f.level === "warn" ? "Fix" : "Consider"}</span><span class="lmsg">${f.q !== undefined ? `<b>Q${f.q + 1}</b> ` : f.rule !== undefined ? `<b>Rule ${f.rule + 1}</b> ` : ""}${esc(f.msg)}</span><span class="lact">${f.q !== undefined ? `<button class="btn small ghost" type="button" data-lshow="${f.q}">Show</button>` : f.rule !== undefined ? `<button class="btn small ghost" type="button" data-lrule="${f.rule}">Show</button>` : ""}${f.fix ? `<button class="btn small" type="button" data-lfix="${f.q}" data-val="${esc(f.fix.hint)}">Use this evidence</button>` : ""}</span></li>`;
+      const lfBadges = items => { const s = LT.summary(items); return items.length ? `${s.fix ? `<span class="badge warn">${s.fix} to fix</span>` : ""}${s.consider ? `<span class="badge">${s.consider} to consider</span>` : ""}` : `<span class="badge ok">No problems found</span>`; };
+      const lfCard = (items, step) => LT ? `<div class="card lint" data-s="${step}"><h3>Rule check ${lfBadges(items)}</h3><p class="small mute intro">A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.</p>${items.length ? `<ul>${items.slice().sort((a, b) => (a.level === b.level ? 0 : a.level === "warn" ? -1 : 1) || (((a.q !== undefined ? a.q : a.rule !== undefined ? a.rule : -1)) - ((b.q !== undefined ? b.q : b.rule !== undefined ? b.rule : -1)))).map(lfItem).join("")}</ul>` : ""}</div>` : "";
+      out.innerHTML = `${lfCard(found.filter(f => f.where !== "r"), 1)}${lfCard(found.filter(f => f.where === "r"), 2)}<div class="sthead" data-s="3"><h2>Does it behave the way you mean?</h2><p class="lede">Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.</p></div>
         <div class="card" data-s="3"><h3>${esc(P.name)}</h3>
         <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} logic steps</span></div>
         <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The finished checker gives the same answer as your rules" : "✗ The finished checker does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
@@ -189,11 +194,16 @@ MY POLICY:
             <div class="out"><div class="vsvg" id="tcirc"></div><div class="vres"><div class="vlab">Result</div><div class="big" id="tr"></div><div class="vwhy small" id="tw"></div></div><p class="small mute" id="tf"></p></div></div></div>
         <div class="sthead" data-s="4"><h2>Put it on X Layer</h2><p class="lede">Publishing records the circuit permanently, so anyone can re-run it. A change later means publishing a new version.</p></div>
         <div class="card" data-s="4"><h3>Publishing it on X Layer</h3>
+          ${LT ? `<p class="small"><b>Rule check:</b> ${found.length ? `${sum.fix ? `<span class="badge warn">${sum.fix} to fix</span> ` : ""}${sum.consider ? `<span class="badge">${sum.consider} to consider</span> ` : ""}<button class="btn small ghost" type="button" data-lgo="1">Review them</button>` : `<span class="badge ok">No problems found</span>`}</p>` : ""}
           <p class="small">Publishing saves your rules permanently on the public network, so they can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (a free starter token: the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
           <p class="small"><b>Rules fingerprint</b> (a short code that changes if the rules text changes): <code>${h}</code></p>
           <details><summary>Technical detail: the checker program (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
           ${pubBox(h, C)}</div>`;
       bindPub(P, canon, h, C);
+      $$("[data-lshow]").forEach(b => b.onclick = () => { goStep(1); const inp = $(`[data-qi="${b.dataset.lshow}"] [data-f="qt"]`); if (inp) { inp.scrollIntoView({block: "center"}); inp.focus(); } });
+      $$("[data-lrule]").forEach(b => b.onclick = () => { goStep(2); const row = $(`.rrow[data-ui="${b.dataset.lrule}"]`); if (row) { row.scrollIntoView({block: "center"}); row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 1600); } });
+      $$("[data-lfix]").forEach(b => b.onclick = () => { const i = Number(b.dataset.lfix); if (S.questions[i]) { S.questions[i].hint = b.dataset.val; drawEditor(); } });
+      $$("[data-lgo]").forEach(b => b.onclick = () => goStep(1));
       const ans = tryAns.length === nQ ? tryAns : (tryAns = P.questions.map(() => true));
       const circ = window.TB_HERO ? window.TB_HERO.circuit($("#tcirc"), C, {w: 520, h: 250, label: "Live circuit for your rules"}) : null;
       const paintTry = () => { $$("#tq .tg").forEach(g => { const i = Number(g.dataset.i); $$("button", g).forEach(bt => bt.setAttribute("aria-pressed", String((bt.dataset.v === "1") === ans[i]))); });

@@ -429,6 +429,14 @@ main.tplpage{max-width:1040px}.tplpage h1{font-size:clamp(34px,5vw,54px);margin:
 .clause textarea.paper{width:100%;background:#fff;border:1px solid var(--warm,#ddd);border-radius:14px;padding:22px 24px;font:400 14.5px/1.7 var(--sans);letter-spacing:0;resize:none;overflow:hidden;min-height:180px;box-sizing:border-box}
 .clause .fine{margin:0;padding-left:18px;color:var(--stone);font-size:13px;line-height:1.6;display:grid;gap:4px}
 .tplpage .clause.two{grid-template-columns:280px minmax(0,1fr);align-items:start}@media(max-width:860px){.tplpage .clause.two{grid-template-columns:1fr}}
+
+/* the rule check in the builder */
+.lint .intro{margin:4px 0 0}.lint ul{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:8px}
+.lf{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;background:#fff;border:1px solid var(--warm,#ddd);border-radius:12px;padding:11px 14px;font-size:14px;line-height:1.55;letter-spacing:0}
+.lf .lvl{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:9999px;background:rgba(0,0,0,.07);margin-top:2px}.lf.warn .lvl{background:#ffe3d6;color:#a63a10}
+.lf .lact{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.lint h3 .badge{margin-left:8px;vertical-align:middle;font-size:12px;letter-spacing:0;word-spacing:.08em;white-space:nowrap}
+@media(max-width:700px){.lf{grid-template-columns:1fr}.lf .lact{justify-content:flex-start}}
+.rrow.flash{outline:2px solid #ff5b2e;outline-offset:-2px}
 /* language: Chinese needs system CJK fonts (the embedded Inter has Latin only) and looser tracking */
 html[lang^="zh"]{--serif:"InterEmbedded","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","WenQuanYi Micro Hei",ui-sans-serif,system-ui,sans-serif;--sans:var(--serif)}
 html[lang^="zh"] body{letter-spacing:0;line-height:1.65;line-break:strict}
@@ -1387,9 +1395,20 @@ window.TB_ZH = {
  "The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award.": "它产生的记录是各方回答了什么、裁定了什么的证据，不是法院判决，也不是仲裁裁决。",
  "Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.": "答案、证据指纹和审核人的书面理由都公开在区块链上，所以请不要用 LGtie 处理必须保密的事项。",
  "Binding (expert determination)": "有约束力（专家裁定）",
- "Advisory only": "仅供参考"
+ "Advisory only": "仅供参考",
+ "Rule check": "规则检查",
+ "Rule check:": "规则检查：",
+ "Fix": "需处理",
+ "Consider": "可考虑",
+ "Show": "查看",
+ "Use this evidence": "采用这条证据",
+ "No problems found": "没有发现问题",
+ "Review them": "去查看",
+ "A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.": "这是在你的浏览器里完成的简单检查，不会向任何地方发送内容。它只会提醒，绝不会阻止你发布。已发布的规则是永久的，所以现在多花几分钟，能省下日后的争论。"
 },
   patterns: [
+  [/^(\d+) to fix$/, "{1} 项需处理"], [/^(\d+) to consider$/, "{1} 项可考虑"], [/^Rule (\d+)$/, "规则 {1}"],
+
   [/^Evidence: (.+)$/, "证据：{1}"],
   [/^(\d+) questions? · published on X Layer$/, "{1} 个问题 · 已发布在 X Layer"],
   [/^Specialty: (.+)$/, "专长：{1}"], [/^Fee: (.+)$/, "费用：{1}"],
@@ -1981,6 +2000,119 @@ default: 予以保修 : 保修的所有条件均已满足。
   root.TB_TEMPLATES = Object.assign(api, {page, clauseCard});
 })(typeof window !== "undefined" ? window : globalThis);
 
+</script><script>/* lint.js */
+// Rule check: a plain, offline checklist that looks at a business's questions and rules BEFORE they are published, because a published rule is permanent.
+// It does not use an AI and sends nothing anywhere. It looks for the things that make a neutral reviewer's job hard:
+//   - words that call for a judgement ("reasonable", "properly", "damaged") with nothing to count or see;
+//   - questions that cannot be answered yes or no, or that hide two questions in one;
+//   - questions with no evidence to show (and a suggested piece of evidence to add);
+//   - questions no rule uses, results nothing leads to, and rules that can never fire;
+//   - rules with no reason to show the customer.
+// It only warns. It never blocks publishing: a word list is a heuristic and will sometimes flag wording that is fine.
+// English and Chinese. Pure, so it can be tested in Node (module.exports); the builder uses window.TB_LINT.
+(function (root) {
+  "use strict";
+  const TB = root.TB || (typeof require !== "undefined" ? require("./rules.js") : null);
+
+  const SUBJ = {
+    en: /\b(fair(ly)?|reasonabl[ey]|unreasonabl[ey]|proper(ly)?|appropriate(ly)?|adequate(ly)?|sufficient(ly)?|suitable|satisfactor(y|ily)|acceptabl[ey]|excessive(ly)?|significant(ly)?|substantial(ly)?|serious(ly)?|minor|major|normal(ly)?|good (condition|faith|quality)|bad(ly)?|poor(ly)?|decent|soon|quickly|promptly|timely|as soon as possible|undue|damag(e|ed|es))\b/gi,
+    zh: /(合理|适当|恰当|适度|过度|妥善|正常|严重|轻微|良好|及时|尽快|尽早|公平|明显|相当|足够|基本|大幅|重大|损坏|损伤)/g
+  };
+  const MEASURE = {en: /\d|\b(hours?|days?|weeks?|months?|years?|minutes?|mm|cm|kg|percent)\b|%/i, zh: /\d|小时|天|日|周|月|年|分钟|毫米|厘米|公斤|%|百分/};
+  const WH = {en: /^(what|when|who|whom|whose|why|how|which|where)\b/i, zh: /(什么|谁|为什么|为何|怎么|怎样|如何|哪个|哪些|哪里|哪种|多少)/};
+  const YESNO_ZH = /(是否|吗|是不是|有没有|能否|可否|能不能)/;   // Chinese question words can sit anywhere in a sentence; these markers show it is a yes or no question
+  const AND = {en: /\b(and|or|as well as)\b/i, zh: /(并且|而且|或者|以及|同时)/};
+  const LIST = {en: /(such as|for example|e\.g\.|including)/i, zh: /(例如|比如|包括)/};
+  const VAGUE_EVID = /^(proof|evidence|photos?|pictures?|documents?|docs?|records?|receipt|证据|证明|照片|图片|文件|记录|凭证)$/i;
+  // keyword -> a piece of evidence that would settle it
+  const EVID = {
+    en: [[/\b(imei|serial)\b/i, "The IMEI or serial number check result"], [/\b(keys?|access cards?|handover)\b/i, "A handover message or receipt"], [/\b(revisions?)\b/i, "The revision requests and replies"],
+      [/\b(paid|payment|rent|bills?|invoice|fees?)\b/i, "Payment records or invoices"], [/\b(inventory)\b/i, "The inventory list with photos"], [/\b(return(ed)?|refund|shipping|shipped|tracking)\b/i, "Tracking number and return receipt"],
+      [/\b(warranty period|purchase date|bought|purchased)\b/i, "Purchase date on the receipt"], [/\b(registered|registration|proof of purchase|receipt|order)\b/i, "Receipt or order confirmation"],
+      [/\b(spec|brief|requirements?|listing|description)\b/i, "The agreed brief or listing, next to what was delivered"], [/\b(deadline|on time|delivered|delivery|reported within|within \d+|date)\b/i, "A message or record that shows the date and time"],
+      [/\b(work(s|ing)?|switch(es)? on|power(s)? on|runs?|opens?|builds?|compiles?|test)\b/i, "A short video or a test log showing it working"], [/\b(photos?|condition|damage[d]?|scratch(es)?|crack(s|ed)?|match(es)?)\b/i, "Dated photos of the item"]],
+    zh: [[/(IMEI|序列号)/i, "IMEI 或序列号查询结果"], [/(钥匙|门禁|交接)/, "交接消息或收据"], [/(修改)/, "修改请求和回复记录"], [/(付款|租金|费用|发票)/, "付款记录或发票"], [/(清单)/, "带照片的物品清单"],
+      [/(退货|退款|寄回|物流)/, "快递单号和退货凭证"], [/(保修期|购买日期)/, "收据上的购买日期"], [/(购买凭证|收据|订单|登记)/, "收据或订单确认"], [/(需求|说明书|规格|描述)/, "约定的需求说明，与交付物对照"],
+      [/(截止|按时|交付|反馈|日期|时间)/, "带日期和时间的消息或记录"], [/(开机|能用|使用|运行|测试|构建|能打开)/, "展示其正常工作的短视频或测试记录"], [/(照片|状态|损坏|划痕|相符)/, "带日期的物品照片"]]
+  };
+
+  const M = {
+    en: {
+      subj: (w, hasEv) => `Judgement word${w.length > 1 ? "s" : ""}: ${w.map(x => "\"" + x + "\"").join(", ")}. ` + (hasEv ? "Your evidence helps, but make the question itself say what the evidence must show." : "Nothing here says how to settle it, and no evidence is listed. Say what can be seen or counted: a number, a date or a plain fact."),
+      wh: w => `This is not a yes or no question: it starts with "${w}". Rewrite it so it can be answered yes or no.`,
+      noq: "Word it as a question that ends with a question mark.",
+      long: "This is a long question. If it hides two ideas, split it so each can be answered on its own.",
+      and: w => `It contains "${w}", so it may be two questions in one. If the parts could be answered differently, split them.`,
+      noevid: s => "No evidence listed. Say what proof the customer or staff should show." + (s ? ` For example: "${s}".` : " For example a dated photo, a receipt or a message."),
+      vague: h => `The evidence is vague ("${h}"). Say exactly what, for example "Dated photo of the item".`,
+      dup: j => `Same as question ${j}. Remove one, or word them so they differ.`,
+      unusedQ: "No rule uses this question, so its answer never changes the result. Use it in a rule, or remove it.",
+      unreach: n => `No combination of answers leads to the result "${n}". Add a rule that gives it, or remove it.`,
+      never: n => `Rule ${n} can never decide anything: earlier rules always apply first, or its own conditions cannot all be true. Move it up or change its conditions.`,
+      nowhy: n => `Rule ${n} has no reason. The customer sees the reason next to the result, so say it in plain words.`,
+      nowhyDef: "The \"else\" result has no reason. The customer sees the reason next to the result, so say it in plain words.",
+      oneQ: "Only one question. Most real disagreements have more than one fact to settle.",
+      noAbout: "Add one line telling the customer what this checks.",
+      skipped: "There are too many questions to test every combination, so unused results and rules that never fire were not checked."
+    },
+    zh: {
+      subj: (w, hasEv) => `主观用词：${w.map(x => "“" + x + "”").join("、")}。` + (hasEv ? "你列出的证据有帮助，但请让问题本身说明证据必须证明什么。" : "这里没有说明如何判定，也没有列出证据。请写成能看到或能数出来的事实：一个数字、一个日期或一个明确的事实。"),
+      wh: w => `这不是是非题：它以“${w}”开头。请改写成可以用“是”或“否”回答的问题。`,
+      noq: "请写成以问号结尾的问题。",
+      long: "这个问题很长。如果其中包含两个意思，请拆开，让每个问题都能单独回答。",
+      and: w => `其中有“${w}”，可能是两个问题合在一起。如果这两部分可能有不同的答案，请拆开。`,
+      noevid: s => "没有列出证据。请说明客户或工作人员应出示什么证明。" + (s ? `例如：“${s}”。` : "例如带日期的照片、收据或消息。"),
+      vague: h => `证据太笼统（“${h}”）。请写清楚具体是什么，例如“带日期的物品照片”。`,
+      dup: j => `与第 ${j} 题相同。请删除一个，或把它们写得有所区别。`,
+      unusedQ: "没有任何规则用到这个问题，所以它的答案不会改变结果。请在规则中使用它，或删除它。",
+      unreach: n => `没有任何答案组合会得出结果“${n}”。请添加一条能得出它的规则，或删除它。`,
+      never: n => `规则 ${n} 永远不会起作用：前面的规则总会先适用，或者它自己的条件不可能同时成立。请把它上移，或修改条件。`,
+      nowhy: n => `规则 ${n} 没有写原因。客户会在结果旁看到原因，请用平实的话说明。`,
+      nowhyDef: "“否则”这一项没有写原因。客户会在结果旁看到原因，请用平实的话说明。",
+      oneQ: "只有一个问题。大多数真实的分歧都不止一件事实需要判定。",
+      noAbout: "请加一句话，告诉客户这个检查器检查什么。",
+      skipped: "问题太多，无法逐一测试所有组合，因此没有检查未使用的结果和永远不会起作用的规则。"
+    }
+  };
+  const norm = s => String(s || "").toLowerCase().replace(/[\s\p{P}]+/gu, "");
+
+  // P: a parsed policy ({name, about, questions: [{text, hint}], results, rules: [{conds: [{q, yes}], result, why}], def: {result, why}}).
+  // Returns findings: {level: "warn" | "info", where: "q" | "r" | "p", q, rule, code, msg, fix}.
+  function lint(P, opts) {
+    const lang = (opts && opts.lang) === "zh" ? "zh" : "en", m = M[lang], out = [], n = P.questions.length;
+    const add = (level, where, code, msg, extra) => out.push(Object.assign({level, where, code, msg}, extra));
+    P.questions.forEach((q, i) => {
+      const text = String(q.text || "").trim(), hint = String(q.hint || "").trim();
+      if (!text) return;
+      const subj = [...new Set((text.match(SUBJ[lang]) || []).map(x => x.toLowerCase()))];
+      if (subj.length && !MEASURE[lang].test(text)) add(hint.length >= 4 ? "info" : "warn", "q", "subjective", m.subj(subj, hint.length >= 4), {q: i});
+      const wh = lang === "zh" && YESNO_ZH.test(text) ? null : WH[lang].exec(text); if (wh) add("warn", "q", "notyesno", m.wh(wh[0]), {q: i});
+      else if (!/[?？]\s*$/.test(text)) add("info", "q", "noq", m.noq, {q: i});
+      if (text.length > (lang === "zh" ? 70 : 140)) add("info", "q", "long", m.long, {q: i});
+      const and = AND[lang].exec(text); if (and && !LIST[lang].test(text) && !wh) add("info", "q", "and", m.and(and[0]), {q: i});
+      if (!hint) { const s = (EVID[lang].find(([re]) => re.test(text)) || [])[1]; add("warn", "q", "noevidence", m.noevid(s), Object.assign({q: i}, s ? {fix: {hint: s}} : {})); }
+      else if (hint.length < 4 || VAGUE_EVID.test(hint)) add("info", "q", "vagueevidence", m.vague(hint), {q: i});
+      const j = P.questions.findIndex((o, k) => k < i && norm(o.text) && norm(o.text) === norm(text)); if (j >= 0) add("warn", "q", "duplicate", m.dup(j + 1), {q: i});
+      if (!P.rules.some(r => r.conds.some(c => c.q === i))) add("warn", "q", "unusedq", m.unusedQ, {q: i});
+    });
+    // results and rules: what can actually happen
+    if (n <= 14) {
+      const seenResult = new Set(), fired = new Set();
+      for (let mask = 0; mask < 2 ** n; mask++) { const r = TB.run(P, TB.decodeAnswers(mask, n)); seenResult.add(r.result); fired.add(r.ruleIndex); }
+      P.results.forEach((name, i) => { if (!seenResult.has(i)) add("warn", "r", "unreachable", m.unreach(name), {result: i}); });
+      P.rules.forEach((r, i) => { if (!fired.has(i)) add("warn", "r", "neverfires", m.never(i + 1), {rule: i}); });
+    } else add("info", "p", "skipped", m.skipped);
+    P.rules.forEach((r, i) => { if (!String(r.why || "").trim()) add("warn", "r", "nowhy", m.nowhy(i + 1), {rule: i}); });
+    if (!String((P.def && P.def.why) || "").trim()) add("warn", "r", "nowhydef", m.nowhyDef);
+    if (n === 1) add("info", "p", "oneq", m.oneQ);
+    if (!String(P.about || "").trim()) add("info", "p", "noabout", m.noAbout);
+    return out;
+  }
+  const summary = f => ({fix: f.filter(x => x.level === "warn").length, consider: f.filter(x => x.level === "info").length});
+  const api = {lint, summary};
+  if (typeof module !== "undefined" && module.exports) module.exports = api; else root.TB_LINT = api;
+})(typeof window !== "undefined" ? window : globalThis);
+
 </script><script>/* pkcore.js */
 // Core for passkey parties: keccak256, a small ABI encoder, and builders for the exact bytes a passkey must sign and the calldata a
 // submitter sends. Pure functions, no network. Works in the browser (window.TB_PK) and in Node (module.exports) so it can be tested
@@ -2469,7 +2601,12 @@ MY POLICY:
       const P = r.policy, C = TB.compile(P), v = TB.verify(P, C), canon = TB.canonical(P), h = await sha256(canon), nQ = P.questions.length;
       if (mode === "text") S = fromPolicy(P);
       const link = location.href.split("#")[0] + "#check/c=" + b64e(canon);
-      out.innerHTML = `<div class="sthead" data-s="3"><h2>Does it behave the way you mean?</h2><p class="lede">Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.</p></div>
+      // the rule check: warnings only, never a block (see lint.js)
+      const LT = window.TB_LINT, found = LT ? LT.lint(P, {lang: window.TB_I18N ? window.TB_I18N.lang : "en"}) : [], sum = LT ? LT.summary(found) : {fix: 0, consider: 0};
+      const lfItem = f => `<li class="lf ${f.level}"><span class="lvl">${f.level === "warn" ? "Fix" : "Consider"}</span><span class="lmsg">${f.q !== undefined ? `<b>Q${f.q + 1}</b> ` : f.rule !== undefined ? `<b>Rule ${f.rule + 1}</b> ` : ""}${esc(f.msg)}</span><span class="lact">${f.q !== undefined ? `<button class="btn small ghost" type="button" data-lshow="${f.q}">Show</button>` : f.rule !== undefined ? `<button class="btn small ghost" type="button" data-lrule="${f.rule}">Show</button>` : ""}${f.fix ? `<button class="btn small" type="button" data-lfix="${f.q}" data-val="${esc(f.fix.hint)}">Use this evidence</button>` : ""}</span></li>`;
+      const lfBadges = items => { const s = LT.summary(items); return items.length ? `${s.fix ? `<span class="badge warn">${s.fix} to fix</span>` : ""}${s.consider ? `<span class="badge">${s.consider} to consider</span>` : ""}` : `<span class="badge ok">No problems found</span>`; };
+      const lfCard = (items, step) => LT ? `<div class="card lint" data-s="${step}"><h3>Rule check ${lfBadges(items)}</h3><p class="small mute intro">A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.</p>${items.length ? `<ul>${items.slice().sort((a, b) => (a.level === b.level ? 0 : a.level === "warn" ? -1 : 1) || (((a.q !== undefined ? a.q : a.rule !== undefined ? a.rule : -1)) - ((b.q !== undefined ? b.q : b.rule !== undefined ? b.rule : -1)))).map(lfItem).join("")}</ul>` : ""}</div>` : "";
+      out.innerHTML = `${lfCard(found.filter(f => f.where !== "r"), 1)}${lfCard(found.filter(f => f.where === "r"), 2)}<div class="sthead" data-s="3"><h2>Does it behave the way you mean?</h2><p class="lede">Answer as a customer would. The circuit lights up, the result appears, and the rule that fired is named.</p></div>
         <div class="card" data-s="3"><h3>${esc(P.name)}</h3>
         <div class="stats"><span>${nQ} questions</span><span>${P.results.length} results</span><span>${P.rules.length} rules</span><span>${C.gates.length} logic steps</span></div>
         <p class="${v.ok ? "ok" : "err"}"><b>${v.ok ? "✓ The finished checker gives the same answer as your rules" : "✗ The finished checker does not match your rules"}</b> on ${v.exhaustive ? "all " + v.checked : v.checked + " sampled"} answer combinations.</p>
@@ -2479,11 +2616,16 @@ MY POLICY:
             <div class="out"><div class="vsvg" id="tcirc"></div><div class="vres"><div class="vlab">Result</div><div class="big" id="tr"></div><div class="vwhy small" id="tw"></div></div><p class="small mute" id="tf"></p></div></div></div>
         <div class="sthead" data-s="4"><h2>Put it on X Layer</h2><p class="lede">Publishing records the circuit permanently, so anyone can re-run it. A change later means publishing a new version.</p></div>
         <div class="card" data-s="4"><h3>Publishing it on X Layer</h3>
+          ${LT ? `<p class="small"><b>Rule check:</b> ${found.length ? `${sum.fix ? `<span class="badge warn">${sum.fix} to fix</span> ` : ""}${sum.consider ? `<span class="badge">${sum.consider} to consider</span> ` : ""}<button class="btn small ghost" type="button" data-lgo="1">Review them</button>` : `<span class="badge ok">No problems found</span>`}</p>` : ""}
           <p class="small">Publishing saves your rules permanently on the public network, so they can't be changed afterwards. A change means publishing a new version. It needs <b>${C.gates.length} NAND tokens</b> (a free starter token: the faucet gives 40 once per wallet) and a 0.0013 OKB fee, a fraction of a cent to a few cents.</p>
           <p class="small"><b>Rules fingerprint</b> (a short code that changes if the rules text changes): <code>${h}</code></p>
           <details><summary>Technical detail: the checker program (${nQ} inputs, ${C.nOut} outputs)</summary><pre>${C.hex}</pre><div class="row"><button class="btn small ghost" id="cphex" type="button">Copy netlist</button><button class="btn small ghost" id="dl" type="button">Download rules and circuit</button></div></details>
           ${pubBox(h, C)}</div>`;
       bindPub(P, canon, h, C);
+      $$("[data-lshow]").forEach(b => b.onclick = () => { goStep(1); const inp = $(`[data-qi="${b.dataset.lshow}"] [data-f="qt"]`); if (inp) { inp.scrollIntoView({block: "center"}); inp.focus(); } });
+      $$("[data-lrule]").forEach(b => b.onclick = () => { goStep(2); const row = $(`.rrow[data-ui="${b.dataset.lrule}"]`); if (row) { row.scrollIntoView({block: "center"}); row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 1600); } });
+      $$("[data-lfix]").forEach(b => b.onclick = () => { const i = Number(b.dataset.lfix); if (S.questions[i]) { S.questions[i].hint = b.dataset.val; drawEditor(); } });
+      $$("[data-lgo]").forEach(b => b.onclick = () => goStep(1));
       const ans = tryAns.length === nQ ? tryAns : (tryAns = P.questions.map(() => true));
       const circ = window.TB_HERO ? window.TB_HERO.circuit($("#tcirc"), C, {w: 520, h: 250, label: "Live circuit for your rules"}) : null;
       const paintTry = () => { $$("#tq .tg").forEach(g => { const i = Number(g.dataset.i); $$("button", g).forEach(bt => bt.setAttribute("aria-pressed", String((bt.dataset.v === "1") === ans[i]))); });

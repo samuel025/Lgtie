@@ -937,9 +937,20 @@ window.TB_ZH = {
  "The record it produces is evidence of what each side answered and what was decided; it is not a court judgment or an arbitral award.": "它产生的记录是各方回答了什么、裁定了什么的证据，不是法院判决，也不是仲裁裁决。",
  "Answers, fingerprints of evidence and the reviewer's written reasons are public on the blockchain, so do not use LGtie for matters that must stay confidential.": "答案、证据指纹和审核人的书面理由都公开在区块链上，所以请不要用 LGtie 处理必须保密的事项。",
  "Binding (expert determination)": "有约束力（专家裁定）",
- "Advisory only": "仅供参考"
+ "Advisory only": "仅供参考",
+ "Rule check": "规则检查",
+ "Rule check:": "规则检查：",
+ "Fix": "需处理",
+ "Consider": "可考虑",
+ "Show": "查看",
+ "Use this evidence": "采用这条证据",
+ "No problems found": "没有发现问题",
+ "Review them": "去查看",
+ "A plain check, done in your browser: nothing is sent anywhere. It only warns and never stops you publishing. Published rules are permanent, so a few minutes here saves arguments later.": "这是在你的浏览器里完成的简单检查，不会向任何地方发送内容。它只会提醒，绝不会阻止你发布。已发布的规则是永久的，所以现在多花几分钟，能省下日后的争论。"
 },
   patterns: [
+  [/^(\d+) to fix$/, "{1} 项需处理"], [/^(\d+) to consider$/, "{1} 项可考虑"], [/^Rule (\d+)$/, "规则 {1}"],
+
   [/^Evidence: (.+)$/, "证据：{1}"],
   [/^(\d+) questions? · published on X Layer$/, "{1} 个问题 · 已发布在 X Layer"],
   [/^Specialty: (.+)$/, "专长：{1}"], [/^Fee: (.+)$/, "费用：{1}"],
