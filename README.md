@@ -34,27 +34,43 @@ A customer uses a passkey and does not need a wallet. LGtie never holds anyone's
 <p><img src="docs/img/home.png" alt="LGtie home page running the real published warranty circuit: tap an answer and the result and reason change" width="100%"></p>
 <p><sub>The home page runs the real published warranty circuit: tap an answer and the result and the reason change.</sub></p>
 
+## Who it's for
+
+LGtie suits disputes that come down to a handful of yes or no facts and recur for the same business.
+
+| Target | The dispute | Starting template |
+| --- | --- | --- |
+| **Online shops and marketplaces** | Returns, refunds, items not as described | Second-hand sale |
+| **Electronics, appliance and repair businesses** | Warranty claims | Warranty claim (live on X Layer) |
+| **Freelancers, agencies and their clients** | Is a milestone delivered and accepted, and what is owed | Freelance milestone |
+| **Landlords and property managers** | Rental deposit deductions | Rental deposit |
+| **Crypto protocols and bug-bounty programmes** | How severe is a reported vulnerability | Bug bounty severity |
+| **Any business with its own recurring claims** | Rules of its own | Write your own in the builder |
+
+The buyer is the business, which publishes the rules and subscribes. The customer, buyer or researcher on the other side joins with a passkey and pays nothing to take part.
+
 ## Architecture
 
 ```mermaid
 flowchart TD
-    B["Business writes rules in the builder"] --> C["Compiled to a NAND circuit,<br/>proved equal to the rules"]
-    C --> P["TapeOut processor on X Layer<br/>runs the circuit: eval(inputs)"]
-    B --> RR["RuleSetRegistry<br/>rules fingerprint and versions"]
-    RR --> AR["AgreementRegistry<br/>rules + reviewer + deadlines, locked"]
+    B["Business writes rules"] --> C["Rules compiled to a circuit"]
+    C --> P["TapeOut processor runs it"]
+    B --> RR["Rule set registry"]
+    RR --> AR["Agreement: rules, reviewer, deadlines"]
     CU["Customer: wallet or passkey"] --> AR
-    AR --> CASE["TiebreakCase V3 / V4<br/>both sides answer the same questions"]
+    AR --> CASE["Case contract: both sides answer"]
     CASE -->|answers match| S["Settled"]
-    CASE -->|answers differ| R["Reviewer answers ONLY the differing questions"]
-    R --> RES["Result and reason from the published rules"]
+    CASE -->|answers differ| R["Reviewer answers only those"]
+    R --> RES["Result and reason"]
     P -.-> RES
-    S --> V["verdict(id): other contracts can read it<br/>anyone can re-run it for free"]
+    S --> V["Anyone can re-run it"]
     RES --> V
+    CASE -.->|fee| BILL["Billing: pays the treasury"]
 ```
 
 - **A static site.** No server and no database: the web app, the rule compiler and the checks run in the browser (`site/`). The built site is one page in `dist/`.
 - **Rules are data, not code.** A rule set compiles to a small circuit of NAND gates and is stored on the existing **TapeOut processor**, so it cannot hold hidden state or an admin key.
-- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 and V4, `PasskeyRegistry`. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
+- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3, V4 and V5, `PasskeyRegistry`, `LGtieBilling`. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
 - **No wallet for customers.** A passkey signs each action; any wallet (usually the business's) submits it and pays the small fee. Signed actions travel through public Nostr relays to the business's inbox.
 - **Optional bridge** (`bridge/`): a script a business runs itself to forward those messages to Slack, Discord or any webhook.
 
@@ -78,16 +94,22 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 
 ## Business model and revenue
 
-LGtie holds no money and takes no cut of any dispute, so the revenue would come from the tools around the rules, not from the disputes themselves.
+LGtie holds no money and takes no cut of any dispute. It earns from using the system, through two payments built into the contracts (`LGtieBilling` and `TiebreakCaseV5`) and paid in USDT on X Layer:
 
-| Who pays | For what | How (hypothesis) |
+| Plan | Price | What it covers |
 | --- | --- | --- |
-| **Businesses with recurring claims or returns** (retail, marketplaces, repair, rental) | Publishing and maintaining their rule sets, an embedded checker on their support page, receipts for payment companies and platforms | Subscription per business or per checker; a small fee per published rule set and per case |
-| **Protocols and bug-bounty programmes** | A shared severity rule set and a neutral reviewer panel before anyone pays for arbitration | Per-programme fee; a small fee per decided case |
-| **Reviewers** | Earn a fee from the parties for settling disputed facts | Paid directly by the parties; LGtie takes no cut today |
-| **Larger businesses** | Hosted notifications, reminders and analytics (the self-hosted bridge exists today) | Paid add-on, outside the no-server core |
+| **Pay as you go** | 3 USDT per case | Paid by whoever opens the case |
+| **Business** | 29 USDT a month, or 290 a year | 50 cases a month under the business's agreements, including cases its customers open |
+| **Pro** | 99 USDT a month, or 990 a year | 300 cases a month, for protocols and programmes with a steady flow |
 
-**Why it could work:** disputes recur for the same business, so a rule set is written once and used for every claim; the receipt is useful evidence for a payment company or platform; and the network fee on X Layer is tiny. **What has to be true:** a business believes published rules reduce its arguments, and a payer says yes. The first step is a pilot with one real business, then a price test.
+- **Paid straight through.** Each payment goes from the payer to the treasury in the same transaction. The contracts never hold funds, and a test checks that they hold exactly nothing after every kind of payment.
+- **A business cannot block a customer.** If the business has no subscription, whoever opens the case pays the fee, so a business that does not pay can never stop a customer from opening a dispute.
+- **Prices are capped in the code.** The owner can change prices, but never above 10 USDT per case, 500 per month and 5,000 per year, and ownership moves in two steps.
+- **No auto-renew**, because there is no server to charge anyone. Subscribe again before a plan ends.
+- **Where it shows.** The `#pricing` page has the plans and the subscribe buttons. When someone opens a case, the page makes the fee payable first (one approval, then the case), and says when a subscription covers it.
+- **How the prices were chosen.** Comparable services charge far more because they include human judges: AAA consumer arbitration filing fees are $225 to $375 plus the arbitrator, and Modria launched at $200 to $5,000 per case. LGtie sells only the software, because the reviewer is paid directly by the parties.
+
+**Status, said plainly.** Deployed on X Layer mainnet (see below), tested (27 billing tests, the whole V4 suite re-run against V5, and an end-to-end browser test on a fork), and unaudited. No money has moved yet: there are no paying customers, no case has been opened on V5, and the prices are untested against real demand. Cases opened through the older wallet-only contract (V3) are not billed, so only the V5 flow earns revenue. The deploy script is `scripts/deploy-v5.sh`.
 
 ## Live on X Layer (chain 196)
 
@@ -100,7 +122,9 @@ LGtie holds no money and takes no cut of any dispute, so the revenue would come 
 | `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (wallet parties; used by the real case) |
 | `PasskeyRegistry` | `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E` |
 | `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` (the other party can be a passkey account) |
-| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey parties; accepts only the official processor) |
+| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey parties; accepts only the official processor; free, superseded by V5) |
+| `LGtieBilling` | `0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De` (pays USD₮0 `0x779D…3736` straight to the treasury `0x0aE1…8fD5`; holds nothing) |
+| `TiebreakCaseV5` | `0x1c261952b583fc6DA59e1525Ff52c15b39eD146a` (V4 plus billing; the site opens cases here) |
 
 The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the project's builder; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
 
@@ -130,7 +154,7 @@ node scripts/verify-circuit.mjs warranty --circuit 13   # read circuit #13 from 
 node tests/lint.test.mjs                       # the rule check
 node tests/templates.test.mjs                  # the five templates, in both languages
 node tests/reviewerid.test.mjs                 # named reviewers: wallet signatures, profile codes
-cd contracts && forge test                     # 119 contract tests (some run on a fork of X Layer and need network access)
+cd contracts && forge test                     # 182 contract tests, including billing (some run on a fork of X Layer and need network access)
 node tests/mainnet-verify.mjs                  # read-only check of circuit #13 on X Layer
 ```
 
@@ -148,19 +172,9 @@ Browser tests are in `tests/browser/`; see its README for what they need. **Depl
 | `tests/`, `test/` | Rule engine, passkey encoding, mainnet check and browser tests |
 | `docs/` | [FEATURES.md](docs/FEATURES.md) (every part in detail), [VERIFICATION.md](docs/VERIFICATION.md), [PASSKEYS.md](docs/PASSKEYS.md), [VERDICT.md](docs/VERDICT.md), [SECURITY.md](docs/SECURITY.md), [USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md), [VALIDATION.md](docs/VALIDATION.md), [SUBMISSION.md](docs/SUBMISSION.md) |
 
-## Honest limits
-
-- **It does not check that answers are true.** The result follows the answers given; a reviewer decides disputed facts and can be wrong.
-- **It is not a court, an arbitration or legal advice.** See [docs/USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md).
-- **Everything recorded is public** and cannot be deleted. Do not use it for confidential matters.
-- **A reviewer can still be biased.** There is no staking or penalty; written reasons make a bad decision visible, not impossible.
-- **A case nobody finishes ends as "no decision".**
-- **Passkey recovery after losing every device is not built.** Tested in Chrome and once on a real phone; Safari and Firefox are untested.
-- **Early prototype.** The contracts are unaudited and hold no funds. There are no customers, no revenue and no validated prices.
-
 ## Roadmap
 
-1. **A first pilot with a real business**, to learn what it would pay for and which disputes matter, then a price test.
+1. **Deploy the revenue contracts and run a first pilot with a real business**, to learn what it would pay for, then test the prices.
 2. **Publish the templates people use** on mainnet (only the warranty rules are published today), so they can be used in agreements and cases.
 3. **Assisted passkey recovery**, with a second device and a reviewer's countersignature.
 4. **An independent security review** before any real customer relies on it.

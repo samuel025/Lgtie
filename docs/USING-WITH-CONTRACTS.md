@@ -53,4 +53,4 @@ Answers, fingerprints of evidence and the reviewer's written reasons are recorde
 
 ## Limits that apply to everything above
 
-The contracts are unaudited and hold no funds. See the "Honest limits" section of the [README](../README.md) and [SECURITY.md](SECURITY.md).
+The contracts are unaudited and hold no funds. See [SECURITY.md](SECURITY.md) and the "Honest limits" section of [SUBMISSION.md](SUBMISSION.md).

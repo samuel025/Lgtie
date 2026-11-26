@@ -355,6 +355,7 @@
     if (view === "agreement") return key ? window.TB_CASES.agreement(key) : window.TB_CASES.agreements();
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "rules") return window.TB_CASES.rules(key);
+    if (view === "pricing") return window.TB_BILLING.page();
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
     if (view === "for-business") return forBusiness();

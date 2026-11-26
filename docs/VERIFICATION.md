@@ -44,4 +44,4 @@ Every check can produce a JSON report with: the tool and version, the compiler v
 - **Size limit.** A decision diagram can in theory grow very large for unusual logic. There is a size limit; past it the result is `inconclusive`, never a guess. Decision-table logic like LGtie's rules stays small (88 nodes for the warranty rules).
 - **It does not verify the processor.** It checks that the published netlist implements the rules; that the on-chain processor evaluates a netlist correctly is checked only by the 128-combination comparison on circuit #13.
 
-See also [SECURITY.md](SECURITY.md) and the "Honest limits" section of the [README](../README.md).
+See also [SECURITY.md](SECURITY.md) and the "Honest limits" section of [SUBMISSION.md](SUBMISSION.md).

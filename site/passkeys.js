@@ -7,7 +7,8 @@
   const ZERO = "0x" + "0".repeat(40), DAY = 86400, STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
-  const V4 = () => CFG.v4 || {}, deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  // once the revenue contracts are live, cases are opened on TiebreakCaseV5 (V4 plus a billing call); the passkeys and agreements stay the same
+  const V4 = () => (CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -221,10 +222,10 @@
         <div class="row"><button class="btn" id="go" type="button" disabled>Submit with my wallet</button><span id="rm" class="small"></span></div><div id="done"></div></div>`;
     const sim = $("#sim"), go = $("#go");
     try { await W().rpc("eth_call", [{from: "0x000000000000000000000000000000000000dEaD", to: o.to, data: o.data}, "latest"]); sim.className = "small ok"; sim.textContent = "✓ This would succeed right now."; go.disabled = false; }
-    catch (e) { sim.className = "small err"; sim.textContent = "This would fail right now: " + ((e && e.message) || "it was rejected") + ". It may already have been submitted, or it may have expired."; go.disabled = false; }
+    catch (e) { if (/payment failed/.test((e && e.message) || "")) { sim.className = "small ok"; sim.textContent = "✓ Valid. A small case fee is paid when you submit it (your wallet asks you to allow it first)."; go.disabled = false; return; } sim.className = "small err"; sim.textContent = "This would fail right now: " + ((e && e.message) || "it was rejected") + ". It may already have been submitted, or it may have expired."; go.disabled = false; }
     go.onclick = async () => {
       const m = $("#rm"); go.disabled = true; m.className = "small mute"; m.textContent = "Confirm in your wallet…";
-      try { const rc = await W().send(o.to, o.data); $("#done").innerHTML = `<div class="note ok-note">✓ Submitted. <a href="${CFG.explorer}/tx/${rc.transactionHash}" target="_blank" rel="noopener">${rc.transactionHash.slice(0, 12)}…</a></div>`; m.textContent = ""; }
+      try { await window.TB_BILLING.before(o, t => { m.textContent = t; }); m.textContent = "Confirm in your wallet…"; const rc = await W().send(o.to, o.data); $("#done").innerHTML = `<div class="note ok-note">✓ Submitted. <a href="${CFG.explorer}/tx/${rc.transactionHash}" target="_blank" rel="noopener">${rc.transactionHash.slice(0, 12)}…</a></div>`; m.textContent = ""; }
       catch (e) { go.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
     };
   }
@@ -284,7 +285,7 @@
           ${old.length ? `<details><summary class="small">Done or expired (${old.length})</summary>${old.map(i => `<p class="small mute">${esc(String(i.o.summary || "A signed action").slice(0, 120))} · ${ago(i.at)}</p>`).join("")}</details>` : ""}`;
         document.querySelectorAll("[data-go]").forEach(b => b.onclick = async () => {
           const i = items.get(b.dataset.go), m = b.parentNode.querySelector("[data-m]"); b.disabled = true; m.className = "small mute"; m.textContent = "Confirm in your wallet…";
-          try { const rc = await W().send(i.o.to, i.o.data); i.state = "old"; m.textContent = ""; [...items.values()].filter(x => x.state === "later" || x.state === "checking").forEach(check); render(); $("#ibs").className = "small ok"; $("#ibs").textContent = "✓ Submitted. " + rc.transactionHash.slice(0, 12) + "…"; }
+          try { await window.TB_BILLING.before(i.o, t => { m.textContent = t; }); m.textContent = "Confirm in your wallet…"; const rc = await W().send(i.o.to, i.o.data); i.state = "old"; m.textContent = ""; [...items.values()].filter(x => x.state === "later" || x.state === "checking").forEach(check); render(); $("#ibs").className = "small ok"; $("#ibs").textContent = "✓ Submitted. " + rc.transactionHash.slice(0, 12) + "…"; }
           catch (e) { b.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
         });
       }, check = async i => {
@@ -368,7 +369,7 @@
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
-    if (inForce) add("Open a dispute under this agreement", "", async () => { const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
+    if (inForce) add("Open a dispute under this agreement", "", async () => { await window.TB_BILLING.ensureFee(a.proposer.wallet, t => { $("#amsg").textContent = t; }); $("#amsg").textContent = "Confirm in your wallet…"; const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
     try { const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: c => "#pk/case/" + c.id}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkAll() {

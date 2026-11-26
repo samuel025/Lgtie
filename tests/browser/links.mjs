@@ -18,7 +18,7 @@ const visible = (p, sel) => p.$eval(sel, e => { const r = e.getBoundingClientRec
 const p = await page("en");
 await p.goto(BASE); await w(1500);
 ok("the header shows Templates next to the main links", (await hrefs(p, "#nav > a")).join(",") === "#about,#templates,#check/warranty,#for-business,#mine,#case/1", (await hrefs(p, "#nav > a")).join(","));
-ok("a More menu holds the rest, closed at first", (await hrefs(p, "#nav .more .menu a")).join(",") === "#build,#agree,#inbox,#reviewer,#verify,#join" && !(await isOpen(p)));
+ok("a More menu holds the rest, closed at first", (await hrefs(p, "#nav .more .menu a")).join(",") === "#build,#agree,#inbox,#reviewer,#pricing,#verify,#join" && !(await isOpen(p)));
 await p.click("#nav .more summary"); await w(200);
 ok("clicking More opens it", await visible(p, "#nav .more .menu"));
 await p.keyboard.press("Escape"); await w(200);

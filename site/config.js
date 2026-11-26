@@ -14,5 +14,6 @@ window.TB_CONFIG = {
   caseContractV1: "0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987",  // the first, simpler case contract (no deadlines); still on-chain
   showcase: {caseId: 1, agreementId: 1},                           // the real mainnet case shown on the home page (played by the team)
   v4: {passkeys: "0xC3c0E2Fa6D8452A14063c01DC50159487E78522E", agreements: "0x802995325A576b69175DCE24e8D643553C9ba2ed", cases: "0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0"},   // passkey parties: PasskeyRegistry, AgreementRegistryV2, TiebreakCaseV4 (set by scripts/deploy-v4.sh)
+  v5: {billing: "0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De", cases: "0x1c261952b583fc6DA59e1525Ff52c15b39eD146a", token: "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", treasury: "0x0aE117C07A277D74D9326eb4e33013439dC68fD5", caseFee: 3000000},   // revenue: LGtieBilling and TiebreakCaseV5 (set by scripts/deploy-v5.sh)
   published: {warranty: {circuitId: 13, ruleSetId: 1}}
 };

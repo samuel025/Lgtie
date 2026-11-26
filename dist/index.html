@@ -224,6 +224,7 @@ body.embed .rv{opacity:1!important;transform:none!important}body.embed main.ente
 .cell.y{background:var(--ink);border-color:var(--ink);color:#fff}.cell.n{background:#fff;border-color:var(--ink);color:#9a2f1f;background:#fbeeea;border-color:#d9a79d}
 .rgrid select,.rgrid input[type=text]{width:100%;font-size:14px;padding:7px 10px}.rgrid td.res{min-width:150px}.rgrid td.why{min-width:190px}
 .rgrid .acts{white-space:nowrap}.rgrid .acts .btn{padding:6px 9px;font-size:12px}
+.priceg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:6px 0 14px}.price{margin:0}.price .pv{font-size:30px;margin:6px 0 0;color:var(--ink)}.price ul{padding-left:18px;margin:10px 0 14px;font-size:14px;color:var(--ash)}.price li{margin:5px 0}
 .rgrid tr.noc td{opacity:.6}
 .rgrid tr.rsum td{background:transparent;padding:0 10px 6px;font-size:12px;color:var(--stone)}.rgrid tr.rsum b{color:var(--ink);font-weight:500}.rgrid tr.rsum b.nn{color:#9a2f1f}
 .rgrid tr.rrow + tr.rsum{position:relative;top:-4px}
@@ -463,14 +464,57 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
-<nav id="nav"><a href="#about" data-k="about">How it works</a><a href="#templates" data-k="templates">Templates</a><a href="#check/warranty" data-k="check">Try a claim check</a><a href="#for-business" data-k="for-business">For businesses</a><a href="#mine" data-k="mine">My cases</a><details class="more"><summary>More</summary><div class="menu"><a href="#build" data-k="build">Build a checker</a><a href="#agree" data-k="agree">Make an agreement</a><a href="#inbox" data-k="inbox">Inbox</a><a href="#reviewer" data-k="reviewer">Reviewer records</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#join" data-k="join">Get a passkey</a></div></details><a class="pill" href="#case/1">See a real case</a></nav></div></header>
+<nav id="nav"><a href="#about" data-k="about">How it works</a><a href="#templates" data-k="templates">Templates</a><a href="#check/warranty" data-k="check">Try a claim check</a><a href="#for-business" data-k="for-business">For businesses</a><a href="#mine" data-k="mine">My cases</a><details class="more"><summary>More</summary><div class="menu"><a href="#build" data-k="build">Build a checker</a><a href="#agree" data-k="agree">Make an agreement</a><a href="#inbox" data-k="inbox">Inbox</a><a href="#reviewer" data-k="reviewer">Reviewer records</a><a href="#pricing" data-k="pricing">Pricing</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#join" data-k="join">Get a passkey</a></div></details><a class="pill" href="#case/1">See a real case</a></nav></div></header>
 <main id="main"></main>
-<footer><div class="wrap"><div class="fcols"><div><h5>Use it</h5><a href="#check/warranty">Try a claim check</a><a href="#case/1">See a real case</a><a href="#mine">My cases</a><a href="#join">Get a passkey</a><a href="#templates">Templates</a></div><div><h5>For businesses</h5><a href="#for-business">For businesses</a><a href="#build">Build a checker</a><a href="#agree">Make an agreement</a><a href="#pk/agree">Invite a customer</a><a href="#inbox">Inbox</a><a href="embed-demo.html">Put it on your website</a></div><div><h5>Check and trust</h5><a href="#about">How it works</a><a href="#reviewer">Reviewer records</a><a href="#rules">Published rule sets</a><a href="#verify">Verify a circuit</a><a href="https://github.com/samuel025/Lgtie" target="_blank" rel="noopener noreferrer">Source code and docs</a><a href="https://github.com/samuel025/Lgtie/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security notes</a></div></div><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div></div></footer>
+<footer><div class="wrap"><div class="fcols"><div><h5>Use it</h5><a href="#check/warranty">Try a claim check</a><a href="#case/1">See a real case</a><a href="#mine">My cases</a><a href="#join">Get a passkey</a><a href="#templates">Templates</a></div><div><h5>For businesses</h5><a href="#for-business">For businesses</a><a href="#build">Build a checker</a><a href="#agree">Make an agreement</a><a href="#pk/agree">Invite a customer</a><a href="#inbox">Inbox</a><a href="embed-demo.html">Put it on your website</a></div><div><h5>Check and trust</h5><a href="#about">How it works</a><a href="#reviewer">Reviewer records</a><a href="#rules">Published rule sets</a><a href="#pricing">Pricing</a><a href="#verify">Verify a circuit</a><a href="https://github.com/samuel025/Lgtie" target="_blank" rel="noopener noreferrer">Source code and docs</a><a href="https://github.com/samuel025/Lgtie/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security notes</a></div></div><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div></div></footer>
 <script>/* zh.js */
 // Chinese translations for the app (see lang.js). `dict` maps an exact English string to Chinese; `patterns` handle text with numbers and names;
 // strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
 window.TB_ZH = {
   dict: {
+ "One year": "一年",
+ "one year": "一年",
+ "one month": "一个月",
+ "until": "至",
+ "used this month,": "本月已用",
+ "left. Wallet": "剩余。钱包",
+ "No active plan on": "没有有效的套餐：",
+ "The last one ended": "上一个套餐已于",
+ "Cases you open pay the case fee.": "你开启的案件需支付案件费用。",
+ "✓ Paid.": "✓ 已支付。",
+ "Pricing": "价格",
+ "LGtie charges a small fee when a case is opened, or a flat monthly plan for businesses with many.": "案件开启时收取少量费用，案件多的商家可选择固定月费套餐。",
+ "It never holds your money: every payment goes straight from you to LGtie's address in the same transaction, so there is nothing for LGtie to lose or to hold back.": "LGtie 从不保管你的资金：每笔付款都在同一笔交易中直接从你转到 LGtie 的地址，LGtie 无从丢失，也无从扣留。",
+ "Payments are built and tested but not deployed on X Layer yet. These are the planned prices, and nothing is charged today.": "付款功能已开发并测试，但尚未部署到 X Layer。以下是计划价格，目前不收取任何费用。",
+ "Pay as you go": "按次付费",
+ "Occasional disputes, freelancers, one-off buyers.": "偶尔的争议、自由职业者、一次性买家。",
+ "per case opened": "每开启一个案件",
+ "No subscription, no commitment": "无需订阅，无需承诺",
+ "Paid by whoever opens the case, so a business that does not pay can never stop a customer from opening one": "由开启案件的人支付，因此不付费的商家永远无法阻止客户开启案件",
+ "Only when a case is opened: checking claims and reading cases is free": "仅在开启案件时收费：检查索赔和查看案件均免费",
+ "A business with recurring claims or returns.": "经常有索赔或退货的商家。",
+ "Covers cases your customers open as well": "客户开启的案件同样包含在内",
+ "Past the monthly allowance the case fee applies again": "超出每月额度后，再次按案件收费",
+ "Pro": "专业版",
+ "Protocols, bounty programmes and larger businesses.": "协议项目、漏洞赏金计划和较大的商家。",
+ "Built for programmes with a steady flow of cases": "为案件持续不断的项目而设计",
+ "Everything in Business": "包含商家版的全部内容",
+ "Not on sale yet.": "暂未开售。",
+ "Subscribe monthly": "按月订阅",
+ "Subscribe yearly": "按年订阅",
+ "Your plan": "你的套餐",
+ "Show my plan": "查看我的套餐",
+ "Connect your wallet to see your plan.": "连接钱包以查看你的套餐。",
+ "Plans open once the contracts are deployed.": "合约部署后即可订阅套餐。",
+ "How the money moves": "资金如何流动",
+ "You pay in USDT on X Layer. The only other cost is the tiny network fee.": "你在 X Layer 上以 USDT 付款。唯一的其他成本是很小的网络费用。",
+ "The billing contract never holds any money, and a test checks that after every kind of payment it holds exactly nothing.": "计费合约从不持有任何资金，测试会在每种付款之后检查它的余额恰好为零。",
+ "Prices can be changed, but never above caps written into the contract: at most 10 USDT per case, 500 per month and 5,000 per year. The reviewer's own fee, if any, is agreed and paid directly between the parties, and LGtie takes no cut of it.": "价格可以调整，但绝不会超过合约中写死的上限：每个案件最多 10 USDT，每月最多 500，每年最多 5,000。审核员自己的费用（如有）由各方直接约定和支付，LGtie 不抽成。",
+ "A plan does not renew by itself, because there is no server to charge you. Subscribe again before it ends; time is added on top. Switching to a higher plan starts it now and does not refund the rest of the old one.": "套餐不会自动续费，因为没有服务器向你扣款。请在到期前再次订阅，时间会累加。升级到更高的套餐会立即生效，旧套餐的剩余时间不退款。",
+ "The contracts are unaudited. Everything recorded is public.": "合约尚未经过审计。所有记录都是公开的。",
+ "Checking your wallet…": "正在检查你的钱包…",
+ "Covered by the business's LGtie subscription: no case fee.": "已由商家的 LGtie 订阅覆盖：无案件费用。",
+ "✓ Valid. A small case fee is paid when you submit it (your wallet asks you to allow it first).": "✓ 有效。提交时需支付少量案件费用（钱包会先请你授权）。",
  "The row that fires lights up in the preview below.": "触发的那一行会在下方预览中高亮显示。",
  "Matches when": "满足以下条件时适用",
  "is": "为",
@@ -1482,6 +1526,12 @@ window.TB_ZH = {
  "Version history": "版本历史"
 },
   patterns: [
+  [/^Opening a case costs ([\d.]+) USDT, paid to LGtie\. Checking your wallet…$/, "开启案件需支付 {1} USDT 给 LGtie。正在检查你的钱包…"], [/^Opening a case costs ([\d.]+) USDT, paid to LGtie\.$/, "开启案件需支付 {1} USDT 给 LGtie。"],
+  [/^per month, or ([\d.]+) USDT per year$/, "每月，或每年 {1} USDT"], [/^(\d+) cases a month under your agreements, with no case fee$/, "你的协议下每月 {1} 个案件，无案件费用"], [/^(\d+) cases a month, with no case fee$/, "每月 {1} 个案件，无案件费用"],
+  [/^Every payment goes straight to LGtie's address\.$/, "每笔付款都直接转到 LGtie 的地址。"], [/^Every payment goes straight to$/, "每笔付款都直接转到"],
+  [/^Step 1 of 2: allow LGtie to take ([\d.]+) USDT\. Confirm in your wallet…$/, "第 1 步（共 2 步）：允许 LGtie 收取 {1} USDT。请在钱包中确认…"],
+  [/^Step 2 of 2: pay ([\d.]+) USDT for (Business|Pro), (one year|one month)\. Confirm in your wallet…$/, "第 2 步（共 2 步）：为{2}支付 {1} USDT，{3}。请在钱包中确认…"],
+  [/^You need ([\d.]+) USDT in this wallet to pay this\. It holds ([\d.]+) USDT\.$/, "你需要在这个钱包中有 {1} USDT 才能支付，目前只有 {2} USDT。"],
   [/^Version (\d+) · rule set #(\d+)$/, "版本 {1} · 规则集 #{2}"], [/^rule set #(\d+)$/, "规则集 #{1}"], [/^#(\d+) on X Layer$/, "X Layer 上的 #{1}"],
   [/^(.+): (\d+) versions? published by (\S+)\. Rule sets are permanent, so a change is always a new version, and the old one stays on-chain\.$/, "{1}：共 {2} 个版本，由 {3} 发布。规则集是永久的，所以任何修改都是一个新版本，旧版本仍保留在链上。"],
   [/^The publisher also published (.+) as a replacement for this version\.$/, "发布者还发布了 {1} 作为这个版本的替代。"],
@@ -2606,6 +2656,7 @@ window.TB_CONFIG = {
   caseContractV1: "0x14c9C106d0A785091F77Fc36F5b2152a5d8C9987",  // the first, simpler case contract (no deadlines); still on-chain
   showcase: {caseId: 1, agreementId: 1},                           // the real mainnet case shown on the home page (played by the team)
   v4: {passkeys: "0xC3c0E2Fa6D8452A14063c01DC50159487E78522E", agreements: "0x802995325A576b69175DCE24e8D643553C9ba2ed", cases: "0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0"},   // passkey parties: PasskeyRegistry, AgreementRegistryV2, TiebreakCaseV4 (set by scripts/deploy-v4.sh)
+  v5: {billing: "0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De", cases: "0x1c261952b583fc6DA59e1525Ff52c15b39eD146a", token: "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", treasury: "0x0aE117C07A277D74D9326eb4e33013439dC68fD5", caseFee: 3000000},   // revenue: LGtieBilling and TiebreakCaseV5 (set by scripts/deploy-v5.sh)
   published: {warranty: {circuitId: 13, ruleSetId: 1}}
 };
 
@@ -3870,6 +3921,127 @@ MY POLICY:
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_RID = api;
 })();
 
+</script><script>/* billing.js */
+// How LGtie earns revenue, on the page: the pricing page (#pricing), subscribing, and the small fee when a case is opened.
+// Everything is paid in a 6-decimal dollar token straight to the treasury by the LGtieBilling contract, which never holds funds. Static: no server.
+// The contract addresses come from TB_CONFIG.v5; until they are deployed the page shows the planned prices and says nothing is charged yet.
+(function () {
+  "use strict";
+  const K = window.TB_PK, CFG = window.TB_CONFIG, W = () => window.TB_WALLET, main = document.querySelector("#main"), $ = s => document.querySelector(s);
+  const ZERO = "0x" + "0".repeat(40);
+  const V5 = () => CFG.v5 || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const short = a => a.slice(0, 6) + "…" + a.slice(-4);
+  const enc = (name, types = [], vals = []) => K.hex(K.call(name, types, vals));
+  const call = (to, data) => W().rpc("eth_call", [{to, data}, "latest"]);
+  const words = h => { const x = h.replace(/^0x/, ""), out = []; for (let i = 0; i + 64 <= x.length; i += 64) out.push(BigInt("0x" + x.slice(i, i + 64))); return out; };
+  const money = n => { const v = Number(n) / 1e6; return (Number.isInteger(v) ? String(v) : v.toFixed(2)) + " USDT"; };
+  const when = sec => new Date(Number(sec) * 1000).toLocaleDateString([], {dateStyle: "medium"});
+  // the prices shown before anything is deployed (the same numbers scripts/deploy-v5.sh deploys with)
+  const PLANNED = {caseFee: 3000000n, plans: {1: {month: 29000000n, year: 290000000n, cases: 50n}, 2: {month: 99000000n, year: 990000000n, cases: 300n}}};
+  const SEL_OPEN_SIGNED = K.keccak(K.utf8("openFromAgreementSigned(uint256,bytes32,bool," + K.typeStr(K.SIGAUTH) + ")")).slice(0, 10);
+
+  async function info() {
+    if (!deployed()) return {live: false, ...PLANNED};
+    const B = V5().billing, one = async (n, t = [], v = []) => words(await call(B, enc(n, t, v)));
+    const [[fee], p1, p2, [tr], [tok]] = await Promise.all([one("caseFee"), one("plans", ["uint8"], [1]), one("plans", ["uint8"], [2]), one("treasury"), one("token")]);
+    return {live: true, caseFee: fee, plans: {1: {month: p1[0], year: p1[1], cases: p1[2]}, 2: {month: p2[0], year: p2[1], cases: p2[2]}}, treasury: "0x" + tr.toString(16).padStart(40, "0"), token: "0x" + tok.toString(16).padStart(40, "0")};
+  }
+  async function status(addr) {
+    const w = words(await call(V5().billing, enc("statusOf", ["address"], [addr])));
+    return {plan: Number(w[0]), expiry: Number(w[1]), active: w[2] === 1n, used: Number(w[3]), left: Number(w[4])};
+  }
+  const tokenOf = async () => "0x" + words(await call(V5().billing, enc("token")))[0].toString(16).padStart(40, "0");
+  async function approveIfNeeded(amount, say) {
+    const acct = await W().connect(), tok = await tokenOf(), B = V5().billing;
+    const bal = words(await call(tok, enc("balanceOf", ["address"], [acct])))[0];
+    if (bal < amount) throw new Error("You need " + money(amount) + " in this wallet to pay this. It holds " + money(bal) + ".");
+    const al = words(await call(tok, enc("allowance", ["address", "address"], [acct, B])))[0];
+    if (al >= amount) return false;
+    if (say) say("Step 1 of 2: allow LGtie to take " + money(amount) + ". Confirm in your wallet…");
+    await W().send(tok, enc("approve", ["address", "uint256"], [B, amount]));
+    return true;
+  }
+
+  /// Before a case is opened by this wallet: if the business's subscription does not cover it, the per-case fee is paid by the opener, so
+  /// make sure the wallet has allowed it. Returns what happened so the page can say so. Does nothing until the contracts are deployed.
+  async function ensureFee(business, say) {
+    if (!deployed()) return {fee: 0n, covered: true};
+    const inf = await info();
+    if (inf.caseFee === 0n) return {fee: 0n, covered: true};
+    const s = await status(business);
+    if (s.active && s.left > 0) return {fee: 0n, covered: true};
+    if (say) say("Opening a case costs " + money(inf.caseFee) + ", paid to LGtie. Checking your wallet…");
+    await approveIfNeeded(inf.caseFee, say);
+    return {fee: inf.caseFee, covered: false};
+  }
+  /// For a signed action someone is about to submit: if it opens a case, make the fee payable first.
+  async function before(o, say) {
+    if (!deployed() || !o || !o.to || o.to.toLowerCase() !== V5().cases.toLowerCase() || !String(o.data).startsWith(SEL_OPEN_SIGNED)) return {fee: 0n, covered: true};
+    const id = BigInt("0x" + String(o.data).slice(10, 74)), ag = (CFG.v4 || {}).agreements;
+    const business = "0x" + words(await call(ag, enc("get", ["uint256"], [id])))[0].toString(16).padStart(40, "0");   // the proposer's wallet is the first word
+    return ensureFee(business, say);
+  }
+  /// A short line for pages that open cases.
+  async function feeNote(business) {
+    try {
+      if (!deployed()) return "";
+      const inf = await info(); if (inf.caseFee === 0n) return "";
+      const s = await status(business);
+      return s.active && s.left > 0 ? "Covered by the business's LGtie subscription: no case fee." : "Opening a case costs " + money(inf.caseFee) + ", paid to LGtie.";
+    } catch { return ""; }
+  }
+
+  // ---------- the pricing page ----------
+  async function page() {
+    main.innerHTML = `<h1>Pricing</h1><p class="lede">LGtie charges a small fee when a case is opened, or a flat monthly plan for businesses with many. It never holds your money: every payment goes straight from you to LGtie's address in the same transaction, so there is nothing for LGtie to lose or to hold back.</p><p class="mute">Reading from X Layer…</p>`;
+    let inf; try { inf = await info(); } catch { inf = {live: false, ...PLANNED}; }
+    const p = inf.plans, fee = inf.caseFee;
+    const card = (id, name, who, price, extra, items, buy) => `<div class="card price" id="${id}"><h3>${name}</h3><p class="small mute">${who}</p><p class="pv">${price}</p><p class="small mute">${extra}</p><ul>${items.map(i => `<li>${i}</li>`).join("")}</ul>${buy}</div>`;
+    const buy = id => inf.live ? `<div class="row"><button class="btn" data-sub="${id}" data-y="0" type="button">Subscribe monthly</button><button class="btn ghost" data-sub="${id}" data-y="1" type="button">Subscribe yearly</button></div>` : `<p class="small mute">Not on sale yet.</p>`;
+    main.innerHTML = `<h1>Pricing</h1>
+      <p class="lede">LGtie charges a small fee when a case is opened, or a flat monthly plan for businesses with many. It never holds your money: every payment goes straight from you to LGtie's address in the same transaction, so there is nothing for LGtie to lose or to hold back.</p>
+      ${inf.live ? "" : `<div class="note">Payments are built and tested but not deployed on X Layer yet. These are the planned prices, and nothing is charged today.</div>`}
+      <div class="priceg">
+        ${card("pl0", "Pay as you go", "Occasional disputes, freelancers, one-off buyers.", money(fee), "per case opened", ["No subscription, no commitment", "Paid by whoever opens the case, so a business that does not pay can never stop a customer from opening one", "Only when a case is opened: checking claims and reading cases is free"], "")}
+        ${card("pl1", "Business", "A business with recurring claims or returns.", money(p[1].month), "per month, or " + money(p[1].year) + " per year", [Number(p[1].cases) + " cases a month under your agreements, with no case fee", "Covers cases your customers open as well", "Past the monthly allowance the case fee applies again"], buy(1))}
+        ${card("pl2", "Pro", "Protocols, bounty programmes and larger businesses.", money(p[2].month), "per month, or " + money(p[2].year) + " per year", [Number(p[2].cases) + " cases a month, with no case fee", "Built for programmes with a steady flow of cases", "Everything in Business"], buy(2))}
+      </div>
+      <div class="card" id="mine"><h3>Your plan</h3><div id="minebody"><p class="small mute">${inf.live ? "Connect your wallet to see your plan." : "Plans open once the contracts are deployed."}</p></div>${inf.live ? `<div class="row"><button class="btn ghost" id="seeplan" type="button">Show my plan</button></div>` : ""}</div>
+      <div class="card"><h3>How the money moves</h3><ul class="small">
+        <li>You pay in USDT on X Layer. The only other cost is the tiny network fee.</li>
+        <li>${inf.live ? `Every payment goes straight to <code>${esc(inf.treasury)}</code>.` : "Every payment goes straight to LGtie's address."} The billing contract never holds any money, and a test checks that after every kind of payment it holds exactly nothing.</li>
+        <li>Prices can be changed, but never above caps written into the contract: at most 10 USDT per case, 500 per month and 5,000 per year. The reviewer's own fee, if any, is agreed and paid directly between the parties, and LGtie takes no cut of it.</li>
+        <li>A plan does not renew by itself, because there is no server to charge you. Subscribe again before it ends; time is added on top. Switching to a higher plan starts it now and does not refund the rest of the old one.</li>
+        <li>The contracts are unaudited. Everything recorded is public.</li></ul></div>`;
+    const msg = (t, cls) => { const m = $("#minebody"); if (m) m.innerHTML = `<p class="small ${cls || "mute"}">${esc(t)}</p>`; };
+    const showPlan = async () => {
+      try {
+        const acct = await W().connect(), s = await status(acct);
+        $("#minebody").innerHTML = s.active
+          ? `<p><span class="badge ok">${s.plan === 2 ? "Pro" : "Business"}</span> until <b>${when(s.expiry)}</b>.</p><p class="small">${s.used} used this month, <b>${s.left}</b> left. Wallet <code>${short(acct)}</code>.</p>`
+          : `<p class="small">No active plan on <code>${short(acct)}</code>.${s.expiry ? " The last one ended " + when(s.expiry) + "." : ""} Cases you open pay the case fee.</p>`;
+      } catch (e) { msg((e && e.message) || String(e), "err"); }
+    };
+    if ($("#seeplan")) $("#seeplan").onclick = showPlan;
+    document.querySelectorAll("[data-sub]").forEach(b => b.onclick = async () => {
+      const plan = Number(b.dataset.sub), yearly = b.dataset.y === "1", price = yearly ? p[plan].year : p[plan].month;
+      document.querySelectorAll("[data-sub]").forEach(x => x.disabled = true);
+      try {
+        msg("Checking your wallet…");
+        await approveIfNeeded(price, t => msg(t));
+        msg("Step 2 of 2: pay " + money(price) + " for " + (plan === 2 ? "Pro" : "Business") + ", " + (yearly ? "one year" : "one month") + ". Confirm in your wallet…");
+        const rc = await W().send(V5().billing, enc("subscribe", ["uint8", "bool"], [plan, yearly]));
+        await showPlan();
+        $("#minebody").insertAdjacentHTML("beforeend", `<p class="small ok">✓ Paid. <a href="${CFG.explorer}/tx/${rc.transactionHash}" target="_blank" rel="noopener">${rc.transactionHash.slice(0, 12)}…</a></p>`);
+      } catch (e) { msg((e && e.message) || String(e), "err"); }
+      document.querySelectorAll("[data-sub]").forEach(x => x.disabled = false);
+    });
+  }
+
+  window.TB_BILLING = {page, info, status, ensureFee, before, feeNote, deployed, money};
+})();
+
 </script><script>/* passkeys.js */
 // Passkey parties: a customer with no wallet acts with a passkey (Face ID, fingerprint, PIN); anyone with a wallet relays the signed message.
 // Pages: #join (create a passkey), #mine (find my agreements and cases, check I control the account, sign), #relay/<pack> (send a signed
@@ -3880,7 +4052,8 @@ MY POLICY:
   const ZERO = "0x" + "0".repeat(40), DAY = 86400, STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
-  const V4 = () => CFG.v4 || {}, deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  // once the revenue contracts are live, cases are opened on TiebreakCaseV5 (V4 plus a billing call); the passkeys and agreements stay the same
+  const V4 = () => (CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -4094,10 +4267,10 @@ MY POLICY:
         <div class="row"><button class="btn" id="go" type="button" disabled>Submit with my wallet</button><span id="rm" class="small"></span></div><div id="done"></div></div>`;
     const sim = $("#sim"), go = $("#go");
     try { await W().rpc("eth_call", [{from: "0x000000000000000000000000000000000000dEaD", to: o.to, data: o.data}, "latest"]); sim.className = "small ok"; sim.textContent = "✓ This would succeed right now."; go.disabled = false; }
-    catch (e) { sim.className = "small err"; sim.textContent = "This would fail right now: " + ((e && e.message) || "it was rejected") + ". It may already have been submitted, or it may have expired."; go.disabled = false; }
+    catch (e) { if (/payment failed/.test((e && e.message) || "")) { sim.className = "small ok"; sim.textContent = "✓ Valid. A small case fee is paid when you submit it (your wallet asks you to allow it first)."; go.disabled = false; return; } sim.className = "small err"; sim.textContent = "This would fail right now: " + ((e && e.message) || "it was rejected") + ". It may already have been submitted, or it may have expired."; go.disabled = false; }
     go.onclick = async () => {
       const m = $("#rm"); go.disabled = true; m.className = "small mute"; m.textContent = "Confirm in your wallet…";
-      try { const rc = await W().send(o.to, o.data); $("#done").innerHTML = `<div class="note ok-note">✓ Submitted. <a href="${CFG.explorer}/tx/${rc.transactionHash}" target="_blank" rel="noopener">${rc.transactionHash.slice(0, 12)}…</a></div>`; m.textContent = ""; }
+      try { await window.TB_BILLING.before(o, t => { m.textContent = t; }); m.textContent = "Confirm in your wallet…"; const rc = await W().send(o.to, o.data); $("#done").innerHTML = `<div class="note ok-note">✓ Submitted. <a href="${CFG.explorer}/tx/${rc.transactionHash}" target="_blank" rel="noopener">${rc.transactionHash.slice(0, 12)}…</a></div>`; m.textContent = ""; }
       catch (e) { go.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
     };
   }
@@ -4157,7 +4330,7 @@ MY POLICY:
           ${old.length ? `<details><summary class="small">Done or expired (${old.length})</summary>${old.map(i => `<p class="small mute">${esc(String(i.o.summary || "A signed action").slice(0, 120))} · ${ago(i.at)}</p>`).join("")}</details>` : ""}`;
         document.querySelectorAll("[data-go]").forEach(b => b.onclick = async () => {
           const i = items.get(b.dataset.go), m = b.parentNode.querySelector("[data-m]"); b.disabled = true; m.className = "small mute"; m.textContent = "Confirm in your wallet…";
-          try { const rc = await W().send(i.o.to, i.o.data); i.state = "old"; m.textContent = ""; [...items.values()].filter(x => x.state === "later" || x.state === "checking").forEach(check); render(); $("#ibs").className = "small ok"; $("#ibs").textContent = "✓ Submitted. " + rc.transactionHash.slice(0, 12) + "…"; }
+          try { await window.TB_BILLING.before(i.o, t => { m.textContent = t; }); m.textContent = "Confirm in your wallet…"; const rc = await W().send(i.o.to, i.o.data); i.state = "old"; m.textContent = ""; [...items.values()].filter(x => x.state === "later" || x.state === "checking").forEach(check); render(); $("#ibs").className = "small ok"; $("#ibs").textContent = "✓ Submitted. " + rc.transactionHash.slice(0, 12) + "…"; }
           catch (e) { b.disabled = false; m.className = "small err"; m.textContent = (e && e.message) || String(e); }
         });
       }, check = async i => {
@@ -4241,7 +4414,7 @@ MY POLICY:
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
-    if (inForce) add("Open a dispute under this agreement", "", async () => { const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
+    if (inForce) add("Open a dispute under this agreement", "", async () => { await window.TB_BILLING.ensureFee(a.proposer.wallet, t => { $("#amsg").textContent = t; }); $("#amsg").textContent = "Confirm in your wallet…"; const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
     try { const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: c => "#pk/case/" + c.id}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkAll() {
@@ -4683,6 +4856,7 @@ MY POLICY:
     if (view === "agreement") return key ? window.TB_CASES.agreement(key) : window.TB_CASES.agreements();
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "rules") return window.TB_CASES.rules(key);
+    if (view === "pricing") return window.TB_BILLING.page();
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
     if (view === "for-business") return forBusiness();
