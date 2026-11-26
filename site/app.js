@@ -188,7 +188,7 @@
     if (!published && rsm && L.custom) {
       try {
         const rec = await fetchRuleSet(Number(rsm[1])), h = await sha256(TB.canonical(P));
-        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rules #${rsm[1]} published on X Layer.</div>`; }
+        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rules #${rsm[1]} published on X Layer. <a href="#rules/${rsm[1]}">Version history</a></div>`; }
         else banner = `<div class="note">These rules do <b>not</b> match rules #${rsm[1]} on X Layer, so the result below is only a preview. Ask the business for the original link.</div>`;
       } catch { banner = `<div class="note">Could not reach X Layer to confirm that these rules were published, so the result below is only a preview.</div>`; }
     }
@@ -220,7 +220,7 @@
         <div class="row"><span class="badge" id="vbadge">Checking…</span><button class="btn small ghost" id="cp" type="button">Copy link to this result</button><button class="btn small ghost" id="rs" type="button">Start over</button></div>
         <details><summary>Check this result yourself</summary>
           <p class="small">${esc(rule)}. The same answers go into the published rules, and anyone can run them.</p>
-          ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
+          ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. <a href="#rules/${published.ruleSetId}">Version history</a>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
             : `<p class="small">This checker has not been published on X Layer yet, so the result above is computed in your browser from the same rules. Once published, the page asks the TapeOut processor and shows a confirmation.</p>`}
           <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre>${published && window.TB_VERIFY ? `<div class="fv" id="fv"></div>` : ""}</details>
         ${embed ? "" : `<details id="packbox"><summary>Claim pack to attach to your report or claim</summary><p class="small">Plain text you can paste into an email, a support ticket or a bug report. It lists your answers, the rule that decided the result, and a link anyone can use to re-run it.</p><pre id="packtxt">Preparing…</pre><div class="row"><button class="btn small ghost" id="cpk" type="button">Copy claim pack</button></div></details>`}</div>`;
@@ -354,6 +354,7 @@
     if (view === "agree") return window.TB_CASES.agreements();
     if (view === "agreement") return key ? window.TB_CASES.agreement(key) : window.TB_CASES.agreements();
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
+    if (view === "rules") return window.TB_CASES.rules(key);
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
     if (view === "for-business") return forBusiness();

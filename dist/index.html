@@ -444,6 +444,7 @@ h3 .badge{letter-spacing:0;word-spacing:.08em;white-space:nowrap;margin-left:8px
 .rrow.flash{outline:2px solid #ff5b2e;outline-offset:-2px}
 .agc{list-style:none;padding:0;margin:10px 0 0;display:grid;gap:6px}.agc li{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--warm,#ddd);border-radius:12px;padding:9px 14px;font-size:14px}.agc a{font-weight:500}
 .fproof{margin:14px 0 4px;padding:12px 16px;background:#fff;border:1px solid var(--warm,#ddd);border-radius:12px}.fproof p{margin:0 0 6px}.fv .fvh{font:500 15px var(--sans);letter-spacing:0;margin:14px 0 4px}.fv code,.fproof code{word-break:break-all}
+.vhist{display:grid;gap:14px;margin:18px 0}.vers.cur{outline:2px solid var(--ink);outline-offset:-2px}.vt{border-collapse:collapse;margin:6px 0}.vt td{padding:3px 18px 3px 0;vertical-align:top}.vt td:first-child{color:var(--stone);white-space:nowrap}.vt code{word-break:break-all}
 /* language: Chinese needs system CJK fonts (the embedded Inter has Latin only) and looser tracking */
 html[lang^="zh"]{--serif:"InterEmbedded","Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Noto Sans SC","WenQuanYi Micro Hei",ui-sans-serif,system-ui,sans-serif;--sans:var(--serif)}
 html[lang^="zh"] body{letter-spacing:0;line-height:1.65;line-break:strict}
@@ -461,7 +462,7 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
 <nav id="nav"><a href="#about" data-k="about">How it works</a><a href="#templates" data-k="templates">Templates</a><a href="#check/warranty" data-k="check">Try a claim check</a><a href="#for-business" data-k="for-business">For businesses</a><a href="#mine" data-k="mine">My cases</a><details class="more"><summary>More</summary><div class="menu"><a href="#build" data-k="build">Build a checker</a><a href="#agree" data-k="agree">Make an agreement</a><a href="#inbox" data-k="inbox">Inbox</a><a href="#reviewer" data-k="reviewer">Reviewer records</a><a href="#verify" data-k="verify">Verify a circuit</a><a href="#join" data-k="join">Get a passkey</a></div></details><a class="pill" href="#case/1">See a real case</a></nav></div></header>
 <main id="main"></main>
-<footer><div class="wrap"><div class="fcols"><div><h5>Use it</h5><a href="#check/warranty">Try a claim check</a><a href="#case/1">See a real case</a><a href="#mine">My cases</a><a href="#join">Get a passkey</a><a href="#templates">Templates</a></div><div><h5>For businesses</h5><a href="#for-business">For businesses</a><a href="#build">Build a checker</a><a href="#agree">Make an agreement</a><a href="#pk/agree">Invite a customer</a><a href="#inbox">Inbox</a><a href="embed-demo.html">Put it on your website</a></div><div><h5>Check and trust</h5><a href="#about">How it works</a><a href="#reviewer">Reviewer records</a><a href="#verify">Verify a circuit</a><a href="https://github.com/samuel025/Lgtie" target="_blank" rel="noopener noreferrer">Source code and docs</a><a href="https://github.com/samuel025/Lgtie/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security notes</a></div></div><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div></div></footer>
+<footer><div class="wrap"><div class="fcols"><div><h5>Use it</h5><a href="#check/warranty">Try a claim check</a><a href="#case/1">See a real case</a><a href="#mine">My cases</a><a href="#join">Get a passkey</a><a href="#templates">Templates</a></div><div><h5>For businesses</h5><a href="#for-business">For businesses</a><a href="#build">Build a checker</a><a href="#agree">Make an agreement</a><a href="#pk/agree">Invite a customer</a><a href="#inbox">Inbox</a><a href="embed-demo.html">Put it on your website</a></div><div><h5>Check and trust</h5><a href="#about">How it works</a><a href="#reviewer">Reviewer records</a><a href="#rules">Published rule sets</a><a href="#verify">Verify a circuit</a><a href="https://github.com/samuel025/Lgtie" target="_blank" rel="noopener noreferrer">Source code and docs</a><a href="https://github.com/samuel025/Lgtie/blob/main/docs/SECURITY.md" target="_blank" rel="noopener noreferrer">Security notes</a></div></div><div><b style="color:#000">LGtie</b> is a hackathon prototype for X Layer. Contracts are unaudited and hold no funds. Results show how a published policy applies to the answers given; they do not prove the answers are true.</div></div></footer>
 <script>/* zh.js */
 // Chinese translations for the app (see lang.js). `dict` maps an exact English string to Chinese; `patterns` handle text with numbers and names;
 // strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
@@ -1437,9 +1438,45 @@ window.TB_ZH = {
  "It lists more entries than the case has.": "它列出的条目比案件实际拥有的更多。",
  "The digest it states is not the digest of those entries on X Layer.": "它声明的摘要并不是这些条目在 X Layer 上的摘要。",
  "Nothing was added after it was written.": "在它写成之后没有新增任何内容。",
- "; drop the file you were sent below to check it is identical and to see which evidence it lists.": "；请把你收到的文件拖到下方，核对是否一致，并查看它列出了哪些证据。"
+ "; drop the file you were sent below to check it is identical and to see which evidence it lists.": "；请把你收到的文件拖到下方，核对是否一致，并查看它列出了哪些证据。",
+ "Rules history": "规则历史",
+ "Published rule sets": "已发布的规则集",
+ "Every rule set a business publishes is permanent. A business that changes its rules publishes a new version; the old one stays on-chain, and agreements keep the version they accepted. Pick one to see its history.": "商家发布的每个规则集都是永久的。商家若要修改规则，就要发布新版本；旧版本仍保留在链上，协议也会沿用它们当初接受的版本。选择一个查看它的历史。",
+ "Publisher": "发布者",
+ "first version": "首个版本",
+ "History": "历史",
+ "Read from the public registry.": "读取自公开登记处。",
+ "Agreements keep the version they accepted.": "协议沿用它们当初接受的版本。",
+ "An agreement is bound to one rule set number for good. A newer version never changes it, and any case under it is decided by that version's circuit, which anyone can still re-run.": "一份协议永久绑定在一个规则集编号上。更新的版本绝不会改变它，它之下的任何案件都由那个版本的电路裁定，而且任何人仍然可以重新运行。",
+ "Newest": "最新",
+ "Replaced": "已被替换",
+ "You are here": "当前位置",
+ "Replaced by": "被以下版本替换",
+ "nothing: the first version": "无：这是首个版本",
+ "nothing yet": "暂无",
+ "The same fingerprint as the previous version, so the rules text did not change.": "与上一版本的指纹相同，所以规则文本没有变化。",
+ "A different fingerprint from the previous version, so the rules changed.": "与上一版本的指纹不同，说明规则发生了变化。",
+ "Counting the agreements and cases that use this version…": "正在统计使用这个版本的协议和案件…",
+ "agreements and": "份协议和",
+ "agreement and": "份协议和",
+ "cases use this version.": "个案件使用这个版本。",
+ "case use this version.": "个案件使用这个版本。",
+ "Could not count the agreements and cases right now.": "暂时无法统计协议和案件。",
+ "Open the checker": "打开检查器",
+ "The registry keeps a fingerprint, not the text. The publisher's own checker link shows the rules and confirms they match this fingerprint.": "登记处保存的是指纹，而不是文本。发布者自己的检查器链接会显示规则，并确认它们与这个指纹一致。",
+ "A new version can only be published by the address that published the one it replaces, so this chain cannot be forged by someone else.": "新版本只能由发布了被替换版本的同一地址发布，所以别人无法伪造这条版本链。",
+ "All published rule sets": "所有已发布的规则集",
+ "That rule set doesn't exist, or it is older than the latest 300 that this page reads.": "该规则集不存在，或者比本页读取的最新 300 个更早。",
+ "See the published rule sets": "查看已发布的规则集",
+ "No rule set has been published yet.": "尚未发布任何规则集。",
+ "Version history": "版本历史"
 },
   patterns: [
+  [/^Version (\d+) · rule set #(\d+)$/, "版本 {1} · 规则集 #{2}"], [/^rule set #(\d+)$/, "规则集 #{1}"], [/^#(\d+) on X Layer$/, "X Layer 上的 #{1}"],
+  [/^(.+): (\d+) versions? published by (\S+)\. Rule sets are permanent, so a change is always a new version, and the old one stays on-chain\.$/, "{1}：共 {2} 个版本，由 {3} 发布。规则集是永久的，所以任何修改都是一个新版本，旧版本仍保留在链上。"],
+  [/^The publisher also published (.+) as a replacement for this version\.$/, "发布者还发布了 {1} 作为这个版本的替代。"],
+  [/^Showing the latest 60 of (\d+) rule sets\. Read from the public registry\.$/, "显示 {1} 个规则集中的最新 60 个。读取自公开登记处。"],
+
   [/^Your statement will list the (\d+) evidence entr(?:y|ies) recorded so far, with a digest anyone can check against X Layer\. Anything added after you record your reasons is not covered\.$/, "你的声明将列出目前已记录的 {1} 条证据，并附上任何人都能对照 X Layer 核对的摘要。你记录理由之后新增的内容不在涵盖范围内。"],
   [/^✓ Evidence examined: entry 1 matches the chain$/, "✓ 已审阅的证据：第 1 条与链上一致"], [/^✓ Evidence examined: entries 1 to (\d+) match the chain$/, "✓ 已审阅的证据：第 1 至 {1} 条与链上一致"],
   [/^(\d+) entr(?:y|ies) added after it was written, not examined\.$/, "在它写成之后新增了 {1} 条，未被审阅。"],
@@ -3218,7 +3255,7 @@ MY POLICY:
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : a.cancelled ? " warn" : ""}">${esc(state)}</span></p>
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody>
         <tr><td>Proposed by</td><td><code>${a.proposer}</code>${isProp ? " (you)" : ""}</td></tr><tr><td>Other party</td><td><code>${a.counterparty}</code>${isCp ? " (you)" : ""}</td></tr>
-        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rules #${a.ruleSetId})</td></tr>
+        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} <a href="#rules/${a.ruleSetId}">(rules #${a.ruleSetId})</a></td></tr>
         <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
         <tr><td>Terms fingerprint (a short code of the written terms)</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
@@ -3447,6 +3484,59 @@ MY POLICY:
   }
 
   // A business's public record: the rule sets it published (and whether it replaced any) and how its cases went.
+
+  // ---------- rules history: every version of a rule set, and what uses each ----------
+  // The registry only lets a publisher name THEIR OWN earlier rule set as the one a new rule set replaces ("not the previous publisher"), so a chain of versions
+  // cannot be forged by a stranger. An agreement is bound to one rule set number for good: a newer version never changes agreements made under an older one.
+  async function readRuleSets() {
+    const n = Number(BigInt(await callAt(CFG.registry, ASEL.count))), ids = Array.from({length: Math.min(n, 300)}, (_, i) => n - i);
+    return {n, sets: (await Promise.all(ids.map(id => callAt(CFG.registry, ASEL.get + w(id)).then(h => ({id, ...decodeRuleSet(h)}), () => null)))).filter(Boolean)};
+  }
+  async function ruleSetUsage() {
+    const out = {agreements: {}, cases: {}}, add = (k, id) => { out[k][id] = (out[k][id] || 0) + 1; };
+    const na = Number(BigInt(await callAt(CFG.agreements, ASEL.count))); const aids = Array.from({length: Math.min(na, 200)}, (_, i) => na - i);
+    (await Promise.all(aids.map(id => callAt(CFG.agreements, ASEL.get + w(id)).then(decodeAgreement, () => null)))).filter(Boolean).forEach(a => add("agreements", a.ruleSetId));
+    (await scanCases(200)).cases.forEach(c => add("cases", c.ruleSetId));
+    try { const u = window.TB_PASSKEYS && window.TB_PASSKEYS.usage ? await window.TB_PASSKEYS.usage() : null; if (u) { u.agreements.forEach(a => add("agreements", a.ruleSetId)); u.cases.forEach(c => add("cases", c.ruleSetId)); } } catch (e) {}
+    return out;
+  }
+  async function rulesHistory(idArg) {
+    if (ZERO.test(CFG.registry)) { upgrading("Rules history"); return; }
+    main.innerHTML = `<h1>Rules history</h1><p class="mute">Reading from X Layer…</p>`;
+    let rs; try { rs = await readRuleSets(); } catch { main.innerHTML = `<h1>Rules history</h1><p class="err">X Layer could not be reached.</p>`; return; }
+    const byId = new Map(rs.sets.map(s => [s.id, s]));
+    if (!idArg) {
+      main.innerHTML = `<h1>Published rule sets</h1><p class="lede">Every rule set a business publishes is permanent. A business that changes its rules publishes a new version; the old one stays on-chain, and agreements keep the version they accepted. Pick one to see its history.</p>
+        <div class="card" style="overflow:auto">${rs.sets.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Rule set</th><th>Published</th><th>Publisher</th><th>Replaces</th><th></th></tr></thead><tbody>${rs.sets.slice(0, 60).map(s => `<tr><td>#${s.id} ${esc(s.name)}</td><td>${when(s.publishedAt)}</td><td><a href="#business/${s.publisher}">${short(s.publisher)}</a></td><td>${s.previousId ? "#" + s.previousId : "first version"}</td><td><a href="#rules/${s.id}">History</a></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No rule set has been published yet.</p>`}</div>
+        <p class="small mute">${rs.n > 60 ? `Showing the latest 60 of ${rs.n} rule sets. ` : ""}Read from the public registry.</p>`;
+      return;
+    }
+    const id = Number(idArg), target = byId.get(id);
+    if (!target) { main.innerHTML = `<h1>Rules history</h1><p class="err">That rule set doesn't exist, or it is older than the latest 300 that this page reads. <a href="#rules">See the published rule sets</a>.</p>`; return; }
+    const seen = new Set(), chain = []; let cur = target;
+    while (cur && !seen.has(cur.id)) { seen.add(cur.id); chain.unshift(cur); cur = cur.previousId ? byId.get(cur.previousId) : null; }
+    const repl = s => rs.sets.filter(x => x.previousId === s.id).sort((a, b) => a.id - b.id);
+    for (let last = target; ;) { const r = repl(last); if (!r.length || seen.has(r[r.length - 1].id)) break; last = r[r.length - 1]; seen.add(last.id); chain.push(last); }
+    const newest = chain[chain.length - 1];
+    const card = (s, i) => {
+      const prev = chain[i - 1], nexts = repl(s), K = policyOf(s.id), others = nexts.filter(x => !chain.includes(x));
+      return `<div class="card vers${s.id === id ? " cur" : ""}" id="v${s.id}"><h3>Version ${i + 1} · rule set #${s.id} ${s === newest ? `<span class="badge ok">Newest</span>` : `<span class="badge">Replaced</span>`}${s.id === id ? ` <span class="badge">You are here</span>` : ""}</h3>
+        <p class="small"><b>${esc(s.name)}</b></p>
+        <table class="small vt"><tbody><tr><td>Published</td><td>${when(s.publishedAt)}</td></tr><tr><td>Publisher</td><td><a href="#business/${s.publisher}">${short(s.publisher)}</a></td></tr><tr><td>Circuit</td><td>#${s.circuitId} on X Layer</td></tr>
+          <tr><td>Rules fingerprint</td><td><code>${s.hash}</code></td></tr><tr><td>Replaces</td><td>${prev ? `<a href="#rules/${prev.id}">rule set #${prev.id}</a>` : (s.previousId ? "rule set #" + s.previousId : "nothing: the first version")}</td></tr>
+          <tr><td>Replaced by</td><td>${nexts.length ? nexts.map(x => `<a href="#rules/${x.id}">rule set #${x.id}</a>`).join(", ") : "nothing yet"}</td></tr></tbody></table>
+        ${prev ? `<p class="small">${prev.hash === s.hash ? "The same fingerprint as the previous version, so the rules text did not change." : "A different fingerprint from the previous version, so the rules changed."}</p>` : ""}
+        ${others.length ? `<p class="small mute">The publisher also published ${others.map(x => "#" + x.id).join(", ")} as a replacement for this version.</p>` : ""}
+        <p class="small" data-use="${s.id}"><span class="mute">Counting the agreements and cases that use this version…</span></p>
+        <div class="row">${K ? `<a class="btn small ghost" href="#check/${K.key}">Open the checker</a>` : `<span class="small mute">The registry keeps a fingerprint, not the text. The publisher's own checker link shows the rules and confirms they match this fingerprint.</span>`}</div></div>`;
+    };
+    main.innerHTML = `<h1>Rules history</h1><p class="lede">${esc(target.name)}: ${chain.length} version${chain.length === 1 ? "" : "s"} published by ${short(target.publisher)}. Rule sets are permanent, so a change is always a new version, and the old one stays on-chain.</p>
+      <div class="note"><b>Agreements keep the version they accepted.</b> An agreement is bound to one rule set number for good. A newer version never changes it, and any case under it is decided by that version's circuit, which anyone can still re-run.</div>
+      <div class="vhist">${chain.map(card).join("")}</div>
+      <p class="small mute">A new version can only be published by the address that published the one it replaces, so this chain cannot be forged by someone else. <a href="#rules">All published rule sets</a>.</p>`;
+    ruleSetUsage().then(u => chain.forEach(s => { const el = main.querySelector(`[data-use="${s.id}"]`); if (!el) return; const a = u.agreements[s.id] || 0, c = u.cases[s.id] || 0; el.innerHTML = `<b>${a}</b> agreement${a === 1 ? "" : "s"} and <b>${c}</b> case${c === 1 ? "" : "s"} use this version.`; })).catch(() => { main.querySelectorAll("[data-use]").forEach(el => { el.innerHTML = `<span class="mute">Could not count the agreements and cases right now.</span>`; }); });
+  }
+
   async function business(addr) {
     if (!deployed()) { upgrading("Business record"); return; }
     if (!ADDR.test(addr)) { main.innerHTML = `<h1>Business record</h1><p class="err">That is not a wallet address.</p>`; return; }
@@ -3463,13 +3553,13 @@ MY POLICY:
     const versions = mineSets.filter(s => s.previousId !== 0).length;
     main.innerHTML = `<h1>Record of ${short(addr)}</h1><p class="small mute"><code>${addr}</code></p>
       <div class="stats"><span>${mineSets.length} rule set${mineSets.length === 1 ? "" : "s"} published</span><span>${versions} replaced an earlier version</span><span>${asDecider.length} case${asDecider.length === 1 ? "" : "s"} as decider</span><span>${disputed.length} of ${done.length} decided needed a reviewer</span><span>${expired.length} ended with no decision</span></div>
-      <div class="card"><h3>Rules this address published</h3>${mineSets.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Rule set</th><th>Published</th><th>Circuit</th><th>Replaces</th></tr></thead><tbody>${mineSets.map(s => `<tr><td>#${s.id} ${esc(s.name)}</td><td>${when(s.publishedAt)}</td><td>#${s.circuitId}</td><td>${s.previousId ? "#" + s.previousId : "first version"}</td></tr>`).join("")}</tbody></table>` : `<p class="mute">This address has not published a rule set.</p>`}<p class="small mute">Each published rule set is permanent. If a business changes its rules it has to publish a new version, and that shows here.</p></div>
+      <div class="card"><h3>Rules this address published</h3>${mineSets.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Rule set</th><th>Published</th><th>Circuit</th><th>Replaces</th></tr></thead><tbody>${mineSets.map(s => `<tr><td><a href="#rules/${s.id}">#${s.id}</a> ${esc(s.name)}</td><td>${when(s.publishedAt)}</td><td>#${s.circuitId}</td><td>${s.previousId ? "#" + s.previousId : "first version"}</td></tr>`).join("")}</tbody></table>` : `<p class="mute">This address has not published a rule set.</p>`}<p class="small mute">Each published rule set is permanent. If a business changes its rules it has to publish a new version, and that shows here.</p></div>
       <div class="card"><h3>Cases</h3>${all.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Case</th><th>Role</th><th>Status</th><th>Result</th></tr></thead><tbody>${all.map(c => { const P = (policyOf(c.ruleSetId) || {}).policy; return `<tr><td><a href="#case/${c.id}">#${c.id}</a></td><td>${c.decider.toLowerCase() === a ? "decider" : "filer"}</td><td>${STATUS[c.status]}</td><td>${c.status === 2 && P ? esc(P.results[c.result]) : ""}</td></tr>`; }).join("")}</tbody></table>` : `<p class="mute">No cases involving this address yet.</p>`}
         ${Object.keys(mix).length ? `<p class="small">Results of decided cases as decider: ${Object.entries(mix).map(([k, v]) => esc(k) + " " + v).join(", ")}.</p>` : ""}</div>
       <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
   }
 
-  window.TB_CASES = {casesCard, scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
+  window.TB_CASES = {rules: rulesHistory, casesCard, scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
 })();
 
 </script><script>/* nostr.js */
@@ -4126,7 +4216,7 @@ MY POLICY:
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody><tr><td>Proposed by</td><td><code>${a.proposer.wallet}</code></td></tr>
         <tr><td>Customer</td><td>${a.counterparty.passkey ? `passkey account #${a.counterparty.passkey}` : `<code>${a.counterparty.wallet}</code>`}</td></tr>
-        <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)}</td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
+        <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)} <a href="#rules/${a.ruleSetId}">(rules #${a.ruleSetId})</a></td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr><tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code></td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</div>` : ""}
       ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
@@ -4217,7 +4307,7 @@ MY POLICY:
     };
   }
 
-  window.TB_PASSKEYS = {inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: await scan(V4().cases, readCase)} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
 })();
 
 </script><script>/* app.js */
@@ -4411,7 +4501,7 @@ MY POLICY:
     if (!published && rsm && L.custom) {
       try {
         const rec = await fetchRuleSet(Number(rsm[1])), h = await sha256(TB.canonical(P));
-        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rules #${rsm[1]} published on X Layer.</div>`; }
+        if (rec && rec.hash === h && rec.processor === CFG.processor.toLowerCase() && rec.nQ === nQ && rec.nOut === C.nOut) { published = {circuitId: rec.circuitId, ruleSetId: Number(rsm[1])}; banner = `<div class="note ok-note">✓ These rules match rules #${rsm[1]} published on X Layer. <a href="#rules/${rsm[1]}">Version history</a></div>`; }
         else banner = `<div class="note">These rules do <b>not</b> match rules #${rsm[1]} on X Layer, so the result below is only a preview. Ask the business for the original link.</div>`;
       } catch { banner = `<div class="note">Could not reach X Layer to confirm that these rules were published, so the result below is only a preview.</div>`; }
     }
@@ -4443,7 +4533,7 @@ MY POLICY:
         <div class="row"><span class="badge" id="vbadge">Checking…</span><button class="btn small ghost" id="cp" type="button">Copy link to this result</button><button class="btn small ghost" id="rs" type="button">Start over</button></div>
         <details><summary>Check this result yourself</summary>
           <p class="small">${esc(rule)}. The same answers go into the published rules, and anyone can run them.</p>
-          ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
+          ${published ? `<p class="small">Published on X Layer as circuit <b>#${published.circuitId}</b> on processor <code>${CFG.processor}</code>. <a href="#rules/${published.ruleSetId}">Version history</a>. Anyone can run this command:</p><pre>cast call ${CFG.processor} "eval(uint256,bytes)(bytes)" ${published.circuitId} 0x${hexIn} --rpc-url ${CFG.rpc}</pre><p class="small">The first byte of the answer is the result number (${r.result} = ${esc(P.results[r.result])}).</p>`
             : `<p class="small">This checker has not been published on X Layer yet, so the result above is computed in your browser from the same rules. Once published, the page asks the TapeOut processor and shows a confirmation.</p>`}
           <p class="small">Circuit: ${C.gates.length} NAND gates, ${nQ} inputs, ${C.nOut} outputs.</p><pre>${C.hex}</pre>${published && window.TB_VERIFY ? `<div class="fv" id="fv"></div>` : ""}</details>
         ${embed ? "" : `<details id="packbox"><summary>Claim pack to attach to your report or claim</summary><p class="small">Plain text you can paste into an email, a support ticket or a bug report. It lists your answers, the rule that decided the result, and a link anyone can use to re-run it.</p><pre id="packtxt">Preparing…</pre><div class="row"><button class="btn small ghost" id="cpk" type="button">Copy claim pack</button></div></details>`}</div>`;
@@ -4577,6 +4667,7 @@ MY POLICY:
     if (view === "agree") return window.TB_CASES.agreements();
     if (view === "agreement") return key ? window.TB_CASES.agreement(key) : window.TB_CASES.agreements();
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
+    if (view === "rules") return window.TB_CASES.rules(key);
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
     if (view === "for-business") return forBusiness();

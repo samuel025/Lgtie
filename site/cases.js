@@ -162,7 +162,7 @@
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : a.cancelled ? " warn" : ""}">${esc(state)}</span></p>
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody>
         <tr><td>Proposed by</td><td><code>${a.proposer}</code>${isProp ? " (you)" : ""}</td></tr><tr><td>Other party</td><td><code>${a.counterparty}</code>${isCp ? " (you)" : ""}</td></tr>
-        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} (rules #${a.ruleSetId})</td></tr>
+        <tr><td>Rules</td><td>${K ? `<a href="#check/${K.key}">${esc(K.policy.name)}</a>` : "Rule set " + a.ruleSetId} <a href="#rules/${a.ruleSetId}">(rules #${a.ruleSetId})</a></td></tr>
         <tr><td>Neutral reviewer</td><td><a href="#reviewer/${a.reviewer}">${short(a.reviewer)}</a>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr>
         <tr><td>Terms fingerprint (a short code of the written terms)</td><td><code>${a.termsHash}</code>${/^0x0+$/.test(a.termsHash) ? " (no terms text was recorded)" : ""}</td></tr></tbody></table></div>
@@ -391,6 +391,59 @@
   }
 
   // A business's public record: the rule sets it published (and whether it replaced any) and how its cases went.
+
+  // ---------- rules history: every version of a rule set, and what uses each ----------
+  // The registry only lets a publisher name THEIR OWN earlier rule set as the one a new rule set replaces ("not the previous publisher"), so a chain of versions
+  // cannot be forged by a stranger. An agreement is bound to one rule set number for good: a newer version never changes agreements made under an older one.
+  async function readRuleSets() {
+    const n = Number(BigInt(await callAt(CFG.registry, ASEL.count))), ids = Array.from({length: Math.min(n, 300)}, (_, i) => n - i);
+    return {n, sets: (await Promise.all(ids.map(id => callAt(CFG.registry, ASEL.get + w(id)).then(h => ({id, ...decodeRuleSet(h)}), () => null)))).filter(Boolean)};
+  }
+  async function ruleSetUsage() {
+    const out = {agreements: {}, cases: {}}, add = (k, id) => { out[k][id] = (out[k][id] || 0) + 1; };
+    const na = Number(BigInt(await callAt(CFG.agreements, ASEL.count))); const aids = Array.from({length: Math.min(na, 200)}, (_, i) => na - i);
+    (await Promise.all(aids.map(id => callAt(CFG.agreements, ASEL.get + w(id)).then(decodeAgreement, () => null)))).filter(Boolean).forEach(a => add("agreements", a.ruleSetId));
+    (await scanCases(200)).cases.forEach(c => add("cases", c.ruleSetId));
+    try { const u = window.TB_PASSKEYS && window.TB_PASSKEYS.usage ? await window.TB_PASSKEYS.usage() : null; if (u) { u.agreements.forEach(a => add("agreements", a.ruleSetId)); u.cases.forEach(c => add("cases", c.ruleSetId)); } } catch (e) {}
+    return out;
+  }
+  async function rulesHistory(idArg) {
+    if (ZERO.test(CFG.registry)) { upgrading("Rules history"); return; }
+    main.innerHTML = `<h1>Rules history</h1><p class="mute">Reading from X Layer…</p>`;
+    let rs; try { rs = await readRuleSets(); } catch { main.innerHTML = `<h1>Rules history</h1><p class="err">X Layer could not be reached.</p>`; return; }
+    const byId = new Map(rs.sets.map(s => [s.id, s]));
+    if (!idArg) {
+      main.innerHTML = `<h1>Published rule sets</h1><p class="lede">Every rule set a business publishes is permanent. A business that changes its rules publishes a new version; the old one stays on-chain, and agreements keep the version they accepted. Pick one to see its history.</p>
+        <div class="card" style="overflow:auto">${rs.sets.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Rule set</th><th>Published</th><th>Publisher</th><th>Replaces</th><th></th></tr></thead><tbody>${rs.sets.slice(0, 60).map(s => `<tr><td>#${s.id} ${esc(s.name)}</td><td>${when(s.publishedAt)}</td><td><a href="#business/${s.publisher}">${short(s.publisher)}</a></td><td>${s.previousId ? "#" + s.previousId : "first version"}</td><td><a href="#rules/${s.id}">History</a></td></tr>`).join("")}</tbody></table>` : `<p class="mute">No rule set has been published yet.</p>`}</div>
+        <p class="small mute">${rs.n > 60 ? `Showing the latest 60 of ${rs.n} rule sets. ` : ""}Read from the public registry.</p>`;
+      return;
+    }
+    const id = Number(idArg), target = byId.get(id);
+    if (!target) { main.innerHTML = `<h1>Rules history</h1><p class="err">That rule set doesn't exist, or it is older than the latest 300 that this page reads. <a href="#rules">See the published rule sets</a>.</p>`; return; }
+    const seen = new Set(), chain = []; let cur = target;
+    while (cur && !seen.has(cur.id)) { seen.add(cur.id); chain.unshift(cur); cur = cur.previousId ? byId.get(cur.previousId) : null; }
+    const repl = s => rs.sets.filter(x => x.previousId === s.id).sort((a, b) => a.id - b.id);
+    for (let last = target; ;) { const r = repl(last); if (!r.length || seen.has(r[r.length - 1].id)) break; last = r[r.length - 1]; seen.add(last.id); chain.push(last); }
+    const newest = chain[chain.length - 1];
+    const card = (s, i) => {
+      const prev = chain[i - 1], nexts = repl(s), K = policyOf(s.id), others = nexts.filter(x => !chain.includes(x));
+      return `<div class="card vers${s.id === id ? " cur" : ""}" id="v${s.id}"><h3>Version ${i + 1} · rule set #${s.id} ${s === newest ? `<span class="badge ok">Newest</span>` : `<span class="badge">Replaced</span>`}${s.id === id ? ` <span class="badge">You are here</span>` : ""}</h3>
+        <p class="small"><b>${esc(s.name)}</b></p>
+        <table class="small vt"><tbody><tr><td>Published</td><td>${when(s.publishedAt)}</td></tr><tr><td>Publisher</td><td><a href="#business/${s.publisher}">${short(s.publisher)}</a></td></tr><tr><td>Circuit</td><td>#${s.circuitId} on X Layer</td></tr>
+          <tr><td>Rules fingerprint</td><td><code>${s.hash}</code></td></tr><tr><td>Replaces</td><td>${prev ? `<a href="#rules/${prev.id}">rule set #${prev.id}</a>` : (s.previousId ? "rule set #" + s.previousId : "nothing: the first version")}</td></tr>
+          <tr><td>Replaced by</td><td>${nexts.length ? nexts.map(x => `<a href="#rules/${x.id}">rule set #${x.id}</a>`).join(", ") : "nothing yet"}</td></tr></tbody></table>
+        ${prev ? `<p class="small">${prev.hash === s.hash ? "The same fingerprint as the previous version, so the rules text did not change." : "A different fingerprint from the previous version, so the rules changed."}</p>` : ""}
+        ${others.length ? `<p class="small mute">The publisher also published ${others.map(x => "#" + x.id).join(", ")} as a replacement for this version.</p>` : ""}
+        <p class="small" data-use="${s.id}"><span class="mute">Counting the agreements and cases that use this version…</span></p>
+        <div class="row">${K ? `<a class="btn small ghost" href="#check/${K.key}">Open the checker</a>` : `<span class="small mute">The registry keeps a fingerprint, not the text. The publisher's own checker link shows the rules and confirms they match this fingerprint.</span>`}</div></div>`;
+    };
+    main.innerHTML = `<h1>Rules history</h1><p class="lede">${esc(target.name)}: ${chain.length} version${chain.length === 1 ? "" : "s"} published by ${short(target.publisher)}. Rule sets are permanent, so a change is always a new version, and the old one stays on-chain.</p>
+      <div class="note"><b>Agreements keep the version they accepted.</b> An agreement is bound to one rule set number for good. A newer version never changes it, and any case under it is decided by that version's circuit, which anyone can still re-run.</div>
+      <div class="vhist">${chain.map(card).join("")}</div>
+      <p class="small mute">A new version can only be published by the address that published the one it replaces, so this chain cannot be forged by someone else. <a href="#rules">All published rule sets</a>.</p>`;
+    ruleSetUsage().then(u => chain.forEach(s => { const el = main.querySelector(`[data-use="${s.id}"]`); if (!el) return; const a = u.agreements[s.id] || 0, c = u.cases[s.id] || 0; el.innerHTML = `<b>${a}</b> agreement${a === 1 ? "" : "s"} and <b>${c}</b> case${c === 1 ? "" : "s"} use this version.`; })).catch(() => { main.querySelectorAll("[data-use]").forEach(el => { el.innerHTML = `<span class="mute">Could not count the agreements and cases right now.</span>`; }); });
+  }
+
   async function business(addr) {
     if (!deployed()) { upgrading("Business record"); return; }
     if (!ADDR.test(addr)) { main.innerHTML = `<h1>Business record</h1><p class="err">That is not a wallet address.</p>`; return; }
@@ -407,11 +460,11 @@
     const versions = mineSets.filter(s => s.previousId !== 0).length;
     main.innerHTML = `<h1>Record of ${short(addr)}</h1><p class="small mute"><code>${addr}</code></p>
       <div class="stats"><span>${mineSets.length} rule set${mineSets.length === 1 ? "" : "s"} published</span><span>${versions} replaced an earlier version</span><span>${asDecider.length} case${asDecider.length === 1 ? "" : "s"} as decider</span><span>${disputed.length} of ${done.length} decided needed a reviewer</span><span>${expired.length} ended with no decision</span></div>
-      <div class="card"><h3>Rules this address published</h3>${mineSets.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Rule set</th><th>Published</th><th>Circuit</th><th>Replaces</th></tr></thead><tbody>${mineSets.map(s => `<tr><td>#${s.id} ${esc(s.name)}</td><td>${when(s.publishedAt)}</td><td>#${s.circuitId}</td><td>${s.previousId ? "#" + s.previousId : "first version"}</td></tr>`).join("")}</tbody></table>` : `<p class="mute">This address has not published a rule set.</p>`}<p class="small mute">Each published rule set is permanent. If a business changes its rules it has to publish a new version, and that shows here.</p></div>
+      <div class="card"><h3>Rules this address published</h3>${mineSets.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Rule set</th><th>Published</th><th>Circuit</th><th>Replaces</th></tr></thead><tbody>${mineSets.map(s => `<tr><td><a href="#rules/${s.id}">#${s.id}</a> ${esc(s.name)}</td><td>${when(s.publishedAt)}</td><td>#${s.circuitId}</td><td>${s.previousId ? "#" + s.previousId : "first version"}</td></tr>`).join("")}</tbody></table>` : `<p class="mute">This address has not published a rule set.</p>`}<p class="small mute">Each published rule set is permanent. If a business changes its rules it has to publish a new version, and that shows here.</p></div>
       <div class="card"><h3>Cases</h3>${all.length ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Case</th><th>Role</th><th>Status</th><th>Result</th></tr></thead><tbody>${all.map(c => { const P = (policyOf(c.ruleSetId) || {}).policy; return `<tr><td><a href="#case/${c.id}">#${c.id}</a></td><td>${c.decider.toLowerCase() === a ? "decider" : "filer"}</td><td>${STATUS[c.status]}</td><td>${c.status === 2 && P ? esc(P.results[c.result]) : ""}</td></tr>`; }).join("")}</tbody></table>` : `<p class="mute">No cases involving this address yet.</p>`}
         ${Object.keys(mix).length ? `<p class="small">Results of decided cases as decider: ${Object.entries(mix).map(([k, v]) => esc(k) + " " + v).join(", ")}.</p>` : ""}</div>
       <div class="note">This is a record of activity read from the chain. It can show how often disputes happen and how they ended, not whether the business was right. Only the latest 200 cases are read.</div>`;
   }
 
-  window.TB_CASES = {casesCard, scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
+  window.TB_CASES = {rules: rulesHistory, casesCard, scanCases, mountFileCheck, summary, receipt, list, view, reviewers, reviewer, agreements, agreement, business};
 })();

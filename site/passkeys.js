@@ -358,7 +358,7 @@
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
       <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody><tr><td>Proposed by</td><td><code>${a.proposer.wallet}</code></td></tr>
         <tr><td>Customer</td><td>${a.counterparty.passkey ? `passkey account #${a.counterparty.passkey}` : `<code>${a.counterparty.wallet}</code>`}</td></tr>
-        <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)}</td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
+        <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)} <a href="#rules/${a.ruleSetId}">(rules #${a.ruleSetId})</a></td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr><tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code></td></tr></tbody></table></div>
       ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</div>` : ""}
       ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
@@ -449,5 +449,5 @@
     };
   }
 
-  window.TB_PASSKEYS = {inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: await scan(V4().cases, readCase)} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
 })();

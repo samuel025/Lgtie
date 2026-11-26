@@ -68,6 +68,35 @@ ok("bounty needs more than 40 gates and says it will buy NAND", /needs 4\d NAND/
 await go(4); await p.click("#pubgo");
 ok("bounty publish succeeds (claim + mint + tapeout + register)", await until(async () => /Published on X Layer/.test(await T("#out")), 90000), await T("#pubmsg") || await T("#out"));
 ok("mint step happened", /mint/.test(await T("#out")), (await T("#out")).slice(0, 300));
+// ---- 4b. version history: a replacement version, the history page, and a stranger cannot extend someone else's chain
+await asUser(A1); await p.goto(BASE + "#build"); await w(700); await setText(SMALL.replace("Return check", "Return check v2").replace("30 days", "60 days"));
+await go(4); await p.$eval("#prevId", (e, v) => { e.value = v; e.dispatchEvent(new Event("input", {bubbles: true})); }, String(rsId)); await p.click("#pubgo");
+ok("a replacement version publishes, naming the rule set it replaces", await until(async () => /Published on X Layer/.test(await T("#out")), 90000), await T("#pubmsg") || await T("#out"));
+const rs2 = Number(/rule set #(\d+)/.exec(await T("#out"))[1]);
+ok("the registry gained the new version after the first", rs2 > rsId && (await regCount()) >= rs2, rs2 + " vs " + rsId);
+await p.goto(BASE + "#rules/" + rsId); await w(1500);
+ok("the history page shows both versions, oldest first", await until(async () => /2 versions published by/.test(await T("main")) && /Version 1 · rule set #\d+/.test(await T("main")) && /Version 2 · rule set #\d+/.test(await T("main"))), (await T("main")).slice(0, 400));
+if (process.env.SHOTS) { await p.addStyleTag({content: "header{display:none!important}"}); const el = await p.$(".vhist"); if (el) await el.screenshot({path: process.env.SHOTS + "/rules-history.png"}); }   // set SHOTS=/some/dir to save a screenshot
+ok("version 2 is the newest, version 1 is marked replaced, and the page marks where you are", /Newest/.test(await T(`#v${rs2}`)) && /Replaced\b/.test(await T(`#v${rsId}`)) && /You are here/.test(await T(`#v${rsId}`)) && !/You are here/.test(await T(`#v${rs2}`)));
+ok("each version says what it replaces and what replaced it", new RegExp("rule set #" + rsId).test(await T(`#v${rs2}`)) && /Replaces/.test(await T(`#v${rs2}`)) && new RegExp("Replaced by\\s*rule set #" + rs2).test(await T(`#v${rsId}`)), await T(`#v${rsId}`));
+ok("it says the rules changed (a different fingerprint from the previous version)", /A different fingerprint from the previous version, so the rules changed/.test(await T(`#v${rs2}`)));
+ok("it states that agreements keep the version they accepted", /Agreements keep the version they accepted/.test(await T("main")) && /A newer version never changes it/.test(await T("main")));
+ok("it counts what uses each version, without crashing", await until(async () => /\d+ agreements? and \d+ cases? use this version/.test(await T(`#v${rs2}`)), 40000), await T(`#v${rs2}`));
+ok("a rule set whose text the page does not have says so, and points to the publisher's link", /fingerprint, not the text/.test(await T(`#v${rs2}`)));
+const fp1 = (/0x[0-9a-f]{64}/.exec(await T(`#v${rsId}`)) || [])[0], fp2 = (/0x[0-9a-f]{64}/.exec(await T(`#v${rs2}`)) || [])[0];
+ok("the two versions have different fingerprints", !!fp1 && !!fp2 && fp1 !== fp2);
+await p.goto(BASE + "#rules/" + rs2); await w(1500);
+ok("opening the newer version shows the same chain with you-are-here on it", await until(async () => /You are here/.test(await T(`#v${rs2}`)) && /2 versions published by/.test(await T("main"))), (await T("main")).slice(0, 300));
+await p.goto(BASE + "#rules"); await w(1500);
+ok("the index lists published rule sets with what each replaces and a link to its history", await until(async () => new RegExp("#" + rs2 + " Return check v2").test(await T("main")) && (await p.$$('a[href^="#rules/"]')).length >= 2), (await T("main")).slice(0, 500));
+await p.goto(BASE + "#rules/99999"); await w(1500);
+ok("a rule set that does not exist is explained", await until(async () => /doesn't exist/.test(await T("main"))), await T("main"));
+const before = await regCount();
+await asUser(A3); await p.goto(BASE + "#build"); await w(700); await setText(SMALL.replace("Return check", "Return check forged").replace("30 days", "90 days"));
+await go(4); await p.$eval("#prevId", (e, v) => { e.value = v; e.dispatchEvent(new Event("input", {bubbles: true})); }, String(rsId)); await p.click("#pubgo");
+// the wallet reports a mined-but-reverted transaction as "failed on-chain" (the revert reason, "not the previous publisher", is asserted in the contract's own tests)
+ok("a stranger cannot publish a 'new version' of someone else's rules (the registry refuses)", await until(async () => /(failed on-chain|not the previous publisher)/.test(await T("#pubmsg")), 90000), await T("#pubmsg"));
+ok("and the registry did not gain a rule set from it", (await regCount()) === before, `${await regCount()} vs ${before}`);
 // ---- 5. cancelled in the wallet
 await asUser(A1, {reject: "1"}); await p.goto(BASE + "#build"); await w(700); await setText(SMALL.replace("Return check", "Return check two"));
 await go(4); await p.click("#pubgo");
