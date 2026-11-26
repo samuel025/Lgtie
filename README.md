@@ -110,8 +110,6 @@ LGtie holds no money and takes no cut of any dispute. It earns from using the sy
 - **Where it shows.** The `#pricing` page has the plans and the subscribe buttons. When someone opens a case, the page makes the fee payable first (one approval, then the case), and says when a subscription covers it.
 - **How the prices were chosen.** Comparable services charge far more because they include human judges: AAA consumer arbitration filing fees are $225 to $375 plus the arbitrator, and Modria launched at $200 to $5,000 per case. LGtie sells only the software, because the reviewer is paid directly by the parties.
 
-**Status, said plainly.** Deployed on X Layer mainnet (see below), tested (27 billing tests, the whole V4 suite re-run against V5, and an end-to-end browser test on a fork), and unaudited. No money has moved yet: there are no paying customers, no case has been opened on V5, and the prices are untested against real demand. Cases opened through the older wallet-only contract (V3) are not billed, so only the V5 flow earns revenue. The deploy script is `scripts/deploy-v5.sh`.
-
 ## Live on X Layer (chain 196)
 
 | Contract | Address |
