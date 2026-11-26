@@ -93,6 +93,42 @@ The contract addresses and what is live are listed [below](#live-on-x-layer-chai
 
 Other entries also compile rules to TapeOut circuits; we do not claim to be first at that. What we have not seen elsewhere is the dispute process built around the rules.
 
+## Features
+
+**For a business**
+- **Rule builder.** Write questions and rules in a guided builder (a click-to-cycle grid), test them, and publish with one click. A built-in rule check warns about vague wording, missing evidence and rules that can never fire.
+- **Templates.** Second-hand sale, freelance milestone, rental deposit, bug bounty and warranty, each in English and Chinese, with a free checker and a message to send the other side.
+- **Formal proof.** The compiled circuit is proved equal to your written rules for every possible set of answers, and can be checked again from the circuit stored on X Layer.
+- **Embeddable checker.** Put the claim checker on your own website with one line, so customers get a result and a reason without leaving your page (see below).
+- **Agreements and cases.** Agree rules, a neutral reviewer and deadlines up front, then open as many cases as you need under one agreement. A business inbox collects what customers sign with a passkey.
+- **Contract clause.** Generates a short clause for your written contract that points disagreements at the published rules. It is a template, not legal advice.
+- **Pricing and subscriptions** on the `#pricing` page.
+
+**For a customer**
+- **No wallet.** Join with a passkey (the fingerprint, face or PIN that unlocks your phone) and approve each step on your own device.
+- **Check a claim** and see the result and the reason, with nothing to install.
+- **A receipt** for any decided case: a one-page record of who answered what and who settled each question, printable as a PDF.
+
+**For a reviewer**
+- **A decision form** where the reviewer sees only the questions the sides disagree on, and must write reasons and declare no conflict of interest before deciding.
+- **A named profile**, signed with their wallet, so their name shows next to their address on agreements, cases and receipts.
+- **An evidence list** the reviewer's statement can be checked against, to show which evidence existed before the decision.
+
+**For anyone**
+- **Replay for free.** Anyone can re-run a decided case from the published rules and get the same result.
+- **Version history** for every published rule set, so a change is always a new version and an agreement keeps the one it accepted.
+- **Chinese and English**, with Chinese as the default.
+
+### Put it on your own website
+
+```html
+<div></div><script src="https://lgtie.vercel.app/embed.js" data-checker="warranty" async></script>
+```
+
+A checker box then appears on your page that asks the warranty questions and shows the result and reason. Replace `warranty` with another published rule set. Add `data-flow="join"` to let customers create a passkey on your page, or `data-flow="mine"` to show a customer their own cases.
+
+The box is a sealed frame from LGtie's site. Your page cannot read what is inside it, and the frame and your page exchange only two checked messages. Passkeys are tied to the site's address, so the passkey flow always runs inside LGtie's frame. See a complete example at [the Acme demo page](https://lgtie.vercel.app/embed-demo.html), and the code in `site/embed-demo.html`.
+
 ## Business model and revenue
 
 LGtie holds no money and takes no cut of any dispute. It earns from using the system, through two payments built into the contracts (`LGtieBilling` and `TiebreakCaseV5`) and paid in USDT on X Layer:
