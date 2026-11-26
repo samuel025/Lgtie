@@ -64,7 +64,7 @@ ok("changed rules are flagged as not matching", /do not<\/b> match|do not match/
 // ---- 4. bigger checker needs more than the 40 free NAND: mints the rest
 const BOUNTY = await p.evaluate(() => window.TB.TEMPLATES.bounty);
 await asUser(A3); await p.goto(BASE + "#build"); await w(700); await go(1); await p.click("[data-t=bounty]"); await w(900);
-ok("bounty needs more than 40 gates and says it will buy NAND", /needs 4\d NAND/.test(await T("#out")), (await T("#out")).slice(0, 300));
+ok("bounty needs more than 40 gates and says it will buy NAND", /needs 7\d NAND/.test(await T("#out")), (await T("#out")).slice(0, 300));
 await go(4); await p.click("#pubgo");
 ok("bounty publish succeeds (claim + mint + tapeout + register)", await until(async () => /Published on X Layer/.test(await T("#out")), 90000), await T("#pubmsg") || await T("#out"));
 ok("mint step happened", /mint/.test(await T("#out")), (await T("#out")).slice(0, 300));

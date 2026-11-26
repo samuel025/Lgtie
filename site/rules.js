@@ -163,6 +163,8 @@ rule: Q8=no -> Rejected : The affected asset is not in the programme's scope.
 rule: Q7=no -> Rejected : The issue could not be reproduced.
 rule: Q1=yes & Q2=yes & Q4=yes & Q6=yes -> Critical : Anyone can steal funds permanently without any victim action.
 rule: Q2=yes & Q6=yes -> High : Funds can be lost permanently, but the attack needs a special role or a victim action.
+rule: Q2=yes & Q3=yes & Q5=yes -> High : Funds can be lost from more than one user, and the attack can be repeated.
+rule: Q2=yes & Q3=no & Q5=no -> Low : A one-time loss to a single user that can be reversed.
 rule: Q2=yes -> Medium : Funds can be lost, but the loss can be reversed.
 rule: Q6=yes -> Medium : Permanent damage without a loss of funds.
 default: Low : It is reproducible and in scope, but there is no loss of funds and no permanent damage.

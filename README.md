@@ -215,7 +215,7 @@ node tests/reviewer.test.mjs                   # reviewer statements and blind r
 node tests/nostr.test.mjs                      # Nostr signatures, against the official test vectors
 node tests/verify.test.mjs                     # the formal check: agrees with brute force on 400 random policies and 3,000 corrupted circuits, proves 40 and 64 questions, refuses bad input
 node scripts/verify-circuit.mjs warranty --circuit 13   # read circuit #13 from X Layer and prove it equals the warranty rules
-node tests/lint.test.mjs                       # the rule check: built-in templates are clean (except two unused bug-bounty questions it finds), bad rules are caught, English and Chinese
+node tests/lint.test.mjs                       # the rule check: built-in templates are clean, bad rules are caught, English and Chinese
 node tests/templates.test.mjs                  # the five templates, in both languages: they parse, the circuit equals the rules, every result is reachable, English and Chinese behave the same
 node tests/reviewerid.test.mjs                 # named reviewers: wallet signatures (a real one made with cast), profile codes, the page check
 cd contracts && forge test                     # 119 contract tests (some run on a fork of X Layer and need network access)

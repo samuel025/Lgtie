@@ -19,10 +19,7 @@ default: No refund : Everything checks out.
 
 for (const t of T.LIBRARY) for (const lang of ["en", "zh"]) {
   const f = L.lint(P(t[lang].text), {lang}), warns = f.filter(x => x.level === "warn");
-  if (t.key === "bounty") {
-    // a real finding: two of the bug-bounty questions are not used by any rule, so their answers never change the result
-    ok(`${t.key} (${lang}): the check finds exactly the two questions no rule uses`, warns.length === 2 && warns.every(x => x.code === "unusedq") && warns.map(x => x.q).join(",") === "2,4", JSON.stringify(warns.map(x => [x.code, x.q])));
-  } else ok(`${t.key} (${lang}): the built-in template has no warnings`, warns.length === 0, codes(f, "warn") + " | " + warns.map(x => x.msg).join(" / "));
+  ok(`${t.key} (${lang}): the built-in template has no warnings`, warns.length === 0, codes(f, "warn") + " | " + warns.map(x => x.msg).join(" / "));
 }
 ok("a clean policy has no warnings", !L.lint(P(base), {lang: "en"}).some(x => x.level === "warn"), codes(L.lint(P(base), {lang: "en"})));
 ok("the check is deterministic", JSON.stringify(L.lint(P(base), {lang: "en"})) === JSON.stringify(L.lint(P(base), {lang: "en"})));
