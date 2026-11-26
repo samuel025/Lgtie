@@ -221,10 +221,13 @@ body.embed .rv{opacity:1!important;transform:none!important}body.embed main.ente
 .rgrid td{padding-top:8px;padding-bottom:8px}
 .cell{width:100%;min-width:46px;font:400 13px var(--sans);border-radius:9999px;border:1px solid var(--warm);background:transparent;color:var(--ash);padding:7px 4px;cursor:pointer;transition:background .25s var(--ease),color .25s var(--ease),border-color .25s var(--ease),transform .15s var(--ease)}
 .cell:hover{border-color:var(--ink)}.cell:active{transform:scale(.94)}
-.cell.y{background:var(--ink);border-color:var(--ink);color:#fff}.cell.n{background:#fff;border-color:var(--ink);color:var(--ink);text-decoration:line-through;text-decoration-thickness:1px}
+.cell.y{background:var(--ink);border-color:var(--ink);color:#fff}.cell.n{background:#fff;border-color:var(--ink);color:#9a2f1f;background:#fbeeea;border-color:#d9a79d}
 .rgrid select,.rgrid input[type=text]{width:100%;font-size:14px;padding:7px 10px}.rgrid td.res{min-width:150px}.rgrid td.why{min-width:190px}
 .rgrid .acts{white-space:nowrap}.rgrid .acts .btn{padding:6px 9px;font-size:12px}
 .rgrid tr.noc td{opacity:.6}
+.rgrid tr.rsum td{background:transparent;padding:0 10px 6px;font-size:12px;color:var(--stone)}.rgrid tr.rsum b{color:var(--ink);font-weight:500}.rgrid tr.rsum b.nn{color:#9a2f1f}
+.rgrid tr.rrow + tr.rsum{position:relative;top:-4px}
+.qleg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:4px 18px;font-size:13px;margin:10px 0 14px;color:var(--ash)}.qleg b{color:var(--ink);font-weight:500;margin-right:4px}
 .rgrid tr.def td{background:var(--paper)}
 .rgrid tr.def .rn{font-size:12px}
 .tryit{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 28px;align-items:start}
@@ -468,6 +471,13 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 // strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
 window.TB_ZH = {
   dict: {
+ "The row that fires lights up in the preview below.": "触发的那一行会在下方预览中高亮显示。",
+ "Matches when": "满足以下条件时适用",
+ "is": "为",
+ "then": "则",
+ "Then the result is": "则结果为",
+ "Because (shown to the customer)": "原因（会显示给客户）",
+ "“Any” means that question does not matter for that rule.": "“任意”表示该问题对这条规则无影响。",
  "How it works": "运作方式",
  "Try a claim check": "试试理赔检查",
  "For businesses": "商家入口",
@@ -1784,6 +1794,8 @@ rule: Q8=no -> Rejected : The affected asset is not in the programme's scope.
 rule: Q7=no -> Rejected : The issue could not be reproduced.
 rule: Q1=yes & Q2=yes & Q4=yes & Q6=yes -> Critical : Anyone can steal funds permanently without any victim action.
 rule: Q2=yes & Q6=yes -> High : Funds can be lost permanently, but the attack needs a special role or a victim action.
+rule: Q2=yes & Q3=yes & Q5=yes -> High : Funds can be lost from more than one user, and the attack can be repeated.
+rule: Q2=yes & Q3=no & Q5=no -> Low : A one-time loss to a single user that can be reversed.
 rule: Q2=yes -> Medium : Funds can be lost, but the loss can be reversed.
 rule: Q6=yes -> Medium : Permanent damage without a loss of funds.
 default: Low : It is reproducible and in scope, but there is no loss of funds and no permanent damage.
@@ -1930,6 +1942,8 @@ rule: Q8=no -> 驳回 : 受影响的资产不在项目的范围内。
 rule: Q7=no -> 驳回 : 该问题无法复现。
 rule: Q1=yes & Q2=yes & Q4=yes & Q6=yes -> 严重 : 任何人都能在没有受害者操作的情况下永久窃取资金。
 rule: Q2=yes & Q6=yes -> 高危 : 资金可能被永久损失，但攻击需要特殊角色或受害者的操作。
+rule: Q2=yes & Q3=yes & Q5=yes -> 高危 : 多名用户的资金可能受损，而且攻击可以重复。
+rule: Q2=yes & Q3=no & Q5=no -> 低危 : 只影响单个用户的一次性损失，而且可以逆转。
 rule: Q2=yes -> 中危 : 资金可能损失，但损失可以逆转。
 rule: Q6=yes -> 中危 : 造成永久性损害，但没有资金损失。
 default: 低危 : 可以复现且在范围内，但没有资金损失，也没有永久性损害。
@@ -2760,11 +2774,12 @@ MY POLICY:
         <div class="sthead" data-s="2"><h2>When does each result apply?</h2><p class="lede">Name the possible results, then build the rules. Rules are checked top to bottom and the first match decides.</p></div>
         <div class="card" data-s="2"><h3>Possible results</h3>
           <div class="chips">${S.results.map((r, i) => `<span class="chipin" data-ri="${i}"><b>${i + 1}</b><input type="text" data-f="rn" value="${esc(r)}" placeholder="Result name" aria-label="Result ${i + 1}"><button class="x" data-a="rdel" type="button" aria-label="Delete result ${i + 1}">×</button></span>`).join("")}<button class="btn small ghost" data-a="radd" type="button">+ Add a result</button></div></div>
-        <div class="card" data-s="2"><h3>Rules</h3><p class="small mute">One row per rule, checked from top to bottom: the first row that matches decides. Click a cell to cycle <b>any</b>, <b>Yes</b> and <b>No</b>. The row that fires lights up in the preview below.</p>
-          <div class="gridwrap"><table class="rgrid"><thead><tr><th></th>${S.questions.map((q, i) => `<th title="${esc(q.text)}"><span class="qn">Q${i + 1}</span><span class="qs">${esc(q.text || "(empty)")}</span></th>`).join("")}<th class="l">Then</th><th class="l">Because</th><th></th></tr></thead><tbody>
+        <div class="card" data-s="2"><h3>Rules</h3><p class="small mute">One row per rule, checked from top to bottom: the first row that matches decides. Click a cell to cycle <b>any</b>, <b>Yes</b> and <b>No</b>. The row that fires lights up in the preview below. “Any” means that question does not matter for that rule.</p>
+          <div class="qleg">${S.questions.map((q, i) => `<div><b>Q${i + 1}</b> <span class="qt">${esc(q.text || "(empty)")}</span></div>`).join("")}</div>
+          <div class="gridwrap"><table class="rgrid"><thead><tr><th></th>${S.questions.map((q, i) => `<th title="${esc(q.text)}"><span class="qn">Q${i + 1}</span><span class="qs">${esc(q.text || "(empty)")}</span></th>`).join("")}<th class="l">Then the result is</th><th class="l">Because (shown to the customer)</th><th></th></tr></thead><tbody>
           ${S.rules.map((r, i) => `<tr class="rrow${r.conds.length ? "" : " noc"}" data-ui="${i}"><td class="rn">${i + 1}</td>${S.questions.map((q, k) => { const c = r.conds.find(c => c.q === k), v = c ? (c.yes ? "y" : "n") : "a"; return `<td><button type="button" class="cell ${v}" data-a="cell" data-q="${k}" aria-label="Rule ${i + 1}, question ${k + 1}: ${v === "y" ? "yes" : v === "n" ? "no" : "any"}">${v === "y" ? "Yes" : v === "n" ? "No" : "any"}</button></td>`; }).join("")}
             <td class="res"><select data-f="rr" aria-label="Result of rule ${i + 1}">${ropts(r.result)}</select></td><td class="why"><input type="text" data-f="rw" value="${esc(r.why)}" placeholder="${r.conds.length ? "Reason shown to the customer" : "Pick at least one Yes or No"}" aria-label="Reason for rule ${i + 1}"></td>
-            <td class="acts"><button class="btn small ghost" data-a="rup" type="button" aria-label="Move rule up">↑</button> <button class="btn small ghost" data-a="rdn" type="button" aria-label="Move rule down">↓</button> <button class="btn small ghost" data-a="rdelrule" type="button" aria-label="Delete rule">×</button></td></tr>`).join("")}
+            <td class="acts"><button class="btn small ghost" data-a="rup" type="button" aria-label="Move rule up">↑</button> <button class="btn small ghost" data-a="rdn" type="button" aria-label="Move rule down">↓</button> <button class="btn small ghost" data-a="rdelrule" type="button" aria-label="Delete rule">×</button></td></tr>${r.conds.length ? `<tr class="rsum"><td></td><td colspan="${S.questions.length + 3}"><span>Matches when</span> ${[...r.conds].sort((a, b) => a.q - b.q).map(c => `<b>Q${c.q + 1}</b> <span>is</span> <b class="${c.yes ? "yy" : "nn"}">${c.yes ? "Yes" : "No"}</b>`).join(" <span>and</span> ")}</td></tr>` : ""}`).join("")}
           <tr class="rrow def" data-def="1"><td class="rn">else</td><td colspan="${S.questions.length}" class="small mute">no rule above matched</td><td class="res"><select id="f-dr" aria-label="Default result">${ropts(S.def.result)}</select></td><td class="why"><input id="f-dw" type="text" value="${esc(S.def.why)}" placeholder="Reason shown to the customer"></td><td></td></tr>
           </tbody></table></div>
           <div class="row"><button class="btn small ghost" data-a="ruleadd" type="button">+ Add a rule</button></div></div>

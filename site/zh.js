@@ -2,6 +2,13 @@
 // strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
 window.TB_ZH = {
   dict: {
+ "The row that fires lights up in the preview below.": "触发的那一行会在下方预览中高亮显示。",
+ "Matches when": "满足以下条件时适用",
+ "is": "为",
+ "then": "则",
+ "Then the result is": "则结果为",
+ "Because (shown to the customer)": "原因（会显示给客户）",
+ "“Any” means that question does not matter for that rule.": "“任意”表示该问题对这条规则无影响。",
  "How it works": "运作方式",
  "Try a claim check": "试试理赔检查",
  "For businesses": "商家入口",
