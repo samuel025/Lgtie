@@ -52,6 +52,7 @@ The buyer is the business, which publishes the rules and subscribes. The custome
 ## Architecture
 
 ```mermaid
+%%{init: {"flowchart": {"htmlLabels": false, "padding": 20}, "themeVariables": {"fontFamily": "Arial, Helvetica, sans-serif"}}}%%
 flowchart TD
     B["Business writes rules"] --> C["Rules compiled to a circuit"]
     C --> P["TapeOut processor runs it"]
@@ -171,14 +172,3 @@ Browser tests are in `tests/browser/`; see its README for what they need. **Depl
 | `scripts/` | Deploy, publish and verify scripts. Each has a read-only `preflight` mode |
 | `tests/`, `test/` | Rule engine, passkey encoding, mainnet check and browser tests |
 | `docs/` | [FEATURES.md](docs/FEATURES.md) (every part in detail), [VERIFICATION.md](docs/VERIFICATION.md), [PASSKEYS.md](docs/PASSKEYS.md), [VERDICT.md](docs/VERDICT.md), [SECURITY.md](docs/SECURITY.md), [USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md), [VALIDATION.md](docs/VALIDATION.md), [SUBMISSION.md](docs/SUBMISSION.md) |
-
-## Roadmap
-
-1. **Deploy the revenue contracts and run a first pilot with a real business**, to learn what it would pay for, then test the prices.
-2. **Publish the templates people use** on mainnet (only the warranty rules are published today), so they can be used in agreements and cases.
-3. **Assisted passkey recovery**, with a second device and a reviewer's countersignature.
-4. **An independent security review** before any real customer relies on it.
-5. **Hosted notifications and reminders** as an add-on to the self-hosted bridge.
-6. **A shared reviewer directory** (needs an operator or on-chain attestations).
-7. **Pay on a verdict (escrow)**, deliberately not built: it would hold real money and needs an audit first.
-8. **A copy hosted on TapeOut's DeWEB**, if the passkey and relay features work there.
