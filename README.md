@@ -97,7 +97,7 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 
 **For a business**
 - **Rule builder.** Write questions and rules in a guided builder (a click-to-cycle grid), test them, and publish with one click. A built-in rule check warns about vague wording, missing evidence and rules that can never fire.
-- **Templates.** Second-hand sale, freelance milestone, rental deposit, bug bounty and warranty, each in English and Chinese, with a free checker and a message to send the other side.
+- **Templates.** Second-hand sale, freelance milestone, rental deposit, bug bounty and warranty, each with a free checker and a message to send the other side.
 - **Formal proof.** The compiled circuit is proved equal to your written rules for every possible set of answers, and can be checked again from the circuit stored on X Layer.
 - **Embeddable checker.** Put the claim checker on your own website with one line, so customers get a result and a reason without leaving your page (see below).
 - **Agreements and cases.** Agree rules, a neutral reviewer and deadlines up front, then open as many cases as you need under one agreement. A business inbox collects what customers sign with a passkey.
@@ -117,7 +117,6 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 **For anyone**
 - **Replay for free.** Anyone can re-run a decided case from the published rules and get the same result.
 - **Version history** for every published rule set, so a change is always a new version and an agreement keeps the one it accepted.
-- **Chinese and English**, with Chinese as the default.
 
 ### Put it on your own website
 
@@ -174,7 +173,6 @@ The contract names keep the project's earlier name, Tiebreak. There is one real 
 | Every published rule set and its version history | https://lgtie.vercel.app/#rules |
 | Prove a circuit on X Layer implements its rules | https://lgtie.vercel.app/#verify |
 | Everything a business can do | https://lgtie.vercel.app/#for-business |
-| The same app in English (it opens in Chinese; use the 中文 / EN button) | https://lgtie.vercel.app/?lang=en |
 
 ## Run it yourself
 
