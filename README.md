@@ -8,7 +8,7 @@ Built for the **X Layer TapeOut Accelerate** hackathon. It is early software: th
 
 ## Pitch
 
-LGtie is a **dispute layer for published rules**. A business publishes its rules as yes or no questions on X Layer, before anything goes wrong. If a dispute comes, both sides answer the same questions, and **only the questions they disagree on** go to a neutral person both agreed on. The published rules turn the final answers into a result and a reason that **anyone can re-run for free**. There is no server, no escrow and no account: a customer approves with the fingerprint or face scan that unlocks their phone.
+LGtie is a **dispute layer for published rules**. A business publishes its rules as yes or no questions on X Layer, before anything goes wrong. If a dispute comes, both sides answer the same questions, and **only the questions they disagree on** go to a neutral person both agreed on. The published rules turn the final answers into a result and a reason that **anyone can re-run for free**. There is no server and no escrow, and a customer uses a **passkey** and does not need a wallet.
 
 It is the step between "we disagree" and "we go to court": cheap, fast, and decided by rules nobody could change afterwards.
 
@@ -29,30 +29,27 @@ When a claim or a report is disputed (a warranty repair, a refund, a bug's sever
 4. **Only the disputed questions** go to the reviewer. Nothing else.
 5. The published rules give a **result and a reason**. Anyone can recompute it and get the same result.
 
-A customer needs no crypto wallet. LGtie never holds anyone's money, and it cannot tell whether someone is telling the truth; the reviewer settles the facts the two sides disagree on.
+A customer uses a passkey and does not need a wallet. LGtie never holds anyone's money, and it cannot tell whether someone is telling the truth; the reviewer settles the facts the two sides disagree on.
 
 <p><img src="docs/img/home.png" alt="LGtie home page running the real published warranty circuit: tap an answer and the result and reason change" width="100%"></p>
 <p><sub>The home page runs the real published warranty circuit: tap an answer and the result and the reason change.</sub></p>
 
 ## Architecture
 
-```
-  Business                       X Layer (chain 196)                       Customer
-  ────────                       ───────────────────                       ────────
-  writes rules  ──► compiles to a NAND circuit ──► TapeOut processor          (wallet,
-  in the builder    (proved equal to the rules)    runs it: eval(inputs)       or passkey:
-        │                                                  ▲                  fingerprint /
-        └──► RuleSetRegistry  (rules fingerprint, versions)│                  face scan)
-                  │                                        │                      │
-                  ▼                                        │                      │
-        AgreementRegistry  (rules + reviewer + deadlines, locked) ◄───────────────┘
-                  │
-                  ▼
-        TiebreakCase V3 / V4   both sides answer ── match ──► settled
-                               differ ──► reviewer answers ONLY those ──► result + reason
-                                                   │
-                                                   ▼
-                         verdict(id): other contracts can read it;  anyone can re-run it
+```mermaid
+flowchart TD
+    B["Business writes rules in the builder"] --> C["Compiled to a NAND circuit,<br/>proved equal to the rules"]
+    C --> P["TapeOut processor on X Layer<br/>runs the circuit: eval(inputs)"]
+    B --> RR["RuleSetRegistry<br/>rules fingerprint and versions"]
+    RR --> AR["AgreementRegistry<br/>rules + reviewer + deadlines, locked"]
+    CU["Customer: wallet or passkey"] --> AR
+    AR --> CASE["TiebreakCase V3 / V4<br/>both sides answer the same questions"]
+    CASE -->|answers match| S["Settled"]
+    CASE -->|answers differ| R["Reviewer answers ONLY the differing questions"]
+    R --> RES["Result and reason from the published rules"]
+    P -.-> RES
+    S --> V["verdict(id): other contracts can read it<br/>anyone can re-run it for free"]
+    RES --> V
 ```
 
 - **A static site.** No server and no database: the web app, the rule compiler and the checks run in the browser (`site/`). The built site is one page in `dist/`.
@@ -76,13 +73,10 @@ The contract addresses and what is live are listed [below](#live-on-x-layer-chai
 - **Named reviewers.** A reviewer signs a name and a public page with their wallet, checked in the browser with no server and no contract change.
 - **Rules you can trust before publishing.** An offline rule check flags judgement words, missing evidence and rules that can never fire; five ready-made templates (second-hand sale, freelance milestone, rental deposit, bug bounty, warranty) and a contract clause generator help a business start.
 - **No server, no escrow, no custody.** Nothing to breach or shut down, and no money to lose.
-- **Chinese and English**, with Chinese as the default.
 
 Other entries also compile rules to TapeOut circuits; we do not claim to be first at that. What we have not seen elsewhere is the dispute process built around the rules.
 
 ## Business model and revenue
-
-*None of this is validated. We have no customers, no revenue and have not interviewed buyers yet; these are hypotheses to test in a pilot.*
 
 LGtie holds no money and takes no cut of any dispute, so the revenue would come from the tools around the rules, not from the disputes themselves.
 
@@ -156,15 +150,12 @@ Browser tests are in `tests/browser/`; see its README for what they need. **Depl
 
 ## Honest limits
 
-- **It does not check that answers are true.** The result follows the answers given. A reviewer decides disputed facts, and a reviewer can be wrong.
-- **It is not a court, an arbitration or legal advice.** The outcome is an expert-style determination of facts if the parties' contract says so, not an arbitral award. Nobody has reviewed the clause with a lawyer. See [docs/USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md).
-- **Everything recorded is public.** Answers, evidence fingerprints, the reviewer's reasons, wallet addresses and times are on a public blockchain and cannot be deleted. Do not use LGtie for confidential matters.
-- **A neutral reviewer can still be biased.** There is no staking, jury or penalty. Written reasons make a bad decision visible, they do not prevent it. A named reviewer proves who controls a wallet, not that the person is honest.
-- **A case nobody finishes ends as "no decision".** That is safe, but the sides then have to open a new case.
-- **The inbox depends on public relays.** They may be slow or drop messages, and nothing notifies the business. The copy-link fallback always works.
-- **Passkeys prove a device, not a person.** Recovery after losing every device is not built yet. Tested in Chrome with a virtual authenticator and once on a real phone; Safari and Firefox are untested.
-- **A normal smart contract could hold the same decision table.** What TapeOut adds is a rule published as data, with no hidden state or admin key, that anyone can re-run for free.
-- **No escrow, on purpose.** Another system can read a decision and pay out; see [docs/VERDICT.md](docs/VERDICT.md).
+- **It does not check that answers are true.** The result follows the answers given; a reviewer decides disputed facts and can be wrong.
+- **It is not a court, an arbitration or legal advice.** See [docs/USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md).
+- **Everything recorded is public** and cannot be deleted. Do not use it for confidential matters.
+- **A reviewer can still be biased.** There is no staking or penalty; written reasons make a bad decision visible, not impossible.
+- **A case nobody finishes ends as "no decision".**
+- **Passkey recovery after losing every device is not built.** Tested in Chrome and once on a real phone; Safari and Firefox are untested.
 - **Early prototype.** The contracts are unaudited and hold no funds. There are no customers, no revenue and no validated prices.
 
 ## Roadmap
