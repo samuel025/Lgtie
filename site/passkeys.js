@@ -8,7 +8,12 @@
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
   // once the revenue contracts are live, cases are opened on TiebreakCaseV5 (V4 plus a billing call); the passkeys and agreements stay the same
-  const V4 = () => (CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  // Cases opened before the revenue contracts live on TiebreakCaseV4; they stay readable and usable at #pk/v4case/<id> (the same agreements and passkeys)
+  let LEGACY = false; window.addEventListener("hashchange", () => { if (!/^#pk\/v4case\//.test(location.hash)) LEGACY = false; });
+  const hasV5 = () => !!(CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO && CFG.v4 && CFG.v4.cases && CFG.v4.cases.toLowerCase() !== CFG.v5.cases.toLowerCase());
+  const legacyCases = async () => hasV5() ? (await scan(CFG.v4.cases, id => call(CFG.v4.cases, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: true})) : [];
+  const caseHref = c => (c.legacy ? "#pk/v4case/" : "#pk/case/") + c.id;
+  const V4 = () => (!LEGACY && CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -162,6 +167,7 @@
     const P = policyOf(a.ruleSetId), inForce = a.acceptedAt !== 0 && !a.cancelled, state = a.cancelled ? "Withdrawn" : inForce ? "In force since " + when(a.acceptedAt) : "Waiting for you to accept", div = document.createElement("div"); div.className = "card";
     div.innerHTML = `<h3>Agreement #${a.id}: ${esc(P ? P.name : "rule set " + a.ruleSetId)}</h3><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
       <p class="small">Proposed by <code>${short(a.proposer.wallet)}</code>. The neutral reviewer is <code>${short(a.reviewer)}</code> <span data-rid="${a.reviewer}"></span>. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
+      ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="note consent" data-consent="${a.reviewer}"></div>` : ""}
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="row"><button class="btn" data-act="accept" type="button">Accept with my passkey</button></div>` : ""}
       ${inForce ? `<div class="row"><button class="btn ghost" data-act="open" type="button">Start a dispute under this agreement</button></div>` : ""}<div class="act"></div>`;
     $("#ags").appendChild(div);
@@ -370,15 +376,15 @@
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
     if (inForce) add("Open a dispute under this agreement", "", async () => { await window.TB_BILLING.ensureFee(a.proposer.wallet, t => { $("#amsg").textContent = t; }); $("#amsg").textContent = "Confirm in your wallet…"; const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
-    try { const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: c => "#pk/case/" + c.id}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
+    try { const cs = [...(await scan(V4().cases, readCase)), ...(LEGACY ? [] : await legacyCases())].filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: caseHref}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkAll() {
     if (!deployed()) { notDeployed("Passkey cases"); return; }
     main.innerHTML = `<h1>Passkey agreements and cases</h1><p class="lede">Everything opened with a customer's fingerprint or face. Cases between two wallets are on <a href="#case">the other case page</a>.</p><p class="mute" id="pkl">Reading from X Layer…</p>`;
     try {
-      const [ags, cs] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase)]);
+      const [ags, cs0, old] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase), legacyCases()]), cs = [...cs0, ...old];
       $("#pkl").outerHTML = `<div class="card"><h3>Agreements</h3>${ags.length ? ags.map(a => { const P = policyOf(a.ruleSetId); return `<p><a href="#pk/agreement/${a.id}">Agreement #${a.id}</a> · ${esc(P ? P.name : "rule set " + a.ruleSetId)} · ${a.cancelled ? "Withdrawn" : a.acceptedAt ? "In force" : "Waiting for the customer"}</p>`; }).join("") : `<p class="mute">None yet.</p>`}<p class="small"><a href="#pk/agree">Invite a customer with a fingerprint</a></p></div>
-        <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
+        <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="${caseHref(c)}">Case #${c.id}</a>${c.legacy ? " (earlier contract)" : ""} · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
     } catch (e) { const l = $("#pkl"); if (l) l.textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkCase(id, opts) {
@@ -450,5 +456,5 @@
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: await scan(V4().cases, readCase)} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: id => { LEGACY = true; return pkCase(id); }, parseClaim, createPasskey, signAction};
 })();

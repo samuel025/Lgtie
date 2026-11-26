@@ -39,6 +39,8 @@ await a.type("#rid-name", "Amina Yusuf"); await a.type("#rid-role", "independent
 await a.click("#rid-sign");
 ok("a page address that is not https is refused", /https/.test(await T(a, "#rid-m2")), await T(a, "#rid-m2"));
 await a.$eval("#rid-url", e => e.value = ""); await a.type("#rid-url", PAGE); await a.click("#rid-sign");
+ok("signing without a disclosure of relationships is refused, with a plain reason", await until(async () => /relationship/.test(await T(a, "#rid-m2"))), await T(a, "#rid-m2"));
+await a.type("#rid-dis", "Independent. No employment, financial or personal tie to either party."); await a.click("#rid-sign");
 ok("signing with the wallet gives a profile code", await until(async () => /^lgtie-reviewer1\./.test(await a.$eval("#rid-code", e => e.value).catch(() => ""))), await T(a, "#rid-m2"));
 const code = await a.$eval("#rid-code", e => e.value);
 await a.click("#rid-chk");
@@ -68,7 +70,7 @@ await c.goto(BASE + "#agree"); await c.waitForSelector("#rvp", {timeout: 30000})
 await c.type("#rv", OTHER); await c.type("#rvp", code);
 ok("the agreement form refuses a profile that belongs to a different reviewer address", await until(async () => /different wallet/.test(await T(c, "#rvpmsg"))), await T(c, "#rvpmsg"));
 await c.$eval("#rv", e => { e.value = ""; e.dispatchEvent(new Event("input")); }); await c.type("#rv", ACCT);
-ok("with the right address, the identity line is added to the terms", await until(async () => /Reviewer identity: Amina Yusuf, independent assessor, specialty Used electronics, fee US\$10 per disputed question, https:\/\/reviewer\.example\/amina/.test(await T(c, "#rvpmsg"))), await T(c, "#rvpmsg"));
+ok("with the right address, the identity line is added to the terms", await until(async () => /Reviewer identity: Amina Yusuf, independent assessor, specialty Used electronics, fee US\$10 per disputed question, disclosed relationships: Independent\. No employment, financial or personal tie to either party\., https:\/\/reviewer\.example\/amina/.test(await T(c, "#rvpmsg"))), await T(c, "#rvpmsg"));
 await c.$eval("#rvp", e => { e.value = "lgtie-reviewer1.garbage"; e.dispatchEvent(new Event("input")); });
 ok("a garbage profile code is explained, not accepted", await until(async () => /could not be read/.test(await T(c, "#rvpmsg"))), await T(c, "#rvpmsg"));
 
@@ -77,5 +79,10 @@ const d = await newPage(OTHER);
 await d.goto(BASE + "#reviewer/" + ACCT); await d.waitForSelector("#rid-me", {timeout: 30000}); await d.click("#rid-me");
 ok("connecting a different wallet is refused with an explanation", await until(async () => /not 0x7099/.test((await T(d, "#rid-msg")).replace("…", ""))) || /not/.test(await T(d, "#rid-msg")), await T(d, "#rid-msg"));
 
+// ---- "Before you accept": what a person asked to accept an agreement sees about the reviewer
+await a.evaluate((x, y) => { const d = document.createElement("div"); d.id = "cs"; d.innerHTML = `<div class="consent" id="c1" data-consent="${x}"></div><div class="consent" id="c2" data-consent="${y}"></div>`; document.querySelector("main").appendChild(d); }, ACCT, OTHER);
+ok("for a reviewer with a signed profile it shows who they are, their disclosed relationships, and that LGtie cannot check it", await until(async () => { const t = await T(a, "#c1"); return /Before you accept: who will decide\?/.test(t) && /Amina Yusuf/.test(t) && /Independent\. No employment/.test(t) && /cannot check it/.test(t) && /identity signed by this wallet/.test(t); }), await T(a, "#c1"));
+ok("it says the person need not accept a reviewer chosen by the other side, and that it cannot be changed afterwards", /do not have to accept a reviewer the other side chose/.test(await T(a, "#c1")) && /cannot be changed/.test(await T(a, "#c1")));
+ok("for an address with no signed identity it warns plainly and says to ask for another reviewer", await until(async () => { const t = await T(a, "#c2"); return /address only/.test(t) && /cannot tell who this is/.test(t) && /different reviewer/.test(t); }), await T(a, "#c2"));
 ok("no page errors", a.errs.length + d.errs.length === 0, [...a.errs, ...d.errs].join(" | "));
 await b.close(); await relay.close(); console.log(fails ? fails + " FAILED" : "all passed"); process.exit(fails ? 1 : 0);

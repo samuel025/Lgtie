@@ -82,6 +82,7 @@ The contract addresses and what is live are listed [below](#live-on-x-layer-chai
 
 ## What makes it different
 
+- **Neither side is forced to accept the other's reviewer.** A reviewer is proposed in the agreement and takes effect only when both sides accept it, and it cannot be swapped afterwards. Before accepting, a person sees who the reviewer is, their signed identity and their own declaration of any relationship with the parties, with a plain warning if there is only a wallet address.
 - **Only the disagreement is judged.** Matching answers settle at once; a neutral person answers only the questions the sides differ on, and must write reasons and declare no conflict of interest first.
 - **The rules cannot be changed quietly.** Rule sets are permanent; a change is a new version with a public history, and an agreement stays bound to the exact version it accepted.
 - **A formal proof, not a few examples.** The compiled circuit is proved equal to the written rules for every possible set of answers (a decision-diagram check, run in the browser and on the circuit read back from X Layer). A 40-question policy takes about 0.1 seconds. [How it works and its limits](docs/VERIFICATION.md).
@@ -111,7 +112,7 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 
 **For a reviewer**
 - **A decision form** where the reviewer sees only the questions the sides disagree on, and must write reasons and declare no conflict of interest before deciding.
-- **A named profile**, signed with their wallet, so their name shows next to their address on agreements, cases and receipts.
+- **A named profile**, signed with their wallet, with a declaration of any relationship to the people they may judge. It shows next to their address on agreements, cases and receipts, and in a "who will decide?" box shown before anyone accepts an agreement.
 - **An evidence list** the reviewer's statement can be checked against, to show which evidence existed before the decision.
 
 **For anyone**

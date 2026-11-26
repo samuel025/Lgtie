@@ -35,7 +35,10 @@ await e.goto(BASE + "#pk/agreement/1");
 ok("the passkey agreement page says the same", await until(async () => /A standing agreement\./.test(await T(e, "main"))), (await T(e, "main")).slice(0, 200));
 ok("and lists its cases with a count and outcomes", await until(async () => (await e.$$("#cases .agc li")).length >= 1 && /\d+ cases?/.test(await T(e, "#cases"))), await T(e, "#cases"));
 ok("several cases can sit under one agreement (agreement #1 has more than one)", (await e.$$("#cases .agc li")).length >= 2, String((await e.$$("#cases .agc li")).length));
-ok("each links to its passkey case page", await e.$$eval("#cases .agc a", as => as.every(a => /^#pk\/case\/\d+$/.test(a.getAttribute("href")))));
+ok("each links to its passkey case page (cases from before billing are on the earlier contract and link to #pk/v4case/)", await e.$$eval("#cases .agc a", as => as.every(a => /^#pk\/(v4case|case)\/\d+$/.test(a.getAttribute("href")))));
+await e.$eval("#cases .agc a", a => a.click()); await w(800);
+ok("an earlier-contract case still opens and shows its result", await until(async () => /Case #\d+/.test(await T(e, "main")) && /Decided|Waiting|No decision/.test(await T(e, "main"))), (await T(e, "main")).slice(0, 300));
+await e.goto(BASE + "#pk/agreement/1"); await until(async () => (await e.$$("#cases .agc li")).length >= 1);
 ok("the count matches the list here too", await e.$eval("#cases", c => { const m = /(\d+) cases?/.exec(c.querySelector("h3").innerText); return !!m && Number(m[1]) === c.querySelectorAll(".agc li").length; }));
 
 const z = await page("zh");

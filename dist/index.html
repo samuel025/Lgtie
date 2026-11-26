@@ -228,6 +228,7 @@ body.embed .rv{opacity:1!important;transform:none!important}body.embed main.ente
 .rgrid tr.noc td{opacity:.6}
 .rgrid tr.rsum td{background:transparent;padding:0 10px 6px;font-size:12px;color:var(--stone)}.rgrid tr.rsum b{color:var(--ink);font-weight:500}.rgrid tr.rsum b.nn{color:#9a2f1f}
 .rgrid tr.rrow + tr.rsum{position:relative;top:-4px}
+.consent{min-height:150px}
 .qleg{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:4px 18px;font-size:13px;margin:10px 0 14px;color:var(--ash)}.qleg b{color:var(--ink);font-weight:500;margin-right:4px}
 .rgrid tr.def td{background:var(--paper)}
 .rgrid tr.def .rn{font-size:12px}
@@ -472,6 +473,21 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 // strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
 window.TB_ZH = {
   dict: {
+ "Before you accept: who will decide?": "接受之前：由谁来裁决？",
+ "Looking for the reviewer's signed identity…": "正在查找审核员的签名身份…",
+ "You do not have to accept a reviewer the other side chose. If you are not comfortable, do not accept: ask for a different reviewer, who will need a new proposal. Once you accept, the reviewer cannot be changed.": "你不必接受对方选定的审核员。如果你觉得不放心，就不要接受：请对方换一位审核员，这需要重新提出协议。一旦你接受，审核员就无法更改。",
+ "The reviewer is only a wallet address,": "审核员只有一个钱包地址，",
+ "You cannot tell who this is, or whether they work for or are paid by the other side. Ask for a reviewer with a signed identity before you accept.": "你无法得知这是谁，也无法知道他是否受雇于对方或由对方付费。接受之前，请要求对方提供有签名身份的审核员。",
+ "Disclosed relationships:": "已披露的关联关系：",
+ "That is the reviewer's own statement. LGtie cannot check it, so ask the other side whether they employ or pay this person.": "这是审核员自己的声明，LGtie 无法核实，请向对方确认是否雇用或付费给这个人。",
+ "This is the reviewer's own statement. LGtie cannot check it.": "这是审核员自己的声明，LGtie 无法核实。",
+ "no disclosure": "未披露",
+ "This reviewer has not said whether they have any relationship with the people they judge. Ask them, and ask the other side, before you accept.": "这位审核员没有说明自己与被裁决的双方是否有任何关联。接受之前，请先询问他，也询问对方。",
+ "This reviewer has not said whether they have any relationship with the people they judge.": "这位审核员没有说明自己与被裁决的双方是否有任何关联。",
+ "Relationships to disclose": "需要披露的关联关系",
+ "For example: Independent. No employment, financial or personal tie to either party.": "例如：独立。与任何一方都没有雇佣、财务或个人关系。",
+ "Say whether you have any relationship with the people you may judge (an employer, a financial tie, a friend). If none, write that you are independent. The people agreeing to you will read it.": "请说明你与可能裁决的双方是否有关联（雇主、财务往来、朋友）。如果没有，请写明你是独立的。同意你担任审核员的人会阅读这段话。",
+ "Disclosed:": "已披露：",
  "One year": "一年",
  "one year": "一年",
  "one month": "一个月",
@@ -1526,6 +1542,7 @@ window.TB_ZH = {
  "Version history": "版本历史"
 },
   patterns: [
+  [/^Keep the disclosure under (\d+) characters\.$/, "披露内容请控制在 {1} 个字符以内。"],
   [/^Opening a case costs ([\d.]+) USDT, paid to LGtie\. Checking your wallet…$/, "开启案件需支付 {1} USDT 给 LGtie。正在检查你的钱包…"], [/^Opening a case costs ([\d.]+) USDT, paid to LGtie\.$/, "开启案件需支付 {1} USDT 给 LGtie。"],
   [/^per month, or ([\d.]+) USDT per year$/, "每月，或每年 {1} USDT"], [/^(\d+) cases a month under your agreements, with no case fee$/, "你的协议下每月 {1} 个案件，无案件费用"], [/^(\d+) cases a month, with no case fee$/, "每月 {1} 个案件，无案件费用"],
   [/^Every payment goes straight to LGtie's address\.$/, "每笔付款都直接转到 LGtie 的地址。"], [/^Every payment goes straight to$/, "每笔付款都直接转到"],
@@ -3328,6 +3345,7 @@ MY POLICY:
       ${a.cancelled ? "" : inForce ? `<div class="note ok-note"><b>A standing agreement.</b> It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.</div>` : `<div class="note">Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.</div>`}
       ${!inForce && !a.cancelled ? `<div class="note${isCp ? " ok-note" : ""}">${isCp ? "<b>You have been invited to accept this agreement.</b> Read the terms below, then use the button at the bottom." : !me ? `If you were invited to accept this, connect the wallet for <code>${short(a.counterparty)}</code> at the bottom of the page.` : ""}</div>` : ""}
       ${!inForce && !a.cancelled && !isCp ? inviteCard("a" + id, `I have proposed an agreement on LGtie for you to accept: ${location.href.split("#")[0]}#agreement/${id}\nOpen it, connect the wallet ${a.counterparty} and click "Accept this agreement". Rules: ${K ? K.policy.name : "rule set " + a.ruleSetId}. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts. Nothing is held in escrow and accepting costs only a small network fee.`, "Send this to the other party. They open the link, connect their wallet and accept.") : ""}
+      ${!inForce && !a.cancelled ? `<div class="card consent" data-consent="${a.reviewer}"></div>` : ""}
       <div id="acts"></div>   <!-- the buttons stay here, above anything that loads later, so they never jump -->
       <div class="card"><h3>Check the written terms</h3><p class="small">Paste the terms text to see whether it is exactly what was agreed.</p><textarea id="tt" rows="3" placeholder="Paste the agreement text"></textarea><div class="row"><span id="tm" class="small"></span></div></div>
       ${inForce ? `<div class="card" id="agcases"><h3>Cases under this agreement</h3><p class="small mute">Reading from X Layer…</p></div>` : ""}
@@ -3733,7 +3751,7 @@ MY POLICY:
   const K = typeof module !== "undefined" && module.exports ? require("./pkcore.js") : window.TB_PK;
   const NOSTR = () => (typeof module !== "undefined" && module.exports ? require("./nostr.js") : window.TB_NOSTR);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 60, fee: 60};
+  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 60, fee: 60, disclosure: 200};
 
   // ---------- secp256k1 public-key recovery (what ecrecover does), with BigInt ----------
   const P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn, N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
@@ -3771,24 +3789,25 @@ MY POLICY:
   const clean = s => String(s || "").replace(/\s+/g, " ").trim();
   const urlOk = u => /^https:\/\/[^\s<>"']+$/i.test(u) && u.length <= LIM.url;
   // The exact text the reviewer's wallet signs. Deterministic: the same fields always give the same text.
-  const statement = ({name, role, specialty, fee, url, address}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
-  function validate({name, role, url, specialty, fee}) {
-    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee);
+  const statement = ({name, role, specialty, fee, disclosure, url, address}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), ...(clean(disclosure) ? ["Disclosure: " + clean(disclosure)] : []), "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
+  function validate({name, role, url, specialty, fee, disclosure}) {
+    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee); disclosure = clean(disclosure);
     if (name.length < 2 || name.length > LIM.name) return {ok: false, error: "Enter your name (2 to " + LIM.name + " characters)."};
     if (role.length > LIM.role) return {ok: false, error: "Keep the role under " + LIM.role + " characters."};
     if (!urlOk(url)) return {ok: false, error: "Enter the address of a public page you control, starting with https:// (for example your GitHub profile or company page)."};
     if (specialty.length > LIM.specialty) return {ok: false, error: "Keep the specialty under " + LIM.specialty + " characters."};
     if (fee.length > LIM.fee) return {ok: false, error: "Keep the fee under " + LIM.fee + " characters."};
-    return {ok: true, name, role, url, specialty, fee};
+    if (disclosure.length > LIM.disclosure) return {ok: false, error: "Keep the disclosure under " + LIM.disclosure + " characters."};
+    return {ok: true, name, role, url, specialty, fee, disclosure};
   }
   const b64u = s => btoa(String.fromCharCode(...K.utf8(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const unb64u = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
-  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
+  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), ...(p.disclosure ? {d: p.disclosure} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
   // Read a profile code and check its signature. Returns {ok, profile} or {ok: false, error}.
   function parse(code) {
     try {
       code = clean(code); if (!code.startsWith(PREFIX)) return {ok: false, error: "That is not a reviewer profile code (it should start with " + PREFIX + ")."};
-      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
+      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), disclosure: clean(o.d), url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
       const v = validate(profile); if (!v.ok) return v; if (!ADDR.test(profile.address)) return {ok: false, error: "The profile has no valid address."};
       const signer = recover(personalHash(statement(profile)), profile.sig);
       if (!signer || signer !== profile.address) return {ok: false, error: "The signature does not match the address, so this profile is not genuine."};
@@ -3796,7 +3815,7 @@ MY POLICY:
     } catch (e) { return {ok: false, error: "That profile code could not be read."}; }
   }
   // The line added to the written terms of an agreement, so the identity is part of what both sides fingerprinted.
-  const termsLine = p => "Reviewer identity: " + p.name + (p.role ? ", " + p.role : "") + (p.specialty ? ", specialty " + p.specialty : "") + (p.fee ? ", fee " + p.fee : "") + ", " + p.url + " (signed profile fingerprint " + K.hex(K.keccak256(K.utf8(statement(p) + "\n" + p.sig))).slice(0, 18) + ")";
+  const termsLine = p => "Reviewer identity: " + p.name + (p.role ? ", " + p.role : "") + (p.specialty ? ", specialty " + p.specialty : "") + (p.fee ? ", fee " + p.fee : "") + (p.disclosure ? ", disclosed relationships: " + p.disclosure : "") + ", " + p.url + " (signed profile fingerprint " + K.hex(K.keccak256(K.utf8(statement(p) + "\n" + p.sig))).slice(0, 18) + ")";
 
   // ---------- checking the public page ----------
   // Does the page the reviewer named really carry their signed profile? status: "verified" | "missing" | "unreadable".
@@ -3844,9 +3863,14 @@ MY POLICY:
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), link = u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.replace(/^https:\/\//, ""))}</a>`;
   const pageBadge = r => r.status === "verified" ? `<span class="badge ok">public page confirms it</span>` : r.status === "missing" ? `<span class="badge warn">page does not show the proof</span>` : `<span class="badge">page could not be read here</span>`;
   const nameHtml = p => `<b>${esc(p.name)}</b>${p.role ? ", " + esc(p.role) : ""}`;
-  const extraHtml = p => (p.specialty ? `<span class="small">Specialty: ${esc(p.specialty)}</span> ` : "") + (p.fee ? `<span class="small">Fee: ${esc(p.fee)}</span>` : "");
+  const extraHtml = p => (p.disclosure ? `<span class="small">Disclosed: ${esc(p.disclosure)}</span> ` : "") + (p.specialty ? `<span class="small">Specialty: ${esc(p.specialty)}</span> ` : "") + (p.fee ? `<span class="small">Fee: ${esc(p.fee)}</span>` : "");
   // Fill every <span data-rid="0x…"> on the page with the reviewer's name (or a note that only an address is known).
   async function decorate(root) {
+    for (const el of root.querySelectorAll("[data-consent]")) {
+      const addr = el.getAttribute("data-consent"); if (!ADDR.test(addr) || el.dataset.done) continue; el.dataset.done = "1";
+      el.innerHTML = `<h3>Before you accept: who will decide?</h3><p class="small mute">Looking for the reviewer's signed identity…</p>`;
+      lookup(addr).then(p => { if (el.isConnected) el.innerHTML = consentHtml(addr, p); });
+    }
     for (const el of root.querySelectorAll("[data-rid]")) {
       const addr = el.getAttribute("data-rid"); if (!ADDR.test(addr) || el.dataset.done) continue; el.dataset.done = "1";
       el.innerHTML = `<span class="small mute">looking for a signed identity…</span>`;
@@ -3857,6 +3881,13 @@ MY POLICY:
       });
     }
   }
+  // "Before you accept": shown to whoever is asked to accept an agreement, so a reviewer is never accepted as a bare address.
+  const consentHtml = (addr, p) => {
+    const principle = `<p class="small">You do not have to accept a reviewer the other side chose. If you are not comfortable, do not accept: ask for a different reviewer, who will need a new proposal. Once you accept, the reviewer cannot be changed.</p>`;
+    if (!p) return `<h3>Before you accept: who will decide?</h3><p><span class="badge warn">address only</span> The reviewer is only a wallet address, <code>${esc(addr)}</code></p><p class="small">You cannot tell who this is, or whether they work for or are paid by the other side. Ask for a reviewer with a signed identity before you accept.</p>${principle}`;
+    return `<h3>Before you accept: who will decide?</h3><p style="font-size:18px;margin:0 0 6px">${nameHtml(p)} <span class="badge ok">identity signed by this wallet</span></p><p class="small">Public page: ${link(p.url)}${p.specialty ? " · Specialty: " + esc(p.specialty) : ""}${p.fee ? " · Fee: " + esc(p.fee) : ""}</p>
+      ${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b></p><p class="small mute">That is the reviewer's own statement. LGtie cannot check it, so ask the other side whether they employ or pay this person.</p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge. Ask them, and ask the other side, before you accept.</p>`}${principle}`;
+  };
   const field = (id, label, ph, extra = "") => `<label class="field"><span>${label}</span><input id="${id}" type="text" placeholder="${ph}" autocomplete="off" ${extra}></label>`;
   // The "who is this reviewer" card on #reviewer/<address>. If the connected wallet is this address, it also offers the setup.
   async function profileCard(el, addr) {
@@ -3866,7 +3897,7 @@ MY POLICY:
     async function show(p) {
       if (!p) { view.innerHTML = `<p><span class="badge warn">address only</span> No signed identity was found for <code>${addr}</code>. Anyone can be named reviewer by an address alone, so ask this person to add a profile before you accept them.</p>`; return; }
       view.innerHTML = `<p style="font-size:20px;margin:0 0 6px">${nameHtml(p)}</p><p class="small">Public page: ${link(p.url)} <span id="rid-pg" class="mute">checking…</span></p>
-        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
+        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b> <span class="mute">This is the reviewer's own statement. LGtie cannot check it.</span></p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge.</p>`}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
         <p class="small"><span class="badge ok">signed by this wallet</span> The name was signed with the wallet <code>${addr}</code>, and anyone can re-check that signature.</p>
         <details class="small"><summary>The signed profile code</summary><textarea readonly rows="3" style="width:100%">${esc(makeCode(p))}</textarea></details>
         <p class="small mute">This shows that whoever controls the wallet also controls the public page. It does not show that the person is honest or free of conflicts.</p>`;
@@ -3881,11 +3912,12 @@ MY POLICY:
         if (acct.toLowerCase() !== addr) { msg.innerHTML = `<span class="err">The connected wallet is ${short(acct)}, not ${short(addr)}. Switch accounts in your wallet and try again.</span>`; return; }
         msg.textContent = "";
         setup.innerHTML = `<div class="note"><b>Sign a short statement with this wallet.</b> It costs nothing and sends no transaction.</div>
-          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional)", "For example: used electronics, smart-contract security", 'maxlength="60"')}${field("rid-fee", "Your fee (optional)", "For example: US$10 per disputed question", 'maxlength="60"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
+          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional)", "For example: used electronics, smart-contract security", 'maxlength="60"')}${field("rid-fee", "Your fee (optional)", "For example: US$10 per disputed question", 'maxlength="60"')}${field("rid-dis", "Relationships to disclose", "For example: Independent. No employment, financial or personal tie to either party.", 'maxlength="200"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
           <div class="row"><button class="btn small" id="rid-sign" type="button">Sign with my wallet</button><span id="rid-m2" class="small"></span></div><div id="rid-out"></div>`;
         setup.querySelector("#rid-sign").onclick = async () => {
-          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, url: setup.querySelector("#rid-url").value});
+          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, disclosure: setup.querySelector("#rid-dis").value, url: setup.querySelector("#rid-url").value});
           if (!v.ok) { m2.innerHTML = `<span class="err">${esc(v.error)}</span>`; return; }
+          if (!v.disclosure) { m2.innerHTML = `<span class="err">Say whether you have any relationship with the people you may judge (an employer, a financial tie, a friend). If none, write that you are independent. The people agreeing to you will read it.</span>`; return; }
           try {
             m2.textContent = "Confirm the signature in your wallet…";
             const text = statement({...v, address: addr}), sig = await window.ethereum.request({method: "personal_sign", params: [K.hex(K.utf8(text)), addr]});
@@ -4053,7 +4085,12 @@ MY POLICY:
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
   // once the revenue contracts are live, cases are opened on TiebreakCaseV5 (V4 plus a billing call); the passkeys and agreements stay the same
-  const V4 = () => (CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  // Cases opened before the revenue contracts live on TiebreakCaseV4; they stay readable and usable at #pk/v4case/<id> (the same agreements and passkeys)
+  let LEGACY = false; window.addEventListener("hashchange", () => { if (!/^#pk\/v4case\//.test(location.hash)) LEGACY = false; });
+  const hasV5 = () => !!(CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO && CFG.v4 && CFG.v4.cases && CFG.v4.cases.toLowerCase() !== CFG.v5.cases.toLowerCase());
+  const legacyCases = async () => hasV5() ? (await scan(CFG.v4.cases, id => call(CFG.v4.cases, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: true})) : [];
+  const caseHref = c => (c.legacy ? "#pk/v4case/" : "#pk/case/") + c.id;
+  const V4 = () => (!LEGACY && CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -4207,6 +4244,7 @@ MY POLICY:
     const P = policyOf(a.ruleSetId), inForce = a.acceptedAt !== 0 && !a.cancelled, state = a.cancelled ? "Withdrawn" : inForce ? "In force since " + when(a.acceptedAt) : "Waiting for you to accept", div = document.createElement("div"); div.className = "card";
     div.innerHTML = `<h3>Agreement #${a.id}: ${esc(P ? P.name : "rule set " + a.ruleSetId)}</h3><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
       <p class="small">Proposed by <code>${short(a.proposer.wallet)}</code>. The neutral reviewer is <code>${short(a.reviewer)}</code> <span data-rid="${a.reviewer}"></span>. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
+      ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="note consent" data-consent="${a.reviewer}"></div>` : ""}
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="row"><button class="btn" data-act="accept" type="button">Accept with my passkey</button></div>` : ""}
       ${inForce ? `<div class="row"><button class="btn ghost" data-act="open" type="button">Start a dispute under this agreement</button></div>` : ""}<div class="act"></div>`;
     $("#ags").appendChild(div);
@@ -4415,15 +4453,15 @@ MY POLICY:
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
     if (inForce) add("Open a dispute under this agreement", "", async () => { await window.TB_BILLING.ensureFee(a.proposer.wallet, t => { $("#amsg").textContent = t; }); $("#amsg").textContent = "Confirm in your wallet…"; const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
-    try { const cs = (await scan(V4().cases, readCase)).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: c => "#pk/case/" + c.id}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
+    try { const cs = [...(await scan(V4().cases, readCase)), ...(LEGACY ? [] : await legacyCases())].filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: caseHref}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkAll() {
     if (!deployed()) { notDeployed("Passkey cases"); return; }
     main.innerHTML = `<h1>Passkey agreements and cases</h1><p class="lede">Everything opened with a customer's fingerprint or face. Cases between two wallets are on <a href="#case">the other case page</a>.</p><p class="mute" id="pkl">Reading from X Layer…</p>`;
     try {
-      const [ags, cs] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase)]);
+      const [ags, cs0, old] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase), legacyCases()]), cs = [...cs0, ...old];
       $("#pkl").outerHTML = `<div class="card"><h3>Agreements</h3>${ags.length ? ags.map(a => { const P = policyOf(a.ruleSetId); return `<p><a href="#pk/agreement/${a.id}">Agreement #${a.id}</a> · ${esc(P ? P.name : "rule set " + a.ruleSetId)} · ${a.cancelled ? "Withdrawn" : a.acceptedAt ? "In force" : "Waiting for the customer"}</p>`; }).join("") : `<p class="mute">None yet.</p>`}<p class="small"><a href="#pk/agree">Invite a customer with a fingerprint</a></p></div>
-        <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="#pk/case/${c.id}">Case #${c.id}</a> · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
+        <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="${caseHref(c)}">Case #${c.id}</a>${c.legacy ? " (earlier contract)" : ""} · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
     } catch (e) { const l = $("#pkl"); if (l) l.textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkCase(id, opts) {
@@ -4495,7 +4533,7 @@ MY POLICY:
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: await scan(V4().cases, readCase)} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: id => { LEGACY = true; return pkCase(id); }, parseClaim, createPasskey, signAction};
 })();
 
 </script><script>/* app.js */
@@ -4864,7 +4902,7 @@ MY POLICY:
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "v4case" ? window.TB_PASSKEYS.legacyCase(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build(key);
     if (view === "templates") return window.TB_TEMPLATES.page();

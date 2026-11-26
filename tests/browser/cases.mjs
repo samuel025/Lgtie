@@ -35,6 +35,7 @@ ok("proposing an agreement opens its page", await until(async () => /^#agreement
 const hAg = await p.evaluate(() => location.hash), agId = hAg.split("/")[1];
 await until(async () => /Proposed, waiting for the other party/.test(await T("main")));
 ok("a new agreement waits for the other party and shows its terms fingerprint", /Proposed, waiting/.test(await T("main")) && /0x[0-9a-f]{64}/.test(await T("main")), (await T("main")).slice(0, 300));
+ok("it asks the person accepting to check who the reviewer is first, and says an address-only reviewer cannot be judged", await until(async () => /Before you accept: who will decide\?/.test(await T("#main")) && /address only/.test(await T("#main")) && /do not have to accept a reviewer the other side chose/.test(await T("#main"))), (await T("#main")).slice(0, 400));
 ok("the proposer gets a ready-to-send invitation with the link and the other party\'s address", /#agreement\/\d+/.test(await p.$eval("#invtxt", e => e.value).catch(() => "")) && /0x[0-9a-fA-F]{40}/.test(await p.$eval("#invtxt", e => e.value).catch(() => "")) && !!(await p.$("#invcp")), await p.$eval("#invtxt", e => e.value).catch(() => ""));
 await p.type("#tt", TERMS); await until(async () => /matches the agreed terms/.test(await T("#tm")));
 ok("the exact terms text is recognised", /✓ This text matches/.test(await T("#tm")), await T("#tm"));

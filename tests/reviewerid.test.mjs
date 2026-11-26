@@ -28,7 +28,7 @@ await ok("v may be 0/1 or 27/28", () => {
   const alt = SIG.slice(0, -2) + (SIG.endsWith("1b") ? "00" : "01"); assert.equal(R.recover(R.personalHash(R.statement(FIELDS)), alt), ADDR);
 });
 await ok("a profile code round-trips and verifies", () => {
-  const code = R.makeCode(profile), r = R.parse(code); assert.ok(code.startsWith("lgtie-reviewer1.")); assert.equal(r.ok, true); assert.deepEqual(r.profile, {...profile, specialty: "", fee: ""}); assert.equal(r.code, code);
+  const code = R.makeCode(profile), r = R.parse(code); assert.ok(code.startsWith("lgtie-reviewer1.")); assert.equal(r.ok, true); assert.deepEqual(r.profile, {...profile, specialty: "", fee: "", disclosure: ""}); assert.equal(r.code, code);
 });
 await ok("a profile code with a swapped name, page or address is rejected", () => {
   for (const bad of [{...profile, name: "Someone Else"}, {...profile, url: "https://evil.example/x"}, {...profile, address: "0x" + "11".repeat(20)}, {...profile, sig: SIG.slice(0, -4) + "0000"}]) {
@@ -82,4 +82,27 @@ await ok("checkPage(): missing when the page does not carry it, unreadable when 
   assert.equal((await R.checkPage(profile, async () => ({ok: false, text: async () => ""}))).status, "unreadable");
   assert.equal((await R.checkPage({...profile, url: "http://x.org"}, page(""))).status, "unreadable");
 });
+// ---- the reviewer's disclosure of relationships (shown to whoever is asked to accept them) ----
+const DIS = "Independent. No employment, financial or personal tie to either party.", SIG3 = "0x53e58b5cec1f199d76551a892f4df14f64bb4aa0f8c3b8d312c5c3e5cfba05231c6a498f749a31d1736143e647a064fd41fb4be8b13cdd35c28ba8c0c9ec61fb1c";
+const profile3 = {...FIELDS, disclosure: DIS, sig: SIG3};
+await ok("the disclosure is part of the signed statement, only when given (older profiles are unchanged)", () => {
+  assert.ok(R.statement({...FIELDS, disclosure: DIS}).includes("\nDisclosure: " + DIS + "\nPublic page:"));
+  assert.equal(R.statement({...FIELDS, disclosure: "  "}), R.statement(FIELDS));
+});
+await ok("a real signature over a profile with a disclosure recovers the wallet and verifies, and the disclosure survives the code", () => {
+  assert.equal(R.recover(R.personalHash(R.statement(profile3)), SIG3), ADDR);
+  const r = R.parse(R.makeCode(profile3)); assert.equal(r.ok, true); assert.equal(r.profile.disclosure, DIS);
+});
+await ok("changing the disclosure after signing breaks the profile (a reviewer cannot be shown with a different disclosure)", () => {
+  const code = R.makeCode({...profile3, disclosure: "Employed by the business."});
+  assert.equal(R.parse(code).ok, false);
+});
+await ok("the disclosure is in the terms line both sides fingerprint, and a profile with none has no such text", () => {
+  assert.ok(R.termsLine(R.parse(R.makeCode(profile3)).profile).includes("disclosed relationships: " + DIS));
+  assert.ok(!R.termsLine(R.parse(R.makeCode(profile)).profile).includes("disclosed relationships"));
+});
+await ok("a disclosure that is too long is refused", () => {
+  assert.equal(R.validate({...FIELDS, disclosure: "x".repeat(201)}).ok, false);
+});
+
 console.log(`\n${n} passed`);

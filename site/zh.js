@@ -2,6 +2,21 @@
 // strings of 6+ characters are also replaced inside longer text. English stays the source of truth: rule text, circuits and on-chain data are never changed.
 window.TB_ZH = {
   dict: {
+ "Before you accept: who will decide?": "接受之前：由谁来裁决？",
+ "Looking for the reviewer's signed identity…": "正在查找审核员的签名身份…",
+ "You do not have to accept a reviewer the other side chose. If you are not comfortable, do not accept: ask for a different reviewer, who will need a new proposal. Once you accept, the reviewer cannot be changed.": "你不必接受对方选定的审核员。如果你觉得不放心，就不要接受：请对方换一位审核员，这需要重新提出协议。一旦你接受，审核员就无法更改。",
+ "The reviewer is only a wallet address,": "审核员只有一个钱包地址，",
+ "You cannot tell who this is, or whether they work for or are paid by the other side. Ask for a reviewer with a signed identity before you accept.": "你无法得知这是谁，也无法知道他是否受雇于对方或由对方付费。接受之前，请要求对方提供有签名身份的审核员。",
+ "Disclosed relationships:": "已披露的关联关系：",
+ "That is the reviewer's own statement. LGtie cannot check it, so ask the other side whether they employ or pay this person.": "这是审核员自己的声明，LGtie 无法核实，请向对方确认是否雇用或付费给这个人。",
+ "This is the reviewer's own statement. LGtie cannot check it.": "这是审核员自己的声明，LGtie 无法核实。",
+ "no disclosure": "未披露",
+ "This reviewer has not said whether they have any relationship with the people they judge. Ask them, and ask the other side, before you accept.": "这位审核员没有说明自己与被裁决的双方是否有任何关联。接受之前，请先询问他，也询问对方。",
+ "This reviewer has not said whether they have any relationship with the people they judge.": "这位审核员没有说明自己与被裁决的双方是否有任何关联。",
+ "Relationships to disclose": "需要披露的关联关系",
+ "For example: Independent. No employment, financial or personal tie to either party.": "例如：独立。与任何一方都没有雇佣、财务或个人关系。",
+ "Say whether you have any relationship with the people you may judge (an employer, a financial tie, a friend). If none, write that you are independent. The people agreeing to you will read it.": "请说明你与可能裁决的双方是否有关联（雇主、财务往来、朋友）。如果没有，请写明你是独立的。同意你担任审核员的人会阅读这段话。",
+ "Disclosed:": "已披露：",
  "One year": "一年",
  "one year": "一年",
  "one month": "一个月",
@@ -1056,6 +1071,7 @@ window.TB_ZH = {
  "Version history": "版本历史"
 },
   patterns: [
+  [/^Keep the disclosure under (\d+) characters\.$/, "披露内容请控制在 {1} 个字符以内。"],
   [/^Opening a case costs ([\d.]+) USDT, paid to LGtie\. Checking your wallet…$/, "开启案件需支付 {1} USDT 给 LGtie。正在检查你的钱包…"], [/^Opening a case costs ([\d.]+) USDT, paid to LGtie\.$/, "开启案件需支付 {1} USDT 给 LGtie。"],
   [/^per month, or ([\d.]+) USDT per year$/, "每月，或每年 {1} USDT"], [/^(\d+) cases a month under your agreements, with no case fee$/, "你的协议下每月 {1} 个案件，无案件费用"], [/^(\d+) cases a month, with no case fee$/, "每月 {1} 个案件，无案件费用"],
   [/^Every payment goes straight to LGtie's address\.$/, "每笔付款都直接转到 LGtie 的地址。"], [/^Every payment goes straight to$/, "每笔付款都直接转到"],

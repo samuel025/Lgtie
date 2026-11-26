@@ -14,7 +14,7 @@
   const K = typeof module !== "undefined" && module.exports ? require("./pkcore.js") : window.TB_PK;
   const NOSTR = () => (typeof module !== "undefined" && module.exports ? require("./nostr.js") : window.TB_NOSTR);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 60, fee: 60};
+  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 60, fee: 60, disclosure: 200};
 
   // ---------- secp256k1 public-key recovery (what ecrecover does), with BigInt ----------
   const P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn, N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
@@ -52,24 +52,25 @@
   const clean = s => String(s || "").replace(/\s+/g, " ").trim();
   const urlOk = u => /^https:\/\/[^\s<>"']+$/i.test(u) && u.length <= LIM.url;
   // The exact text the reviewer's wallet signs. Deterministic: the same fields always give the same text.
-  const statement = ({name, role, specialty, fee, url, address}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
-  function validate({name, role, url, specialty, fee}) {
-    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee);
+  const statement = ({name, role, specialty, fee, disclosure, url, address}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), ...(clean(disclosure) ? ["Disclosure: " + clean(disclosure)] : []), "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
+  function validate({name, role, url, specialty, fee, disclosure}) {
+    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee); disclosure = clean(disclosure);
     if (name.length < 2 || name.length > LIM.name) return {ok: false, error: "Enter your name (2 to " + LIM.name + " characters)."};
     if (role.length > LIM.role) return {ok: false, error: "Keep the role under " + LIM.role + " characters."};
     if (!urlOk(url)) return {ok: false, error: "Enter the address of a public page you control, starting with https:// (for example your GitHub profile or company page)."};
     if (specialty.length > LIM.specialty) return {ok: false, error: "Keep the specialty under " + LIM.specialty + " characters."};
     if (fee.length > LIM.fee) return {ok: false, error: "Keep the fee under " + LIM.fee + " characters."};
-    return {ok: true, name, role, url, specialty, fee};
+    if (disclosure.length > LIM.disclosure) return {ok: false, error: "Keep the disclosure under " + LIM.disclosure + " characters."};
+    return {ok: true, name, role, url, specialty, fee, disclosure};
   }
   const b64u = s => btoa(String.fromCharCode(...K.utf8(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const unb64u = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
-  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
+  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), ...(p.disclosure ? {d: p.disclosure} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
   // Read a profile code and check its signature. Returns {ok, profile} or {ok: false, error}.
   function parse(code) {
     try {
       code = clean(code); if (!code.startsWith(PREFIX)) return {ok: false, error: "That is not a reviewer profile code (it should start with " + PREFIX + ")."};
-      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
+      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), disclosure: clean(o.d), url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
       const v = validate(profile); if (!v.ok) return v; if (!ADDR.test(profile.address)) return {ok: false, error: "The profile has no valid address."};
       const signer = recover(personalHash(statement(profile)), profile.sig);
       if (!signer || signer !== profile.address) return {ok: false, error: "The signature does not match the address, so this profile is not genuine."};
@@ -77,7 +78,7 @@
     } catch (e) { return {ok: false, error: "That profile code could not be read."}; }
   }
   // The line added to the written terms of an agreement, so the identity is part of what both sides fingerprinted.
-  const termsLine = p => "Reviewer identity: " + p.name + (p.role ? ", " + p.role : "") + (p.specialty ? ", specialty " + p.specialty : "") + (p.fee ? ", fee " + p.fee : "") + ", " + p.url + " (signed profile fingerprint " + K.hex(K.keccak256(K.utf8(statement(p) + "\n" + p.sig))).slice(0, 18) + ")";
+  const termsLine = p => "Reviewer identity: " + p.name + (p.role ? ", " + p.role : "") + (p.specialty ? ", specialty " + p.specialty : "") + (p.fee ? ", fee " + p.fee : "") + (p.disclosure ? ", disclosed relationships: " + p.disclosure : "") + ", " + p.url + " (signed profile fingerprint " + K.hex(K.keccak256(K.utf8(statement(p) + "\n" + p.sig))).slice(0, 18) + ")";
 
   // ---------- checking the public page ----------
   // Does the page the reviewer named really carry their signed profile? status: "verified" | "missing" | "unreadable".
@@ -125,9 +126,14 @@
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), link = u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.replace(/^https:\/\//, ""))}</a>`;
   const pageBadge = r => r.status === "verified" ? `<span class="badge ok">public page confirms it</span>` : r.status === "missing" ? `<span class="badge warn">page does not show the proof</span>` : `<span class="badge">page could not be read here</span>`;
   const nameHtml = p => `<b>${esc(p.name)}</b>${p.role ? ", " + esc(p.role) : ""}`;
-  const extraHtml = p => (p.specialty ? `<span class="small">Specialty: ${esc(p.specialty)}</span> ` : "") + (p.fee ? `<span class="small">Fee: ${esc(p.fee)}</span>` : "");
+  const extraHtml = p => (p.disclosure ? `<span class="small">Disclosed: ${esc(p.disclosure)}</span> ` : "") + (p.specialty ? `<span class="small">Specialty: ${esc(p.specialty)}</span> ` : "") + (p.fee ? `<span class="small">Fee: ${esc(p.fee)}</span>` : "");
   // Fill every <span data-rid="0x…"> on the page with the reviewer's name (or a note that only an address is known).
   async function decorate(root) {
+    for (const el of root.querySelectorAll("[data-consent]")) {
+      const addr = el.getAttribute("data-consent"); if (!ADDR.test(addr) || el.dataset.done) continue; el.dataset.done = "1";
+      el.innerHTML = `<h3>Before you accept: who will decide?</h3><p class="small mute">Looking for the reviewer's signed identity…</p>`;
+      lookup(addr).then(p => { if (el.isConnected) el.innerHTML = consentHtml(addr, p); });
+    }
     for (const el of root.querySelectorAll("[data-rid]")) {
       const addr = el.getAttribute("data-rid"); if (!ADDR.test(addr) || el.dataset.done) continue; el.dataset.done = "1";
       el.innerHTML = `<span class="small mute">looking for a signed identity…</span>`;
@@ -138,6 +144,13 @@
       });
     }
   }
+  // "Before you accept": shown to whoever is asked to accept an agreement, so a reviewer is never accepted as a bare address.
+  const consentHtml = (addr, p) => {
+    const principle = `<p class="small">You do not have to accept a reviewer the other side chose. If you are not comfortable, do not accept: ask for a different reviewer, who will need a new proposal. Once you accept, the reviewer cannot be changed.</p>`;
+    if (!p) return `<h3>Before you accept: who will decide?</h3><p><span class="badge warn">address only</span> The reviewer is only a wallet address, <code>${esc(addr)}</code></p><p class="small">You cannot tell who this is, or whether they work for or are paid by the other side. Ask for a reviewer with a signed identity before you accept.</p>${principle}`;
+    return `<h3>Before you accept: who will decide?</h3><p style="font-size:18px;margin:0 0 6px">${nameHtml(p)} <span class="badge ok">identity signed by this wallet</span></p><p class="small">Public page: ${link(p.url)}${p.specialty ? " · Specialty: " + esc(p.specialty) : ""}${p.fee ? " · Fee: " + esc(p.fee) : ""}</p>
+      ${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b></p><p class="small mute">That is the reviewer's own statement. LGtie cannot check it, so ask the other side whether they employ or pay this person.</p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge. Ask them, and ask the other side, before you accept.</p>`}${principle}`;
+  };
   const field = (id, label, ph, extra = "") => `<label class="field"><span>${label}</span><input id="${id}" type="text" placeholder="${ph}" autocomplete="off" ${extra}></label>`;
   // The "who is this reviewer" card on #reviewer/<address>. If the connected wallet is this address, it also offers the setup.
   async function profileCard(el, addr) {
@@ -147,7 +160,7 @@
     async function show(p) {
       if (!p) { view.innerHTML = `<p><span class="badge warn">address only</span> No signed identity was found for <code>${addr}</code>. Anyone can be named reviewer by an address alone, so ask this person to add a profile before you accept them.</p>`; return; }
       view.innerHTML = `<p style="font-size:20px;margin:0 0 6px">${nameHtml(p)}</p><p class="small">Public page: ${link(p.url)} <span id="rid-pg" class="mute">checking…</span></p>
-        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
+        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b> <span class="mute">This is the reviewer's own statement. LGtie cannot check it.</span></p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge.</p>`}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
         <p class="small"><span class="badge ok">signed by this wallet</span> The name was signed with the wallet <code>${addr}</code>, and anyone can re-check that signature.</p>
         <details class="small"><summary>The signed profile code</summary><textarea readonly rows="3" style="width:100%">${esc(makeCode(p))}</textarea></details>
         <p class="small mute">This shows that whoever controls the wallet also controls the public page. It does not show that the person is honest or free of conflicts.</p>`;
@@ -162,11 +175,12 @@
         if (acct.toLowerCase() !== addr) { msg.innerHTML = `<span class="err">The connected wallet is ${short(acct)}, not ${short(addr)}. Switch accounts in your wallet and try again.</span>`; return; }
         msg.textContent = "";
         setup.innerHTML = `<div class="note"><b>Sign a short statement with this wallet.</b> It costs nothing and sends no transaction.</div>
-          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional)", "For example: used electronics, smart-contract security", 'maxlength="60"')}${field("rid-fee", "Your fee (optional)", "For example: US$10 per disputed question", 'maxlength="60"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
+          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional)", "For example: used electronics, smart-contract security", 'maxlength="60"')}${field("rid-fee", "Your fee (optional)", "For example: US$10 per disputed question", 'maxlength="60"')}${field("rid-dis", "Relationships to disclose", "For example: Independent. No employment, financial or personal tie to either party.", 'maxlength="200"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
           <div class="row"><button class="btn small" id="rid-sign" type="button">Sign with my wallet</button><span id="rid-m2" class="small"></span></div><div id="rid-out"></div>`;
         setup.querySelector("#rid-sign").onclick = async () => {
-          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, url: setup.querySelector("#rid-url").value});
+          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, disclosure: setup.querySelector("#rid-dis").value, url: setup.querySelector("#rid-url").value});
           if (!v.ok) { m2.innerHTML = `<span class="err">${esc(v.error)}</span>`; return; }
+          if (!v.disclosure) { m2.innerHTML = `<span class="err">Say whether you have any relationship with the people you may judge (an employer, a financial tie, a friend). If none, write that you are independent. The people agreeing to you will read it.</span>`; return; }
           try {
             m2.textContent = "Confirm the signature in your wallet…";
             const text = statement({...v, address: addr}), sig = await window.ethereum.request({method: "personal_sign", params: [K.hex(K.utf8(text)), addr]});
