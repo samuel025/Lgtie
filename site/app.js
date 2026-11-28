@@ -358,6 +358,7 @@
     if (view === "pricing") return window.TB_BILLING.page();
     if (view === "deal") return window.TB_DEAL.create(key);
     if (view === "d") return window.TB_DEAL.deal([key, ...rest].join("/"));
+    if (view === "directory") return window.TB_DIRECTORY.page();
     if (view === "card") return window.TB_CARDS.page([key, ...rest].join("/"));
     if (view === "cards") return window.TB_CARDS.list();
     if (view === "auto") return window.TB_AUTOPREVIEW.page(key);   // unlisted preview, see docs/AUTO-QUESTIONS.md

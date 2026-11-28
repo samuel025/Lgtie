@@ -462,7 +462,7 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 .langsw button{font:400 13px/1 var(--sans);padding:7px 11px;border:0;background:transparent;color:var(--ink);cursor:pointer;letter-spacing:0}
 .langsw button.on{background:var(--ink);color:#fff}
 .langsw button:not(.on):hover{background:rgba(0,0,0,.06)}
-.fgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.formcard .fgrid2 .field,.formcard .fgrid2 .field:first-child{margin-top:16px}@media(max-width:640px){.fgrid2{grid-template-columns:minmax(0,1fr)}}.formcard + #dl-out,#dl-out{margin-top:18px}#dl-out h3{margin:28px 0 10px}#dl-out h3:first-child{margin-top:0}#dl-out .row{margin:14px 0 4px}#dl-out textarea{margin-top:4px}.check{display:flex;gap:10px;align-items:flex-start;margin:18px 0 0;font-size:14px}.check input{margin-top:3px}.rvbox{margin:14px 0}.dealcard{display:flex;max-width:520px;border:1px solid var(--warm);border-radius:14px;overflow:hidden;background:#fff;margin:8px 0 14px}.dc-img{flex:0 0 130px;background:var(--paper);display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px;border-right:1px solid var(--warm)}.dc-img b{font-size:20px}.dc-img span{font-size:12px;color:var(--stone)}.dc-txt{display:flex;flex-direction:column;gap:3px;padding:12px 14px;min-width:0}.dc-txt b{font-size:15px}.dc-txt span{font-size:13px;color:var(--stone)}.dc-txt em{font-size:12px;color:var(--ash);font-style:normal}#dl-msg{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--warm);border-radius:10px;resize:vertical}
+.fgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.formcard .fgrid2 .field,.formcard .fgrid2 .field:first-child{margin-top:16px}@media(max-width:640px){.fgrid2{grid-template-columns:minmax(0,1fr)}}.formcard + #dl-out,#dl-out{margin-top:18px}#dl-out h3{margin:28px 0 10px}#dl-out h3:first-child{margin-top:0}#dl-out .row{margin:14px 0 4px}#dl-out textarea{margin-top:4px}.modalbg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:30px 14px}.modal{background:#fff;border-radius:16px;max-width:760px;width:100%;padding:22px;box-sizing:border-box}.modal .card{background:var(--paper)}.dircard .badge{vertical-align:middle}.check{display:flex;gap:10px;align-items:flex-start;margin:18px 0 0;font-size:14px}.check input{margin-top:3px}.rvbox{margin:14px 0}.dealcard{display:flex;max-width:520px;border:1px solid var(--warm);border-radius:14px;overflow:hidden;background:#fff;margin:8px 0 14px}.dc-img{flex:0 0 130px;background:var(--paper);display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px;border-right:1px solid var(--warm)}.dc-img b{font-size:20px}.dc-img span{font-size:12px;color:var(--stone)}.dc-txt{display:flex;flex-direction:column;gap:3px;padding:12px 14px;min-width:0}.dc-txt b{font-size:15px}.dc-txt span{font-size:13px;color:var(--stone)}.dc-txt em{font-size:12px;color:var(--ash);font-style:normal}#dl-msg{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--warm);border-radius:10px;resize:vertical}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
@@ -3563,7 +3563,7 @@ MY POLICY:
     let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewers</h1><p class="err">X Layer could not be reached.</p>`; return; }
     const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
     const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a><br><span class="small" data-rid="${a}"></span></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
-    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that.</p>
+    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that. Looking for someone to name? <a href="#directory">Find a reviewer</a>.</p>
       <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Not accepted by both sides</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
       <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
   }
@@ -3767,7 +3767,7 @@ MY POLICY:
   const K = typeof module !== "undefined" && module.exports ? require("./pkcore.js") : window.TB_PK;
   const NOSTR = () => (typeof module !== "undefined" && module.exports ? require("./nostr.js") : window.TB_NOSTR);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 60, fee: 60, disclosure: 200};
+  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 120, fee: 60, disclosure: 200, regions: 80, response: 40}, ARRANGEMENTS = ["split", "sponsored", "volunteer"], today = () => new Date().toISOString().slice(0, 10);
 
   // ---------- secp256k1 public-key recovery (what ecrecover does), with BigInt ----------
   const P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn, N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
@@ -3805,26 +3805,40 @@ MY POLICY:
   const clean = s => String(s || "").replace(/\s+/g, " ").trim();
   const urlOk = u => /^https:\/\/[^\s<>"']+$/i.test(u) && u.length <= LIM.url;
   // The exact text the reviewer's wallet signs. Deterministic: the same fields always give the same text.
-  const statement = ({name, role, specialty, fee, disclosure, url, address}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), ...(clean(disclosure) ? ["Disclosure: " + clean(disclosure)] : []), "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
-  function validate({name, role, url, specialty, fee, disclosure}) {
-    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee); disclosure = clean(disclosure);
+  const statement = ({name, role, specialty, fee, disclosure, url, address, regions, arrangements, avail, confirmed, max, response, listed}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), ...(clean(disclosure) ? ["Disclosure: " + clean(disclosure)] : []),
+    // optional directory fields: present in the signed text only when set, so every earlier profile keeps verifying
+    ...(clean(regions) ? ["Regions: " + clean(regions)] : []), ...(clean(arrangements) ? ["Fee arrangements: " + clean(arrangements).replace(/,/g, ", ")] : []), ...(avail ? ["Availability: " + (avail === "yes" ? "available" : "not available") + (confirmed ? " (confirmed " + confirmed + ")" : "")] : []),
+    ...(clean(max) ? ["Maximum cases at once: " + clean(max)] : []), ...(clean(response) ? ["Typical response: " + clean(response)] : []), ...(listed ? ["Directory: listed (self-listed, not checked by LGtie)"] : []),
+    "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
+  function validate({name, role, url, specialty, fee, disclosure, regions, arrangements, avail, confirmed, max, response, listed}) {
+    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee); disclosure = clean(disclosure); regions = clean(regions); response = clean(response); max = clean(max); avail = clean(avail); confirmed = clean(confirmed); listed = !!listed;
     if (name.length < 2 || name.length > LIM.name) return {ok: false, error: "Enter your name (2 to " + LIM.name + " characters)."};
     if (role.length > LIM.role) return {ok: false, error: "Keep the role under " + LIM.role + " characters."};
     if (!urlOk(url)) return {ok: false, error: "Enter the address of a public page you control, starting with https:// (for example your GitHub profile or company page)."};
-    if (specialty.length > LIM.specialty) return {ok: false, error: "Keep the specialty under " + LIM.specialty + " characters."};
+    if (specialty.length > LIM.specialty) return {ok: false, error: "Keep the specialties under " + LIM.specialty + " characters."};
     if (fee.length > LIM.fee) return {ok: false, error: "Keep the fee under " + LIM.fee + " characters."};
     if (disclosure.length > LIM.disclosure) return {ok: false, error: "Keep the disclosure under " + LIM.disclosure + " characters."};
-    return {ok: true, name, role, url, specialty, fee, disclosure};
+    if (regions.length > LIM.regions) return {ok: false, error: "Keep the regions under " + LIM.regions + " characters."};
+    if (response.length > LIM.response) return {ok: false, error: "Keep the typical response under " + LIM.response + " characters."};
+    const arr = [...new Set((Array.isArray(arrangements) ? arrangements : String(arrangements || "").split(",")).map(x => clean(x)).filter(Boolean))];
+    if (arr.some(x => !ARRANGEMENTS.includes(x))) return {ok: false, error: "Fee arrangements can be split, sponsored or volunteer."};
+    arrangements = ARRANGEMENTS.filter(x => arr.includes(x)).join(",");
+    if (avail && avail !== "yes" && avail !== "no") return {ok: false, error: "Availability must be available or not available."};
+    if (avail) { if (!/^\d{4}-\d{2}-\d{2}$/.test(confirmed)) return {ok: false, error: "Availability needs the date you confirmed it."}; if (confirmed > new Date(Date.now() + 86400000).toISOString().slice(0, 10)) return {ok: false, error: "The confirmation date cannot be in the future."}; } else confirmed = "";
+    if (max && (!/^\d{1,2}$/.test(max) || Number(max) < 1)) return {ok: false, error: "The maximum number of cases must be a number from 1 to 99."};
+    if (listed && !disclosure) return {ok: false, error: "To be listed in the directory you must say whether you have any relationship with the people you may judge."};
+    return {ok: true, name, role, url, specialty, fee, disclosure, regions, arrangements, avail, confirmed, max, response, listed};
   }
   const b64u = s => btoa(String.fromCharCode(...K.utf8(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const unb64u = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
-  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), ...(p.disclosure ? {d: p.disclosure} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
+  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), ...(p.disclosure ? {d: p.disclosure} : {}), ...(p.regions ? {g: p.regions} : {}), ...(p.arrangements ? {m: p.arrangements} : {}), ...(p.avail ? {v: p.avail, t: p.confirmed} : {}), ...(p.max ? {x: p.max} : {}), ...(p.response ? {q: p.response} : {}), ...(p.listed ? {l: 1} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
   // Read a profile code and check its signature. Returns {ok, profile} or {ok: false, error}.
   function parse(code) {
     try {
       code = clean(code); if (!code.startsWith(PREFIX)) return {ok: false, error: "That is not a reviewer profile code (it should start with " + PREFIX + ")."};
-      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), disclosure: clean(o.d), url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
+      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), disclosure: clean(o.d), regions: clean(o.g), arrangements: clean(o.m), avail: clean(o.v), confirmed: clean(o.t), max: clean(o.x), response: clean(o.q), listed: o.l === 1, url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
       const v = validate(profile); if (!v.ok) return v; if (!ADDR.test(profile.address)) return {ok: false, error: "The profile has no valid address."};
+      Object.assign(profile, v);   // the cleaned values, so the signed text is rebuilt exactly
       const signer = recover(personalHash(statement(profile)), profile.sig);
       if (!signer || signer !== profile.address) return {ok: false, error: "The signature does not match the address, so this profile is not genuine."};
       return {ok: true, profile, code: makeCode(profile)};
@@ -3848,10 +3862,10 @@ MY POLICY:
   }
 
   // ---------- relays: store and find a profile ----------
-  const tagOf = addr => "lgtie-rid-" + String(addr).toLowerCase();
+  const tagOf = addr => "lgtie-rid-" + String(addr).toLowerCase(), DIRECTORY_TAG = "lgtie-directory";
   async function publish(profile, relays) {
     const N_ = NOSTR(), sk = crypto.getRandomValues(new Uint8Array(32)), code = makeCode(profile);
-    const ev = {pubkey: N_.pubkeyOf(sk), created_at: Math.floor(Date.now() / 1000), kind: N_.KIND, tags: [["d", "rid-" + profile.address], ["t", "lgtie"], ["t", tagOf(profile.address)]], content: JSON.stringify({code})};
+    const ev = {pubkey: N_.pubkeyOf(sk), created_at: Math.floor(Date.now() / 1000), kind: N_.KIND, tags: [["d", "rid-" + profile.address], ["t", "lgtie"], ["t", tagOf(profile.address)], ...(profile.listed ? [["t", DIRECTORY_TAG]] : [])], content: JSON.stringify({code})};
     ev.id = await N_.idOf(ev); ev.sig = await N_.sign(N_.unhex(ev.id), sk);
     return N_.publish(relays || N_.relaysConfigured(), ev);
   }
@@ -3879,6 +3893,20 @@ MY POLICY:
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), link = u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.replace(/^https:\/\//, ""))}</a>`;
   const pageBadge = r => r.status === "verified" ? `<span class="badge ok">public page confirms it</span>` : r.status === "missing" ? `<span class="badge warn">page does not show the proof</span>` : `<span class="badge">page could not be read here</span>`;
   const nameHtml = p => `<b>${esc(p.name)}</b>${p.role ? ", " + esc(p.role) : ""}`;
+  const ARR_LABEL = {split: "split between the two sides", sponsored: "paid by the business", volunteer: "volunteer, free"};
+  /// Availability as the reviewer last stated it. It goes stale after 30 days: that says it was not re-confirmed, not that the profile is gone.
+  function availability(p, now = Date.now()) {
+    if (!p.avail) return {state: "none"};
+    const age = (now - Date.parse(p.confirmed + "T00:00:00Z")) / 86400000;
+    return age > 30 ? {state: "stale", was: p.avail, date: p.confirmed} : {state: p.avail === "yes" ? "available" : "unavailable", date: p.confirmed};
+  }
+  /// The optional directory details of a profile, each plainly marked as the reviewer's own statement.
+  function detailsHtml(p) {
+    const a = availability(p), arr = (p.arrangements || "").split(",").filter(Boolean).map(x => ARR_LABEL[x]).filter(Boolean);
+    const av = a.state === "none" ? "" : a.state === "available" ? `<span class="badge ok">available</span> <span class="small mute">confirmed ${esc(a.date)}</span>` : a.state === "unavailable" ? `<span class="badge warn">not available now</span> <span class="small mute">confirmed ${esc(a.date)}</span>` : `<span class="badge">availability not confirmed recently</span> <span class="small mute">last said ${a.was === "yes" ? "available" : "not available"} on ${esc(a.date)}</span>`;
+    const bits = [p.regions && `Regions they know: ${esc(p.regions)}`, arr.length && `Fee: ${arr.join("; ")}`, p.max && `Most cases at once: ${esc(p.max)}`, p.response && `Typical response: ${esc(p.response)}`].filter(Boolean);
+    return (av || bits.length) ? `<p class="small">${av}${av && bits.length ? " · " : ""}${bits.join(" · ")} <span class="mute">(the reviewer's own statement, not checked by LGtie)</span></p>` : "";
+  }
   const extraHtml = p => (p.disclosure ? `<span class="small">Disclosed: ${esc(p.disclosure)}</span> ` : "") + (p.specialty ? `<span class="small">Specialty: ${esc(p.specialty)}</span> ` : "") + (p.fee ? `<span class="small">Fee: ${esc(p.fee)}</span>` : "");
   // Fill every <span data-rid="0x…"> on the page with the reviewer's name (or a note that only an address is known).
   async function decorate(root) {
@@ -3913,7 +3941,7 @@ MY POLICY:
     async function show(p) {
       if (!p) { view.innerHTML = `<p><span class="badge warn">address only</span> No signed identity was found for <code>${addr}</code>. Anyone can be named reviewer by an address alone, so ask this person to add a profile before you accept them.</p>`; return; }
       view.innerHTML = `<p style="font-size:20px;margin:0 0 6px">${nameHtml(p)}</p><p class="small">Public page: ${link(p.url)} <span id="rid-pg" class="mute">checking…</span></p>
-        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b> <span class="mute">This is the reviewer's own statement. LGtie cannot check it.</span></p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge.</p>`}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
+        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${detailsHtml(p)}${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b> <span class="mute">This is the reviewer's own statement. LGtie cannot check it.</span></p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge.</p>`}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
         <p class="small"><span class="badge ok">signed by this wallet</span> The name was signed with the wallet <code>${addr}</code>, and anyone can re-check that signature.</p>
         <details class="small"><summary>The signed profile code</summary><textarea readonly rows="3" style="width:100%">${esc(makeCode(p))}</textarea></details>
         <p class="small mute">This shows that whoever controls the wallet also controls the public page. It does not show that the person is honest or free of conflicts.</p>`;
@@ -3928,10 +3956,15 @@ MY POLICY:
         if (acct.toLowerCase() !== addr) { msg.innerHTML = `<span class="err">The connected wallet is ${short(acct)}, not ${short(addr)}. Switch accounts in your wallet and try again.</span>`; return; }
         msg.textContent = "";
         setup.innerHTML = `<div class="note"><b>Sign a short statement with this wallet.</b> It costs nothing and sends no transaction.</div>
-          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional)", "For example: used electronics, smart-contract security", 'maxlength="60"')}${field("rid-fee", "Your fee (optional)", "For example: US$10 per disputed question", 'maxlength="60"')}${field("rid-dis", "Relationships to disclose", "For example: Independent. No employment, financial or personal tie to either party.", 'maxlength="200"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
+          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional, separate with commas)", "For example: used electronics, smart-contract security", 'maxlength="120"')}${field("rid-fee", "Your fee (optional)", "For example: 20 USDT per case, or free", 'maxlength="60"')}
+          <div class="field"><span>How you can be paid (optional)</span><div class="row" id="rid-arr"><label class="check"><input type="checkbox" value="split"> <span>Split: each side pays half</span></label><label class="check"><input type="checkbox" value="sponsored"> <span>Business-sponsored: the business pays</span></label><label class="check"><input type="checkbox" value="volunteer"> <span>Volunteer: no fee</span></label></div><em class="small mute">Payment is made directly between the people and you. LGtie never holds or takes any of it, and cannot enforce it.</em></div>
+          ${field("rid-reg", "Regions you know (optional, information only)", "For example: West Africa, UK", 'maxlength="80"')}
+          <div class="fgrid2"><label class="field"><span>Availability (optional)</span><select id="rid-av"><option value="">Not stating</option><option value="yes">Available for new cases</option><option value="no">Not available right now</option></select></label><label class="field"><span>Most cases at once (optional)</span><input id="rid-max" type="text" inputmode="numeric" placeholder="For example: 5" maxlength="2"></label></div>
+          ${field("rid-resp", "Typical response time (optional)", "For example: within 24 hours", 'maxlength="40"')}${field("rid-dis", "Relationships to disclose", "For example: Independent. No employment, financial or personal tie to either party.", 'maxlength="200"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
+          <label class="check"><input type="checkbox" id="rid-list"> <span><b>List me in the reviewer directory.</b> People looking for a reviewer can find you. It says "self-listed, not checked by LGtie", shows your signed details and a record read from the chain, and does not endorse you. Needs a disclosure above.</span></label>
           <div class="row"><button class="btn small" id="rid-sign" type="button">Sign with my wallet</button><span id="rid-m2" class="small"></span></div><div id="rid-out"></div>`;
         setup.querySelector("#rid-sign").onclick = async () => {
-          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, disclosure: setup.querySelector("#rid-dis").value, url: setup.querySelector("#rid-url").value});
+          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, disclosure: setup.querySelector("#rid-dis").value, url: setup.querySelector("#rid-url").value, regions: setup.querySelector("#rid-reg").value, arrangements: [...setup.querySelectorAll("#rid-arr input:checked")].map(x => x.value), avail: setup.querySelector("#rid-av").value, confirmed: today(), max: setup.querySelector("#rid-max").value, response: setup.querySelector("#rid-resp").value, listed: setup.querySelector("#rid-list").checked});
           if (!v.ok) { m2.innerHTML = `<span class="err">${esc(v.error)}</span>`; return; }
           if (!v.disclosure) { m2.innerHTML = `<span class="err">Say whether you have any relationship with the people you may judge (an employer, a financial tie, a friend). If none, write that you are independent. The people agreeing to you will read it.</span>`; return; }
           try {
@@ -3965,8 +3998,149 @@ MY POLICY:
   // Pages are drawn at different times; fill any [data-rid] span that appears.
   if (typeof document !== "undefined" && typeof MutationObserver !== "undefined") { let t = 0; new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => decorate(document), 120); }).observe(document.documentElement, {childList: true, subtree: true}); }
 
-  const api = {recover, personalHash, statement, validate, makeCode, parse, termsLine, checkPage, publish, lookup, remember, decorate, profileCard, noteFor, PREFIX, tagOf};
+  const api = {recover, personalHash, statement, validate, makeCode, parse, termsLine, checkPage, publish, lookup, remember, decorate, profileCard, noteFor, PREFIX, tagOf, DIRECTORY_TAG, ARRANGEMENTS, today, availability, detailsHtml, ARR_LABEL, nameHtml, link};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_RID = api;
+})();
+
+</script><script>/* directory.js */
+// The reviewer directory (docs/REVIEWER-DIRECTORY.md, Wave 1). A place to FIND a reviewer, built on evidence and never on scores:
+//   * what a reviewer says about themselves (signed profile, shown as their own statement, with the date availability was last confirmed);
+//   * what the chain shows about their work (counts with denominators; a percentage only after five different parties);
+//   * conflict information: what they declared, and what the chain shows about their past cases with the people choosing them.
+// A listing is a choice the reviewer signs. LGtie does not check or endorse anyone, takes no cut, and never touches the reviewer's fee: it is paid directly.
+// The pure statistics work in Node (module.exports); the page needs the browser.
+(function () {
+  "use strict";
+  const isNode = typeof module !== "undefined" && module.exports;
+  const MIN_PARTIES_FOR_PERCENT = 5;
+  const zero = a => !a || /^0x0*$/i.test(String(a));
+
+  // ---------- pure: statistics from cases ----------
+  /// A case, in one shape whatever contract it came from: {reviewer, status (0 answering, 1 awaiting the reviewer, 2 decided, 3 expired), hadDispute, acked, parties: [key], business: key|null}.
+  /// A reviewer's work is counted only where the sides actually disagreed (hadDispute): where they agreed, nobody needed a reviewer.
+  function computeStats(cases, addr) {
+    const a = String(addr).toLowerCase(), mine = cases.filter(c => c.reviewer && String(c.reviewer).toLowerCase() === a);
+    const asked = mine.filter(c => c.hadDispute), decided = asked.filter(c => c.status === 2).length, missed = asked.filter(c => c.status === 3).length, acked = asked.filter(c => c.acked).length;
+    const active = mine.filter(c => c.status === 0 || c.status === 1).length, parties = new Set(), biz = new Map();
+    mine.forEach(c => { (c.parties || []).forEach(k => parties.add(k)); if (c.business) biz.set(c.business, (biz.get(c.business) || 0) + 1); });
+    const bizCases = [...biz.values()].reduce((x, y) => x + y, 0), top = [...biz.values()].sort((x, y) => y - x)[0] || 0;
+    const enough = parties.size >= MIN_PARTIES_FOR_PERCENT;
+    return {named: mine.length, asked: asked.length, decided, missed, acked, active, parties: parties.size, businesses: biz.size, topCount: top, bizCases, topShare: bizCases ? top / bizCases : 0,
+      deadlinePct: enough && decided + missed ? Math.round(100 * decided / (decided + missed)) : null, acceptPct: enough && asked.length ? Math.round(100 * acked / asked.length) : null, enough};
+  }
+  /// How many cases this reviewer already had where one of these people was a party: shown when someone proposes them.
+  const priorWith = (cases, addr, keys) => { const a = String(addr).toLowerCase(), want = new Set(keys); return cases.filter(c => c.reviewer && String(c.reviewer).toLowerCase() === a && (c.parties || []).some(k => want.has(k))).length; };
+  const partyKey = p => (p && p.wallet && !zero(p.wallet)) ? String(p.wallet).toLowerCase() : (p && p.passkey && BigInt(p.passkey) !== 0n) ? "pk:" + p.passkey : null;
+  /// From a wallet-era case (strings) and a passkey-era case ({wallet, passkey} sides).
+  function fromWalletCase(c) { const parties = [c.filer, c.decider].filter(x => !zero(x)).map(x => x.toLowerCase()); return {reviewer: c.reviewer, status: c.status, hadDispute: c.disputed !== 0n, acked: false, parties, business: zero(c.decider) ? null : c.decider.toLowerCase()}; }
+  function fromPasskeyCase(c) {
+    const f = partyKey(c.filer), d = partyKey(c.decider), wallets = [f, d].filter(k => k && !k.startsWith("pk:"));
+    return {reviewer: c.reviewer, status: c.status, hadDispute: c.disputed !== 0n, acked: !!c.reviewerAcked, parties: [f, d].filter(Boolean), business: wallets.length === 1 ? wallets[0] : null};
+  }
+  const api = {computeStats, priorWith, partyKey, fromWalletCase, fromPasskeyCase, MIN_PARTIES_FOR_PERCENT};
+  if (isNode) { module.exports = api; return; }
+
+  // ---------- the browser ----------
+  const main = document.querySelector("#main"), $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const R = () => window.TB_RID, short = a => a.slice(0, 6) + "…" + a.slice(-4);
+
+  let chainCache = null;
+  /// Every case on every contract this site knows, in one shape. Read once per page load.
+  function loadCases() {
+    if (!chainCache) chainCache = (async () => {
+      const out = [];
+      try { const sc = await window.TB_CASES.scanCases(200); sc.cases.forEach(c => out.push(fromWalletCase(c))); } catch (e) {}
+      try { const u = await window.TB_PASSKEYS.usage(); if (u) u.cases.forEach(c => out.push(fromPasskeyCase(c))); } catch (e) {}
+      return out;
+    })();
+    return chainCache;
+  }
+  /// Profiles that reviewers listed on the public relays (each is a signed choice to be listed), newest per address. Resolves after a few seconds.
+  function fetchListings({ms = 4500, relays} = {}) {
+    return new Promise(resolve => {
+      const best = new Map(); let done = false, stop = null, reached = false;
+      const finish = () => { if (done) return; done = true; try { stop && stop(); } catch (e) {} resolve({list: [...best.values()].map(x => x.profile), reached}); };
+      try {
+        const N = window.TB_NOSTR; stop = N.listen(relays || N.relaysConfigured(), {kinds: [N.KIND], "#t": [R().DIRECTORY_TAG], limit: 300}, ev => {
+          reached = true; try { const r = R().parse(JSON.parse(ev.content).code); if (r.ok && r.profile.listed) { const cur = best.get(r.profile.address); if (!cur || ev.created_at > cur.at) best.set(r.profile.address, {at: ev.created_at, profile: r.profile}); } } catch (e) {}
+        }, st => { if (st && st.open > 0) reached = true; });
+      } catch (e) {}
+      setTimeout(finish, ms);
+    });
+  }
+
+  // ---------- one listing ----------
+  const pct = (n, of) => of ? `${n} of ${of}` : "0";
+  function statsHtml(st) {
+    if (st === undefined) return `<p class="small mute">Record from the chain: reading…</p>`;
+    if (!st || !st.named) return `<p class="small mute">Record from the chain: no cases yet. That is not a mark against them, only that they have not been named on a case.</p>`;
+    const lines = [`named on <b>${st.named}</b> case${st.named === 1 ? "" : "s"}`, `asked to decide <b>${st.asked}</b> (the sides disagreed)`, `decided <b>${st.decided}</b>`, `no decision in time <b>${st.missed}</b>`, `open now <b>${st.active}</b>`, `<b>${st.parties}</b> different part${st.parties === 1 ? "y" : "ies"}`];
+    const pcs = st.enough ? [st.deadlinePct !== null ? `decided before the deadline in ${st.deadlinePct}% of ${st.decided + st.missed} (${pct(st.decided, st.decided + st.missed)})` : "", st.acceptPct !== null ? `acknowledged ${st.acceptPct}% of ${st.asked}` : ""].filter(Boolean).join(" · ")
+      : `Percentages appear once there are ${MIN_PARTIES_FOR_PERCENT} different parties; with fewer they would mislead.`;
+    const conc = st.bizCases ? `<br>Independence: the most frequent wallet party was in <b>${Math.round(100 * st.topShare)}%</b> of the ${st.bizCases} cases that have one (${st.topCount}), across <b>${st.businesses}</b> wallet part${st.businesses === 1 ? "y" : "ies"}. A high share is a reason to ask questions, not proof of bias.` : "";
+    return `<p class="small"><b>Record from the chain</b> (read live, latest 200 cases per contract): ${lines.join(" · ")}.<br>${pcs}${conc}</p>`;
+  }
+  function listingHtml(p, st, mode) {
+    const spec = p.specialty ? p.specialty.split(",").map(x => x.trim()).filter(Boolean).map(x => `<span class="badge">${esc(x)}</span>`).join(" ") : "";
+    return `<div class="card dircard" data-addr="${p.address}"><p style="margin:0 0 4px;font-size:18px">${R().nameHtml(p)} <span class="badge warn">self-listed · not checked by LGtie</span></p>
+      ${spec ? `<p class="small" style="margin:4px 0">${spec}${p.fee ? ` <span class="small">Fee: <b>${esc(p.fee)}</b></span>` : ""}</p>` : p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b></p>` : ""}
+      ${R().detailsHtml(p)}
+      <p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b> <span class="mute">(their own statement; LGtie cannot check it)</span></p>
+      <p class="small">Signed with <code>${short(p.address)}</code> · public page ${R().link(p.url)} · <a href="#reviewer/${p.address}">full record</a></p>
+      ${statsHtml(st)}${mode === "pick" ? `<div class="row"><button class="btn small" data-choose="${p.address}" type="button">Choose this reviewer</button></div>` : ""}</div>`;
+  }
+  const availRank = p => { const a = R().availability(p); return a.state === "available" ? 0 : a.state === "none" || a.state === "stale" ? 1 : 2; };
+  /// Filter by what people ask for; sort by availability then experience (decided cases), never by a rating.
+  function arrange(list, stats, f) {
+    return list.filter(p => (!f.text || (p.specialty + " " + p.name + " " + p.role + " " + p.regions).toLowerCase().includes(f.text.toLowerCase())) && (!f.avail || R().availability(p).state === "available") && (!f.arr || (p.arrangements || "").split(",").includes(f.arr)))
+      .sort((x, y) => availRank(x) - availRank(y) || ((stats.get(y.address) || {}).decided || 0) - ((stats.get(x.address) || {}).decided || 0) || x.name.localeCompare(y.name));
+  }
+  const controls = () => `<div class="card"><div class="fgrid2"><label class="field"><span>Search specialties, names, regions</span><input id="dr-q" type="text" placeholder="For example: freelance, electronics"></label>
+    <label class="field"><span>How the fee is paid</span><select id="dr-arr"><option value="">Any</option><option value="split">Split between the two sides</option><option value="sponsored">Paid by the business</option><option value="volunteer">Volunteer (free)</option></select></label></div>
+    <label class="check"><input type="checkbox" id="dr-av"> <span>Only reviewers who say they are available (confirmed in the last 30 days)</span></label></div>`;
+
+  // ---------- the page: #directory ----------
+  async function page() {
+    main.innerHTML = `<h1>Find a reviewer</h1><p class="lede">A reviewer is the neutral person both sides accept to decide only the questions they answered differently. Anyone can list themselves here. <b>Nobody is checked or endorsed by LGtie.</b> You and the other side both have to accept whoever you choose, and either of you can say no.</p>
+      <div class="note"><b>Paying a reviewer.</b> A reviewer's fee is agreed and paid directly between you and them. LGtie takes no cut, never holds the money and cannot make anyone pay, so agree it first: split between the two sides, paid by the business, or free. Do not pay anyone before they confirm they will take the case.</div>
+      ${controls()}<div id="dr-list"><p class="mute">Looking for listed reviewers on the public relays…</p></div>
+      <p class="small mute">Want to be listed? Open your own address at <a href="#reviewer">Reviewers</a>, choose <i>This is my address: set up my profile</i> and tick the listing box. <a href="#reviewer">Activity record of every reviewer</a></p>`;
+    const {list, reached} = await fetchListings(), stats = new Map();   // listings first; the chain record fills in when the cases have been read
+    const f = {text: "", avail: false, arr: ""}, draw = () => {
+      const shown = arrange(list, stats, f);
+      $("#dr-list").innerHTML = shown.length ? shown.map(p => listingHtml(p, stats.get(p.address), "view")).join("") : `<div class="card"><p>${list.length ? "No listed reviewer matches. Loosen the filters." : reached ? "Nobody has listed themselves yet." : "Could not reach the public relays, so listings cannot be shown right now. Try again in a moment."}</p></div>`;
+    };
+    $("#dr-q").oninput = e => { f.text = e.target.value.trim(); draw(); }; $("#dr-av").onchange = e => { f.avail = e.target.checked; draw(); }; $("#dr-arr").onchange = e => { f.arr = e.target.value; draw(); }; draw();
+    loadCases().then(cases => { list.forEach(p => stats.set(p.address, computeStats(cases, p.address))); if ($("#dr-list")) draw(); });
+  }
+
+  // ---------- the picker: a window other screens open to fill in a reviewer's address ----------
+  async function pick(onPick) {
+    const bg = document.createElement("div"); bg.className = "modalbg"; bg.setAttribute("role", "dialog"); bg.setAttribute("aria-label", "Choose a reviewer");
+    bg.innerHTML = `<div class="modal"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Choose a reviewer</h2><button class="btn small ghost" data-close type="button">Close</button></div>
+      <p class="small mute">Self-listed, not checked by LGtie. The reviewer's fee is paid directly between you and them. The other side still has to accept whoever you choose.</p>${controls()}<div id="dr-list"><p class="mute">Looking for listed reviewers…</p></div></div>`;
+    document.body.appendChild(bg); const close = () => bg.remove(); bg.querySelector("[data-close]").onclick = close; bg.onclick = e => { if (e.target === bg) close(); };
+    const onKey = e => { if (e.key === "Escape") { close(); document.removeEventListener("keydown", onKey); } }; document.addEventListener("keydown", onKey);
+    const {list, reached} = await fetchListings(); if (!bg.isConnected) return;
+    const stats = new Map(), f = {text: "", avail: false, arr: ""}, root = bg.querySelector(".modal");
+    const draw = () => { const shown = arrange(list, stats, f), box = root.querySelector("#dr-list");
+      box.innerHTML = shown.length ? shown.map(p => listingHtml(p, stats.get(p.address), "pick")).join("") : `<div class="card"><p>${list.length ? "No listed reviewer matches." : reached ? "Nobody has listed themselves yet." : "Could not reach the public relays."}</p></div>`;
+      box.querySelectorAll("[data-choose]").forEach(b => b.onclick = () => { const p = list.find(x => x.address === b.dataset.choose); close(); onPick(p.address, p); }); };
+    root.querySelector("#dr-q").oninput = e => { f.text = e.target.value.trim(); draw(); }; root.querySelector("#dr-av").onchange = e => { f.avail = e.target.checked; draw(); }; root.querySelector("#dr-arr").onchange = e => { f.arr = e.target.value; draw(); }; draw();
+    loadCases().then(cases => { list.forEach(p => stats.set(p.address, computeStats(cases, p.address))); if (bg.isConnected) draw(); });
+  }
+  /// A "Choose from the directory" button next to a reviewer-address input.
+  const pickButton = (inputSel, after) => `<button class="btn small ghost" type="button" data-dirpick="${esc(inputSel)}">Choose from the directory</button>`;
+  document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-dirpick]"); if (!b) return; e.preventDefault(); pick((addr, p) => { const inp = document.querySelector(b.dataset.dirpick); if (inp) { inp.value = addr; inp.dispatchEvent(new Event("input", {bubbles: true})); inp.dispatchEvent(new Event("change", {bubbles: true})); } }); });
+  /// For the screen where someone proposes a reviewer: what they said, and what the chain shows about this reviewer and the people involved.
+  async function appointmentInfo(addr, partyKeys) {
+    const [p, cases] = await Promise.all([R().lookup(addr), loadCases()]), prior = priorWith(cases, addr, partyKeys || []), st = computeStats(cases, addr);
+    const conflict = prior ? `<p class="small"><span class="badge warn">chain shows ${prior} earlier case${prior === 1 ? "" : "s"}</span> where this reviewer was named and one of the two sides was a party. Ask whether that is a problem.</p>` : `<p class="small mute">The chain shows no earlier case where this reviewer was named and one of you was a party. That is not a complete conflict check.</p>`;
+    return `<div class="card"><p class="small" style="margin:0 0 6px"><b>About <code>${short(addr)}</code></b></p>${p ? `<p style="margin:0 0 4px">${R().nameHtml(p)} ${p.listed ? `<span class="badge warn">self-listed · not checked by LGtie</span>` : `<span class="badge ok">identity signed by this wallet</span>`}</p>${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b></p>` : ""}${R().detailsHtml(p)}<p class="small">Disclosed relationships: <b>${esc(p.disclosure || "none stated")}</b> <span class="mute">(their own statement)</span></p>` : `<p class="small"><span class="badge warn">address only</span> No signed identity found.</p>`}${conflict}${statsHtml(st)}
+      <p class="small mute"><b>Fee.</b> Agree who pays and how before the reviewer starts: split between you, paid by the business, or free. It is paid directly to them. LGtie cannot enforce it, and the reviewer should confirm they are taking the case before anyone pays.</p></div>`;
+  }
+  window.TB_DIRECTORY = {page, pick, pickButton, appointmentInfo, computeStats, priorWith, loadCases, fetchListings, partyKey};
 })();
 
 </script><script>/* deal.js */
@@ -4024,6 +4198,7 @@ MY POLICY:
         <div class="fgrid2"><label class="field"><span>Price (optional)</span><input id="dl-p" type="text" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
           <label class="field"><span>Date (optional)</span><input id="dl-d" type="date"></label></div>
         <label class="field"><span>Neutral reviewer's wallet address, if you already have someone in mind (optional)</span><input id="dl-v" type="text" maxlength="42" autocomplete="off" placeholder="0x… (leave empty to agree on one later)"></label>
+        ${window.TB_DIRECTORY ? `<div class="row">${window.TB_DIRECTORY.pickButton("#dl-v")}</div>` : ""}
         ${window.TB_CARDS && window.TB_CARDS.on() ? `<label class="check"><input type="checkbox" id="dl-card"> <span><b>Sign it with passkeys</b> (recommended). You both sign on your phones with your fingerprint or face. No wallet, no fee, and nothing goes on X Layer unless there is a dispute. <em class="mute" id="dl-cardnote"></em></span></label>` : ""}
         <label class="field"><span>Rule set number, if you have published these rules on X Layer (optional)</span><input id="dl-r" type="number" min="1" step="1" placeholder="${CFG.published && CFG.published[k] ? "default: " + CFG.published[k].ruleSetId : "leave empty"}"></label></div>
       <div class="card" id="dl-out"></div>`;
@@ -4836,7 +5011,7 @@ MY POLICY:
   function reviewerBox(div, c, accountId, credentialId, asFiler) {
     const box = div.querySelector(".rvbox"); if (!box) return;
     const myOk = asFiler ? c.filerOk : c.deciderOk, otherOk = asFiler ? c.deciderOk : c.filerOk, has = !isZero(c.reviewer), both = has && myOk && otherOk;
-    const form = (label) => `<div class="row"><input type="text" class="rv-in" placeholder="0x… the reviewer's wallet address" autocomplete="off" style="min-width:240px"><button class="btn small ghost" data-rv="propose" type="button">${label}</button></div>`;
+    const inId = "rv-in-" + c.id, form = (label) => `<div class="row"><input type="text" id="${inId}" class="rv-in" placeholder="0x… the reviewer's wallet address" autocomplete="off" style="min-width:240px"><button class="btn small ghost" data-rv="propose" type="button">${label}</button>${window.TB_DIRECTORY ? window.TB_DIRECTORY.pickButton("#" + inId) : ""}</div>`;
     box.innerHTML = `<div class="note"><b>Reviewer.</b> ` + (both ? `Agreed: <code>${short(c.reviewer)}</code>. They decide only the questions you answered differently.</div>`
       : !has ? `None yet. If you and the other side answer any question differently, you must agree on a neutral person with a wallet to decide it. Propose one now (it can be a friend or someone you both trust); the other side approves.</div>${form("Propose this reviewer")}`
       : !myOk ? `The other side proposed <code>${short(c.reviewer)}</code>. Approve them, or propose someone else.</div><div class="row"><button class="btn small" data-rv="approve" type="button">Approve ${short(c.reviewer)}</button></div>${form("Propose someone else")}`
@@ -4848,6 +5023,8 @@ MY POLICY:
       const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.proposeReviewer(c.id, asFiler, r), credentialId});
       return packBox(V4().cases, enc("proposeReviewerSigned", ["uint256", "bool", "address", K.SIGAUTH], [c.id, asFiler, r, s]), "Propose " + short(r) + " as the reviewer for case #" + c.id, ZERO);
     }));
+    // what they said, what the chain shows, and how the fee works, for the reviewer now proposed
+    if (has && window.TB_DIRECTORY) { const info = document.createElement("div"); info.className = "rv-info"; box.appendChild(info); window.TB_DIRECTORY.appointmentInfo(c.reviewer, [window.TB_DIRECTORY.partyKey(c.filer), window.TB_DIRECTORY.partyKey(c.decider)].filter(Boolean)).then(h => { if (info.isConnected) info.innerHTML = h; }).catch(() => {}); }
   }
   function caseCard(c, accountId, credentialId) {
     const P = policyOf(c.ruleSetId); if (!P) return;
@@ -4997,6 +5174,7 @@ MY POLICY:
       <div class="card formcard">
         <label class="field"><span>Customer's claim code</span><input id="cc" type="text" placeholder="lgtie1.…" autocomplete="off"><em class="small mute">The customer creates it at <b>#join</b> and sends it to you. It contains nothing secret.</em></label>
         <label class="field"><span>Neutral reviewer's address</span><input id="rv" type="text" placeholder="0x… (not you)" autocomplete="off"><em class="small mute">The person both sides accept to decide only the questions they disagree on.</em></label>
+        ${window.TB_DIRECTORY ? `<div class="row">${window.TB_DIRECTORY.pickButton("#rv")}</div>` : ""}
         <div class="fgrid">
           <label class="field"><span>Rules</span><select id="rs"><option value="1">Warranty claims (published)</option></select></label>
           <label class="field"><span>Time to answer</span><select id="aw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label>
@@ -5498,6 +5676,7 @@ MY POLICY:
     if (view === "pricing") return window.TB_BILLING.page();
     if (view === "deal") return window.TB_DEAL.create(key);
     if (view === "d") return window.TB_DEAL.deal([key, ...rest].join("/"));
+    if (view === "directory") return window.TB_DIRECTORY.page();
     if (view === "card") return window.TB_CARDS.page([key, ...rest].join("/"));
     if (view === "cards") return window.TB_CARDS.list();
     if (view === "auto") return window.TB_AUTOPREVIEW.page(key);   // unlisted preview, see docs/AUTO-QUESTIONS.md

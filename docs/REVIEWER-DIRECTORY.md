@@ -1,6 +1,6 @@
 # Reviewer directory, payment and reputation: specification (not built)
 
-Status: a specification to review. Nothing here is implemented yet.
+Status: **Wave 1 is built** (site only, no contract change): the extended signed profile, the directory at `#directory`, the chain statistics, the picker and the appointment panel. Waves 2 and 3 are not built. Tests: `tests/reviewerid.test.mjs`, `tests/directory.test.mjs`, `tests/browser/directory.mjs`.
 
 ## Principles
 - LGtie is a **neutral platform**, not the reviewers' employer or a payment intermediary. It holds no money and takes **no cut** of what a reviewer earns.

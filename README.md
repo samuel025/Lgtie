@@ -90,6 +90,7 @@ The contract addresses and what is live are listed [below](#live-on-x-layer-chai
 - **A formal proof, not a few examples.** The compiled circuit is proved equal to the written rules for every possible set of answers (a decision-diagram check, run in the browser and on the circuit read back from X Layer). A 40-question policy takes about 0.1 seconds. [How it works and its limits](docs/VERIFICATION.md).
 - **Anyone can replay it for free.** The result is computed on-chain by the processor and re-checkable by anyone; other contracts can read a decision with `verdict(id)`.
 - **No wallet for the customer.** Passkeys, with signed approvals that cannot be altered, replayed or moved.
+- **A reviewer directory.** Reviewers list themselves with a signed profile (specialties, how they can be paid, availability with its confirmed date); anyone can find one at `#directory` and fill their address in from the deal-link page, the invite page or a case. Every listing says it is self-listed and not checked by LGtie. LGtie takes no cut and never holds a reviewer's fee, and there are no ratings: a reviewer's record is counts read from the chain, with percentages only after five different parties. [Design](docs/REVIEWER-DIRECTORY.md).
 - **Named reviewers.** A reviewer signs a name and a public page with their wallet, checked in the browser with no server and no contract change.
 - **Rules you can trust before publishing.** An offline rule check flags judgement words, missing evidence and rules that can never fire; five ready-made templates (second-hand sale, freelance milestone, rental deposit, bug bounty, warranty) and a contract clause generator help a business start.
 - **No server, no escrow, no custody.** Nothing to breach or shut down, and no money to lose.
@@ -191,6 +192,7 @@ The contract names keep the project's earlier name, Tiebreak. There is one real 
 | Ready-made templates (second-hand sale, freelance, rental deposit, bug bounty, warranty) | https://lgtie.vercel.app/#templates |
 | Every published rule set and its version history | https://lgtie.vercel.app/#rules |
 | Prove a circuit on X Layer implements its rules | https://lgtie.vercel.app/#verify |
+| Find a reviewer, or list yourself as one | https://lgtie.vercel.app/#directory |
 | Make a deal link to send on WhatsApp or Telegram (try the Warranty template for a signed card) | https://lgtie.vercel.app/#deal/warranty |
 | Prices and plans | https://lgtie.vercel.app/#pricing |
 | Everything a business can do | https://lgtie.vercel.app/#for-business |
@@ -208,6 +210,7 @@ node scripts/verify-circuit.mjs warranty --circuit 13   # read circuit #13 from 
 node tests/lint.test.mjs                       # the rule check
 node tests/templates.test.mjs                  # the five templates
 node tests/autoq.test.mjs                      # automatic questions: the reference the contracts are checked against
+node tests/directory.test.mjs                  # the reviewer directory's statistics
 node tests/reviewerid.test.mjs                 # named reviewers: wallet signatures, profile codes
 cd contracts && forge test                     # 414 contract tests, including billing, cards and automatic questions (many run on a fork of X Layer and need network access)
 node tests/mainnet-verify.mjs                  # read-only check of circuit #13 on X Layer
@@ -225,4 +228,4 @@ Browser tests are in `tests/browser/`; see its README for what they need. **Depl
 | `dist/` | The built site, a single self-contained page |
 | `scripts/` | Deploy (`deploy-v5.sh` to `deploy-v8.sh`), publish and verify scripts; each deploy has a read-only `preflight` mode. Also the bundler and the generators for the deal preview pages and pictures |
 | `tests/`, `test/` | Rule engine, passkey encoding, mainnet check and browser tests |
-| `docs/` | [FEATURES.md](docs/FEATURES.md) (every part in detail), [VERIFICATION.md](docs/VERIFICATION.md), [PASSKEYS.md](docs/PASSKEYS.md), [VERDICT.md](docs/VERDICT.md), [SECURITY.md](docs/SECURITY.md), [USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md), [VALIDATION.md](docs/VALIDATION.md), [SUBMISSION.md](docs/SUBMISSION.md), [AUTO-QUESTIONS.md](docs/AUTO-QUESTIONS.md), [AGREEMENTS-V3.md](docs/AGREEMENTS-V3.md), [AGREEMENT-CARDS.md](docs/AGREEMENT-CARDS.md) |
+| `docs/` | [FEATURES.md](docs/FEATURES.md) (every part in detail), [VERIFICATION.md](docs/VERIFICATION.md), [PASSKEYS.md](docs/PASSKEYS.md), [VERDICT.md](docs/VERDICT.md), [SECURITY.md](docs/SECURITY.md), [USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md), [VALIDATION.md](docs/VALIDATION.md), [SUBMISSION.md](docs/SUBMISSION.md), [AUTO-QUESTIONS.md](docs/AUTO-QUESTIONS.md), [AGREEMENTS-V3.md](docs/AGREEMENTS-V3.md), [AGREEMENT-CARDS.md](docs/AGREEMENT-CARDS.md), [REVIEWER-DIRECTORY.md](docs/REVIEWER-DIRECTORY.md) |

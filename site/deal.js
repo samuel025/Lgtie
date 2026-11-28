@@ -52,6 +52,7 @@
         <div class="fgrid2"><label class="field"><span>Price (optional)</span><input id="dl-p" type="text" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
           <label class="field"><span>Date (optional)</span><input id="dl-d" type="date"></label></div>
         <label class="field"><span>Neutral reviewer's wallet address, if you already have someone in mind (optional)</span><input id="dl-v" type="text" maxlength="42" autocomplete="off" placeholder="0x… (leave empty to agree on one later)"></label>
+        ${window.TB_DIRECTORY ? `<div class="row">${window.TB_DIRECTORY.pickButton("#dl-v")}</div>` : ""}
         ${window.TB_CARDS && window.TB_CARDS.on() ? `<label class="check"><input type="checkbox" id="dl-card"> <span><b>Sign it with passkeys</b> (recommended). You both sign on your phones with your fingerprint or face. No wallet, no fee, and nothing goes on X Layer unless there is a dispute. <em class="mute" id="dl-cardnote"></em></span></label>` : ""}
         <label class="field"><span>Rule set number, if you have published these rules on X Layer (optional)</span><input id="dl-r" type="number" min="1" step="1" placeholder="${CFG.published && CFG.published[k] ? "default: " + CFG.published[k].ruleSetId : "leave empty"}"></label></div>
       <div class="card" id="dl-out"></div>`;

@@ -256,7 +256,7 @@
   function reviewerBox(div, c, accountId, credentialId, asFiler) {
     const box = div.querySelector(".rvbox"); if (!box) return;
     const myOk = asFiler ? c.filerOk : c.deciderOk, otherOk = asFiler ? c.deciderOk : c.filerOk, has = !isZero(c.reviewer), both = has && myOk && otherOk;
-    const form = (label) => `<div class="row"><input type="text" class="rv-in" placeholder="0x… the reviewer's wallet address" autocomplete="off" style="min-width:240px"><button class="btn small ghost" data-rv="propose" type="button">${label}</button></div>`;
+    const inId = "rv-in-" + c.id, form = (label) => `<div class="row"><input type="text" id="${inId}" class="rv-in" placeholder="0x… the reviewer's wallet address" autocomplete="off" style="min-width:240px"><button class="btn small ghost" data-rv="propose" type="button">${label}</button>${window.TB_DIRECTORY ? window.TB_DIRECTORY.pickButton("#" + inId) : ""}</div>`;
     box.innerHTML = `<div class="note"><b>Reviewer.</b> ` + (both ? `Agreed: <code>${short(c.reviewer)}</code>. They decide only the questions you answered differently.</div>`
       : !has ? `None yet. If you and the other side answer any question differently, you must agree on a neutral person with a wallet to decide it. Propose one now (it can be a friend or someone you both trust); the other side approves.</div>${form("Propose this reviewer")}`
       : !myOk ? `The other side proposed <code>${short(c.reviewer)}</code>. Approve them, or propose someone else.</div><div class="row"><button class="btn small" data-rv="approve" type="button">Approve ${short(c.reviewer)}</button></div>${form("Propose someone else")}`
@@ -268,6 +268,8 @@
       const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.proposeReviewer(c.id, asFiler, r), credentialId});
       return packBox(V4().cases, enc("proposeReviewerSigned", ["uint256", "bool", "address", K.SIGAUTH], [c.id, asFiler, r, s]), "Propose " + short(r) + " as the reviewer for case #" + c.id, ZERO);
     }));
+    // what they said, what the chain shows, and how the fee works, for the reviewer now proposed
+    if (has && window.TB_DIRECTORY) { const info = document.createElement("div"); info.className = "rv-info"; box.appendChild(info); window.TB_DIRECTORY.appointmentInfo(c.reviewer, [window.TB_DIRECTORY.partyKey(c.filer), window.TB_DIRECTORY.partyKey(c.decider)].filter(Boolean)).then(h => { if (info.isConnected) info.innerHTML = h; }).catch(() => {}); }
   }
   function caseCard(c, accountId, credentialId) {
     const P = policyOf(c.ruleSetId); if (!P) return;
@@ -417,6 +419,7 @@
       <div class="card formcard">
         <label class="field"><span>Customer's claim code</span><input id="cc" type="text" placeholder="lgtie1.…" autocomplete="off"><em class="small mute">The customer creates it at <b>#join</b> and sends it to you. It contains nothing secret.</em></label>
         <label class="field"><span>Neutral reviewer's address</span><input id="rv" type="text" placeholder="0x… (not you)" autocomplete="off"><em class="small mute">The person both sides accept to decide only the questions they disagree on.</em></label>
+        ${window.TB_DIRECTORY ? `<div class="row">${window.TB_DIRECTORY.pickButton("#rv")}</div>` : ""}
         <div class="fgrid">
           <label class="field"><span>Rules</span><select id="rs"><option value="1">Warranty claims (published)</option></select></label>
           <label class="field"><span>Time to answer</span><select id="aw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label>

@@ -28,7 +28,7 @@ await ok("v may be 0/1 or 27/28", () => {
   const alt = SIG.slice(0, -2) + (SIG.endsWith("1b") ? "00" : "01"); assert.equal(R.recover(R.personalHash(R.statement(FIELDS)), alt), ADDR);
 });
 await ok("a profile code round-trips and verifies", () => {
-  const code = R.makeCode(profile), r = R.parse(code); assert.ok(code.startsWith("lgtie-reviewer1.")); assert.equal(r.ok, true); assert.deepEqual(r.profile, {...profile, specialty: "", fee: "", disclosure: ""}); assert.equal(r.code, code);
+  const code = R.makeCode(profile), r = R.parse(code); assert.ok(code.startsWith("lgtie-reviewer1.")); assert.equal(r.ok, true); assert.deepEqual(r.profile, {...profile, specialty: "", fee: "", disclosure: "", regions: "", arrangements: "", avail: "", confirmed: "", max: "", response: "", listed: false}); assert.equal(r.code, code);
 });
 await ok("a profile code with a swapped name, page or address is rejected", () => {
   for (const bad of [{...profile, name: "Someone Else"}, {...profile, url: "https://evil.example/x"}, {...profile, address: "0x" + "11".repeat(20)}, {...profile, sig: SIG.slice(0, -4) + "0000"}]) {
@@ -63,7 +63,7 @@ await ok("changing the specialty or the fee after signing breaks the profile", (
   for (const bad of [{...profile2, specialty: "Smart-contract security"}, {...profile2, fee: "Free"}, {...profile2, specialty: ""}, {...profile2, fee: ""}]) assert.equal(R.parse(R.makeCode(bad)).ok, false);
 });
 await ok("validate() limits the specialty and the fee", () => {
-  assert.equal(R.validate({name: "Amina", url: "https://x.org", specialty: "x".repeat(61)}).ok, false);
+  assert.equal(R.validate({name: "Amina", url: "https://x.org", specialty: "x".repeat(121)}).ok, false);
   assert.equal(R.validate({name: "Amina", url: "https://x.org", fee: "x".repeat(61)}).ok, false);
   assert.equal(R.validate({name: "Amina", url: "https://x.org", specialty: "Rentals", fee: "Free"}).ok, true);
 });
@@ -105,4 +105,37 @@ await ok("a disclosure that is too long is refused", () => {
   assert.equal(R.validate({...FIELDS, disclosure: "x".repeat(201)}).ok, false);
 });
 
+
+// ---- directory fields (docs/REVIEWER-DIRECTORY.md): optional, signed, and backward compatible. Real signatures from `cast`.
+import { execFileSync } from "node:child_process";
+const TESTKEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";   // the well-known test key whose address is 0x7099...79C8
+const signed = fields => { const text = R.statement({...fields, address: ADDR}); const sig = execFileSync("cast", ["wallet", "sign", "--private-key", TESTKEY, text], {encoding: "utf8"}).trim(); return {...fields, address: ADDR, sig}; };
+const BASE = {name: "Amina Yusuf", role: "independent assessor", url: "https://github.com/amina-y", disclosure: "Independent: no tie to any business"};
+const DIR = {...BASE, specialty: "Freelance work, software", fee: "20 USDT per case", regions: "West Africa", arrangements: "split,sponsored,volunteer", avail: "yes", confirmed: R.today(), max: "5", response: "within 24 hours", listed: true};
+await ok("a profile with every directory field is signed, round-trips and verifies", () => {
+  const p = signed(DIR), r = R.parse(R.makeCode(p)); assert.equal(r.ok, true, r.error); assert.equal(r.profile.listed, true); assert.equal(r.profile.arrangements, "split,sponsored,volunteer"); assert.equal(r.profile.max, "5"); assert.equal(r.profile.confirmed, R.today()); assert.equal(r.profile.response, "within 24 hours"); assert.equal(R.recover(R.personalHash(R.statement(r.profile)), r.profile.sig), ADDR);
+});
+await ok("the directory fields are part of the signed text, so changing any one breaks the signature", () => {
+  const p = signed(DIR);
+  for (const [k, v] of [["listed", false], ["max", "50"], ["avail", "no"], ["fee", "1 USDT per case"], ["regions", "Europe"], ["arrangements", "volunteer"], ["response", "instantly"], ["confirmed", "2020-01-01"]]) assert.equal(R.parse(R.makeCode({...p, [k]: v})).ok, false, k);
+});
+await ok("being listed is a signed choice: a relay or a stranger cannot list someone who did not opt in", () => {
+  const unlisted = signed({...DIR, listed: false}); assert.equal(R.parse(R.makeCode(unlisted)).ok, true);
+  assert.equal(R.parse(R.makeCode({...unlisted, listed: true})).ok, false);   // the same signature does not cover "listed"
+});
+await ok("a profile made before the directory fields existed still verifies, unlisted, with no availability", () => {
+  const r = R.parse(R.makeCode({...FIELDS, sig: SIG})); assert.equal(r.ok, true); assert.equal(r.profile.listed, false); assert.equal(r.profile.avail, ""); assert.equal(r.profile.arrangements, "");
+});
+await ok("validate() checks the directory fields", () => {
+  const v = o => R.validate({name: "Amina", url: "https://x.org", ...o});
+  assert.equal(v({arrangements: "split,barter"}).ok, false); assert.equal(v({arrangements: "volunteer,split"}).arrangements, "split,volunteer");   // known values only, in a fixed order
+  assert.equal(v({avail: "maybe", confirmed: R.today()}).ok, false); assert.equal(v({avail: "yes"}).ok, false);   // availability needs its date
+  assert.equal(v({avail: "yes", confirmed: "2999-01-01"}).ok, false);   // not in the future
+  assert.equal(v({max: "0"}).ok, false); assert.equal(v({max: "100"}).ok, false); assert.equal(v({max: "abc"}).ok, false); assert.equal(v({max: "5"}).ok, true);
+  assert.equal(v({regions: "x".repeat(81)}).ok, false); assert.equal(v({response: "x".repeat(41)}).ok, false);
+  assert.equal(v({listed: true}).ok, false);   // listing needs a disclosure
+  assert.equal(v({listed: true, disclosure: "Independent"}).ok, true);
+  assert.equal(v({avail: "no", confirmed: R.today()}).avail, "no");
+});
+await ok("an unset availability carries no date into the signed text", () => { assert.doesNotMatch(R.statement({...FIELDS, avail: "", confirmed: "2026-01-01"}), /Availability/); assert.match(R.statement({...FIELDS, avail: "yes", confirmed: "2026-01-01"}), /Availability: available \(confirmed 2026-01-01\)/); });
 console.log(`\n${n} passed`);

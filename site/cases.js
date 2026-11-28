@@ -371,7 +371,7 @@
     let sc; try { sc = await scanCases(200); } catch { main.innerHTML = `<h1>Reviewers</h1><p class="err">X Layer could not be reached.</p>`; return; }
     const by = new Map(); sc.cases.forEach(c => { const k = c.reviewer.toLowerCase(); if (!by.has(k)) by.set(k, []); by.get(k).push(c); });
     const rows = [...by.entries()].map(([a, cs]) => { const t = tally(cs); return `<tr><td><a href="#reviewer/${a}">${short(a)}</a><br><span class="small" data-rid="${a}"></span></td><td>${cs.length}</td><td>${t.decided}</td><td>${t.ghosted}</td><td>${t.neverAccepted}</td><td>${t.pending}</td></tr>`; }).join("");
-    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that.</p>
+    main.innerHTML = `<h1>Reviewers</h1><p class="lede">A public record of what each neutral reviewer did, read from the public network. It shows who decided and who did not, not whether a decision was right: nothing recorded there can tell that. Looking for someone to name? <a href="#directory">Find a reviewer</a>.</p>
       <div class="card" style="overflow:auto">${rows ? `<table style="width:100%;border-collapse:collapse;font-size:15px"><thead><tr style="text-align:left"><th>Reviewer</th><th>Cases</th><th>Decided</th><th>No decision in time</th><th>Not accepted by both sides</th><th>Open</th></tr></thead><tbody>${rows}</tbody></table>` : `<p class="mute">No cases yet.</p>`}</div>
       <p class="small mute">${sc.truncated ? `Showing the latest 200 of ${sc.total} cases. ` : `${sc.total} case${sc.total === 1 ? "" : "s"} read. `}A case counts for the reviewer currently named on it.</p>`;
   }

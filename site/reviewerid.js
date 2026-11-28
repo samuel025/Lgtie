@@ -14,7 +14,7 @@
   const K = typeof module !== "undefined" && module.exports ? require("./pkcore.js") : window.TB_PK;
   const NOSTR = () => (typeof module !== "undefined" && module.exports ? require("./nostr.js") : window.TB_NOSTR);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 60, fee: 60, disclosure: 200};
+  const ADDR = /^0x[0-9a-fA-F]{40}$/, PREFIX = "lgtie-reviewer1.", LIM = {name: 80, role: 100, url: 200, specialty: 120, fee: 60, disclosure: 200, regions: 80, response: 40}, ARRANGEMENTS = ["split", "sponsored", "volunteer"], today = () => new Date().toISOString().slice(0, 10);
 
   // ---------- secp256k1 public-key recovery (what ecrecover does), with BigInt ----------
   const P = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2Fn, N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141n;
@@ -52,26 +52,40 @@
   const clean = s => String(s || "").replace(/\s+/g, " ").trim();
   const urlOk = u => /^https:\/\/[^\s<>"']+$/i.test(u) && u.length <= LIM.url;
   // The exact text the reviewer's wallet signs. Deterministic: the same fields always give the same text.
-  const statement = ({name, role, specialty, fee, disclosure, url, address}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), ...(clean(disclosure) ? ["Disclosure: " + clean(disclosure)] : []), "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
-  function validate({name, role, url, specialty, fee, disclosure}) {
-    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee); disclosure = clean(disclosure);
+  const statement = ({name, role, specialty, fee, disclosure, url, address, regions, arrangements, avail, confirmed, max, response, listed}) => ["LGTIE REVIEWER PROFILE", "Name: " + clean(name), "Role: " + clean(role), ...(clean(specialty) ? ["Specialty: " + clean(specialty)] : []), ...(clean(fee) ? ["Fee: " + clean(fee)] : []), ...(clean(disclosure) ? ["Disclosure: " + clean(disclosure)] : []),
+    // optional directory fields: present in the signed text only when set, so every earlier profile keeps verifying
+    ...(clean(regions) ? ["Regions: " + clean(regions)] : []), ...(clean(arrangements) ? ["Fee arrangements: " + clean(arrangements).replace(/,/g, ", ")] : []), ...(avail ? ["Availability: " + (avail === "yes" ? "available" : "not available") + (confirmed ? " (confirmed " + confirmed + ")" : "")] : []),
+    ...(clean(max) ? ["Maximum cases at once: " + clean(max)] : []), ...(clean(response) ? ["Typical response: " + clean(response)] : []), ...(listed ? ["Directory: listed (self-listed, not checked by LGtie)"] : []),
+    "Public page: " + clean(url), "Address: " + String(address).toLowerCase(), "I am the person named above. I control this address and the public page."].join("\n");
+  function validate({name, role, url, specialty, fee, disclosure, regions, arrangements, avail, confirmed, max, response, listed}) {
+    name = clean(name); role = clean(role); url = clean(url); specialty = clean(specialty); fee = clean(fee); disclosure = clean(disclosure); regions = clean(regions); response = clean(response); max = clean(max); avail = clean(avail); confirmed = clean(confirmed); listed = !!listed;
     if (name.length < 2 || name.length > LIM.name) return {ok: false, error: "Enter your name (2 to " + LIM.name + " characters)."};
     if (role.length > LIM.role) return {ok: false, error: "Keep the role under " + LIM.role + " characters."};
     if (!urlOk(url)) return {ok: false, error: "Enter the address of a public page you control, starting with https:// (for example your GitHub profile or company page)."};
-    if (specialty.length > LIM.specialty) return {ok: false, error: "Keep the specialty under " + LIM.specialty + " characters."};
+    if (specialty.length > LIM.specialty) return {ok: false, error: "Keep the specialties under " + LIM.specialty + " characters."};
     if (fee.length > LIM.fee) return {ok: false, error: "Keep the fee under " + LIM.fee + " characters."};
     if (disclosure.length > LIM.disclosure) return {ok: false, error: "Keep the disclosure under " + LIM.disclosure + " characters."};
-    return {ok: true, name, role, url, specialty, fee, disclosure};
+    if (regions.length > LIM.regions) return {ok: false, error: "Keep the regions under " + LIM.regions + " characters."};
+    if (response.length > LIM.response) return {ok: false, error: "Keep the typical response under " + LIM.response + " characters."};
+    const arr = [...new Set((Array.isArray(arrangements) ? arrangements : String(arrangements || "").split(",")).map(x => clean(x)).filter(Boolean))];
+    if (arr.some(x => !ARRANGEMENTS.includes(x))) return {ok: false, error: "Fee arrangements can be split, sponsored or volunteer."};
+    arrangements = ARRANGEMENTS.filter(x => arr.includes(x)).join(",");
+    if (avail && avail !== "yes" && avail !== "no") return {ok: false, error: "Availability must be available or not available."};
+    if (avail) { if (!/^\d{4}-\d{2}-\d{2}$/.test(confirmed)) return {ok: false, error: "Availability needs the date you confirmed it."}; if (confirmed > new Date(Date.now() + 86400000).toISOString().slice(0, 10)) return {ok: false, error: "The confirmation date cannot be in the future."}; } else confirmed = "";
+    if (max && (!/^\d{1,2}$/.test(max) || Number(max) < 1)) return {ok: false, error: "The maximum number of cases must be a number from 1 to 99."};
+    if (listed && !disclosure) return {ok: false, error: "To be listed in the directory you must say whether you have any relationship with the people you may judge."};
+    return {ok: true, name, role, url, specialty, fee, disclosure, regions, arrangements, avail, confirmed, max, response, listed};
   }
   const b64u = s => btoa(String.fromCharCode(...K.utf8(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   const unb64u = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
-  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), ...(p.disclosure ? {d: p.disclosure} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
+  const makeCode = p => PREFIX + b64u(JSON.stringify({n: p.name, r: p.role, ...(p.specialty ? {p: p.specialty} : {}), ...(p.fee ? {f: p.fee} : {}), ...(p.disclosure ? {d: p.disclosure} : {}), ...(p.regions ? {g: p.regions} : {}), ...(p.arrangements ? {m: p.arrangements} : {}), ...(p.avail ? {v: p.avail, t: p.confirmed} : {}), ...(p.max ? {x: p.max} : {}), ...(p.response ? {q: p.response} : {}), ...(p.listed ? {l: 1} : {}), u: p.url, a: p.address.toLowerCase(), s: p.sig}));
   // Read a profile code and check its signature. Returns {ok, profile} or {ok: false, error}.
   function parse(code) {
     try {
       code = clean(code); if (!code.startsWith(PREFIX)) return {ok: false, error: "That is not a reviewer profile code (it should start with " + PREFIX + ")."};
-      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), disclosure: clean(o.d), url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
+      const o = JSON.parse(unb64u(code.slice(PREFIX.length))), profile = {name: clean(o.n), role: clean(o.r), specialty: clean(o.p), fee: clean(o.f), disclosure: clean(o.d), regions: clean(o.g), arrangements: clean(o.m), avail: clean(o.v), confirmed: clean(o.t), max: clean(o.x), response: clean(o.q), listed: o.l === 1, url: clean(o.u), address: String(o.a).toLowerCase(), sig: String(o.s)};
       const v = validate(profile); if (!v.ok) return v; if (!ADDR.test(profile.address)) return {ok: false, error: "The profile has no valid address."};
+      Object.assign(profile, v);   // the cleaned values, so the signed text is rebuilt exactly
       const signer = recover(personalHash(statement(profile)), profile.sig);
       if (!signer || signer !== profile.address) return {ok: false, error: "The signature does not match the address, so this profile is not genuine."};
       return {ok: true, profile, code: makeCode(profile)};
@@ -95,10 +109,10 @@
   }
 
   // ---------- relays: store and find a profile ----------
-  const tagOf = addr => "lgtie-rid-" + String(addr).toLowerCase();
+  const tagOf = addr => "lgtie-rid-" + String(addr).toLowerCase(), DIRECTORY_TAG = "lgtie-directory";
   async function publish(profile, relays) {
     const N_ = NOSTR(), sk = crypto.getRandomValues(new Uint8Array(32)), code = makeCode(profile);
-    const ev = {pubkey: N_.pubkeyOf(sk), created_at: Math.floor(Date.now() / 1000), kind: N_.KIND, tags: [["d", "rid-" + profile.address], ["t", "lgtie"], ["t", tagOf(profile.address)]], content: JSON.stringify({code})};
+    const ev = {pubkey: N_.pubkeyOf(sk), created_at: Math.floor(Date.now() / 1000), kind: N_.KIND, tags: [["d", "rid-" + profile.address], ["t", "lgtie"], ["t", tagOf(profile.address)], ...(profile.listed ? [["t", DIRECTORY_TAG]] : [])], content: JSON.stringify({code})};
     ev.id = await N_.idOf(ev); ev.sig = await N_.sign(N_.unhex(ev.id), sk);
     return N_.publish(relays || N_.relaysConfigured(), ev);
   }
@@ -126,6 +140,20 @@
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), link = u => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u.replace(/^https:\/\//, ""))}</a>`;
   const pageBadge = r => r.status === "verified" ? `<span class="badge ok">public page confirms it</span>` : r.status === "missing" ? `<span class="badge warn">page does not show the proof</span>` : `<span class="badge">page could not be read here</span>`;
   const nameHtml = p => `<b>${esc(p.name)}</b>${p.role ? ", " + esc(p.role) : ""}`;
+  const ARR_LABEL = {split: "split between the two sides", sponsored: "paid by the business", volunteer: "volunteer, free"};
+  /// Availability as the reviewer last stated it. It goes stale after 30 days: that says it was not re-confirmed, not that the profile is gone.
+  function availability(p, now = Date.now()) {
+    if (!p.avail) return {state: "none"};
+    const age = (now - Date.parse(p.confirmed + "T00:00:00Z")) / 86400000;
+    return age > 30 ? {state: "stale", was: p.avail, date: p.confirmed} : {state: p.avail === "yes" ? "available" : "unavailable", date: p.confirmed};
+  }
+  /// The optional directory details of a profile, each plainly marked as the reviewer's own statement.
+  function detailsHtml(p) {
+    const a = availability(p), arr = (p.arrangements || "").split(",").filter(Boolean).map(x => ARR_LABEL[x]).filter(Boolean);
+    const av = a.state === "none" ? "" : a.state === "available" ? `<span class="badge ok">available</span> <span class="small mute">confirmed ${esc(a.date)}</span>` : a.state === "unavailable" ? `<span class="badge warn">not available now</span> <span class="small mute">confirmed ${esc(a.date)}</span>` : `<span class="badge">availability not confirmed recently</span> <span class="small mute">last said ${a.was === "yes" ? "available" : "not available"} on ${esc(a.date)}</span>`;
+    const bits = [p.regions && `Regions they know: ${esc(p.regions)}`, arr.length && `Fee: ${arr.join("; ")}`, p.max && `Most cases at once: ${esc(p.max)}`, p.response && `Typical response: ${esc(p.response)}`].filter(Boolean);
+    return (av || bits.length) ? `<p class="small">${av}${av && bits.length ? " · " : ""}${bits.join(" · ")} <span class="mute">(the reviewer's own statement, not checked by LGtie)</span></p>` : "";
+  }
   const extraHtml = p => (p.disclosure ? `<span class="small">Disclosed: ${esc(p.disclosure)}</span> ` : "") + (p.specialty ? `<span class="small">Specialty: ${esc(p.specialty)}</span> ` : "") + (p.fee ? `<span class="small">Fee: ${esc(p.fee)}</span>` : "");
   // Fill every <span data-rid="0x…"> on the page with the reviewer's name (or a note that only an address is known).
   async function decorate(root) {
@@ -160,7 +188,7 @@
     async function show(p) {
       if (!p) { view.innerHTML = `<p><span class="badge warn">address only</span> No signed identity was found for <code>${addr}</code>. Anyone can be named reviewer by an address alone, so ask this person to add a profile before you accept them.</p>`; return; }
       view.innerHTML = `<p style="font-size:20px;margin:0 0 6px">${nameHtml(p)}</p><p class="small">Public page: ${link(p.url)} <span id="rid-pg" class="mute">checking…</span></p>
-        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b> <span class="mute">This is the reviewer's own statement. LGtie cannot check it.</span></p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge.</p>`}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
+        ${p.specialty ? `<p class="small">Specialty: <b>${esc(p.specialty)}</b></p>` : ""}${detailsHtml(p)}${p.disclosure ? `<p class="small">Disclosed relationships: <b>${esc(p.disclosure)}</b> <span class="mute">This is the reviewer's own statement. LGtie cannot check it.</span></p>` : `<p class="small"><span class="badge warn">no disclosure</span> This reviewer has not said whether they have any relationship with the people they judge.</p>`}${p.fee ? `<p class="small">Fee: <b>${esc(p.fee)}</b>. <span class="mute">Agreed and paid directly between the parties and the reviewer. LGtie holds no money.</span></p>` : ""}
         <p class="small"><span class="badge ok">signed by this wallet</span> The name was signed with the wallet <code>${addr}</code>, and anyone can re-check that signature.</p>
         <details class="small"><summary>The signed profile code</summary><textarea readonly rows="3" style="width:100%">${esc(makeCode(p))}</textarea></details>
         <p class="small mute">This shows that whoever controls the wallet also controls the public page. It does not show that the person is honest or free of conflicts.</p>`;
@@ -175,10 +203,15 @@
         if (acct.toLowerCase() !== addr) { msg.innerHTML = `<span class="err">The connected wallet is ${short(acct)}, not ${short(addr)}. Switch accounts in your wallet and try again.</span>`; return; }
         msg.textContent = "";
         setup.innerHTML = `<div class="note"><b>Sign a short statement with this wallet.</b> It costs nothing and sends no transaction.</div>
-          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional)", "For example: used electronics, smart-contract security", 'maxlength="60"')}${field("rid-fee", "Your fee (optional)", "For example: US$10 per disputed question", 'maxlength="60"')}${field("rid-dis", "Relationships to disclose", "For example: Independent. No employment, financial or personal tie to either party.", 'maxlength="200"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
+          ${field("rid-name", "Your name", "For example: Amina Yusuf", 'maxlength="80"')}${field("rid-role", "Role or organisation (optional)", "For example: independent warranty assessor", 'maxlength="100"')}${field("rid-spec", "What you can judge (optional, separate with commas)", "For example: used electronics, smart-contract security", 'maxlength="120"')}${field("rid-fee", "Your fee (optional)", "For example: 20 USDT per case, or free", 'maxlength="60"')}
+          <div class="field"><span>How you can be paid (optional)</span><div class="row" id="rid-arr"><label class="check"><input type="checkbox" value="split"> <span>Split: each side pays half</span></label><label class="check"><input type="checkbox" value="sponsored"> <span>Business-sponsored: the business pays</span></label><label class="check"><input type="checkbox" value="volunteer"> <span>Volunteer: no fee</span></label></div><em class="small mute">Payment is made directly between the people and you. LGtie never holds or takes any of it, and cannot enforce it.</em></div>
+          ${field("rid-reg", "Regions you know (optional, information only)", "For example: West Africa, UK", 'maxlength="80"')}
+          <div class="fgrid2"><label class="field"><span>Availability (optional)</span><select id="rid-av"><option value="">Not stating</option><option value="yes">Available for new cases</option><option value="no">Not available right now</option></select></label><label class="field"><span>Most cases at once (optional)</span><input id="rid-max" type="text" inputmode="numeric" placeholder="For example: 5" maxlength="2"></label></div>
+          ${field("rid-resp", "Typical response time (optional)", "For example: within 24 hours", 'maxlength="40"')}${field("rid-dis", "Relationships to disclose", "For example: Independent. No employment, financial or personal tie to either party.", 'maxlength="200"')}${field("rid-url", "A public page you control", "https://github.com/your-name", 'maxlength="200"')}
+          <label class="check"><input type="checkbox" id="rid-list"> <span><b>List me in the reviewer directory.</b> People looking for a reviewer can find you. It says "self-listed, not checked by LGtie", shows your signed details and a record read from the chain, and does not endorse you. Needs a disclosure above.</span></label>
           <div class="row"><button class="btn small" id="rid-sign" type="button">Sign with my wallet</button><span id="rid-m2" class="small"></span></div><div id="rid-out"></div>`;
         setup.querySelector("#rid-sign").onclick = async () => {
-          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, disclosure: setup.querySelector("#rid-dis").value, url: setup.querySelector("#rid-url").value});
+          const m2 = setup.querySelector("#rid-m2"), v = validate({name: setup.querySelector("#rid-name").value, role: setup.querySelector("#rid-role").value, specialty: setup.querySelector("#rid-spec").value, fee: setup.querySelector("#rid-fee").value, disclosure: setup.querySelector("#rid-dis").value, url: setup.querySelector("#rid-url").value, regions: setup.querySelector("#rid-reg").value, arrangements: [...setup.querySelectorAll("#rid-arr input:checked")].map(x => x.value), avail: setup.querySelector("#rid-av").value, confirmed: today(), max: setup.querySelector("#rid-max").value, response: setup.querySelector("#rid-resp").value, listed: setup.querySelector("#rid-list").checked});
           if (!v.ok) { m2.innerHTML = `<span class="err">${esc(v.error)}</span>`; return; }
           if (!v.disclosure) { m2.innerHTML = `<span class="err">Say whether you have any relationship with the people you may judge (an employer, a financial tie, a friend). If none, write that you are independent. The people agreeing to you will read it.</span>`; return; }
           try {
@@ -212,6 +245,6 @@
   // Pages are drawn at different times; fill any [data-rid] span that appears.
   if (typeof document !== "undefined" && typeof MutationObserver !== "undefined") { let t = 0; new MutationObserver(() => { clearTimeout(t); t = setTimeout(() => decorate(document), 120); }).observe(document.documentElement, {childList: true, subtree: true}); }
 
-  const api = {recover, personalHash, statement, validate, makeCode, parse, termsLine, checkPage, publish, lookup, remember, decorate, profileCard, noteFor, PREFIX, tagOf};
+  const api = {recover, personalHash, statement, validate, makeCode, parse, termsLine, checkPage, publish, lookup, remember, decorate, profileCard, noteFor, PREFIX, tagOf, DIRECTORY_TAG, ARRANGEMENTS, today, availability, detailsHtml, ARR_LABEL, nameHtml, link};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_RID = api;
 })();

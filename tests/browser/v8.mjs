@@ -116,6 +116,7 @@ ok("the case now waits for a reviewer and nobody can decide yet", (await words(C
 // ---- 8. they agree a reviewer after the dispute started, by passkey signatures
 await go(A.p, "#mine"); await click(A.p, "#find");
 ok("Amina's case shows that no reviewer is agreed yet and lets her propose one", await until(async () => /None yet\. If you and the other side answer any question differently/.test(await T(A.p, "#cs")) && !!(await A.p.$("#cs .rv-in"))), await T(A.p, "#cs"));
+ok("the reviewer box offers the directory", !!(await A.p.$("#cs [data-dirpick]")));
 await A.p.$eval("#cs .rv-in", (e, v) => { e.value = v; }, REVIEWER); await click(A.p, '#cs [data-rv="propose"]');
 ok("she signs the proposal", await until(async () => !!(await A.p.$("#cs .rv-out #cplink"))), await T(A.p, "#cs"));
 await submit(await A.p.$eval("#cs .rv-out #cplink", e => e.dataset.link));
@@ -124,6 +125,7 @@ ok("the reviewer is on the case and only Amina has approved", (c2(5) & ((1n << 1
 ok("the reviewer cannot decide yet", await (async () => { try { sh(`cast call ${CASES} "review(uint256,uint64)" 1 127 --from ${REVIEWER} --rpc-url ${ANVIL} 2>&1`); return false; } catch (e) { return /not accepted by both/.test(String(e.stdout || "") + String(e.stderr || "") + e.message); } })());
 await go(S.p, "#mine"); await click(S.p, "#find");
 ok("Samuel is asked to approve that reviewer", await until(async () => /proposed/.test(await T(S.p, "#cs")) && !!(await S.p.$('#cs [data-rv="approve"]'))), await T(S.p, "#cs"));
+ok("with a reviewer proposed it shows who they are, what the chain shows about them, and how the fee works (paid directly, not enforced)", await until(async () => /About 0x/.test(await T(S.p, "#cs .rv-info")) && /address only/.test(await T(S.p, "#cs .rv-info")) && /Agree who pays and how before the reviewer starts/.test(await T(S.p, "#cs .rv-info")) && /LGtie cannot enforce it/.test(await T(S.p, "#cs .rv-info"))), await T(S.p, "#cs .rv-info"));
 await click(S.p, '#cs [data-rv="approve"]');
 ok("he signs the approval", await until(async () => !!(await S.p.$("#cs .rv-out #cplink"))), await T(S.p, "#cs"));
 await submit(await S.p.$eval("#cs .rv-out #cplink", e => e.dataset.link));
