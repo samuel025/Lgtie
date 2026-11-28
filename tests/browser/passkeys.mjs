@@ -21,7 +21,7 @@ let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL "
 const shot = async n => { if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, {recursive: true}); await w(1500); await p.screenshot({path: process.env.SHOTS + "/" + n + ".png", fullPage: true}); } };   // SHOTS=/some/dir saves screenshots
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 30000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await w(300); } return false; }
-const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`).replace(/\n\s*v5: \{[^}]*\},[^\n]*/, "");   // this story tests the free V4 contract it deploys; billing (v5) is covered by billing.mjs
+const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`).replace(/\n\s*v5: \{[^}]*\},[^\n]*/, "").replace(/\n\s*v6: \{[^}]*\},[^\n]*/, "");   // this story tests the free V4 contract it deploys; billing (v5) is covered by billing.mjs
 await p.setRequestInterception(true);
 p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", body: cfg}); else r.continue(); });
 await p.evaluateOnNewDocument(ANVIL => { window.ethereum = {request: async ({method, params}) => {

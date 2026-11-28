@@ -7,13 +7,15 @@
   const ZERO = "0x" + "0".repeat(40), DAY = 86400, STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
-  // once the revenue contracts are live, cases are opened on TiebreakCaseV5 (V4 plus a billing call); the passkeys and agreements stay the same
-  // Cases opened before the revenue contracts live on TiebreakCaseV4; they stay readable and usable at #pk/v4case/<id> (the same agreements and passkeys)
-  let LEGACY = false; window.addEventListener("hashchange", () => { if (!/^#pk\/v4case\//.test(location.hash)) LEGACY = false; });
-  const hasV5 = () => !!(CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO && CFG.v4 && CFG.v4.cases && CFG.v4.cases.toLowerCase() !== CFG.v5.cases.toLowerCase());
-  const legacyCases = async () => hasV5() ? (await scan(CFG.v4.cases, id => call(CFG.v4.cases, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: true})) : [];
-  const caseHref = c => (c.legacy ? "#pk/v4case/" : "#pk/case/") + c.id;
-  const V4 = () => (!LEGACY && CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  // The newest case contract that is live is the one cases open on: TiebreakCaseV6 (V5 plus automatic questions), else V5 (V4 plus billing), else V4.
+  // The passkeys and agreements never changed. Cases opened on an older contract stay readable and usable at #pk/v5case/<id> and #pk/v4case/<id>.
+  const live = c => !!(c && c.cases && c.cases !== ZERO);
+  const ACTIVE = () => live(CFG.v6) ? CFG.v6 : live(CFG.v5) ? CFG.v5 : null;
+  const OLDER = () => { const act = ACTIVE(); if (!act) return []; const out = []; if (act === CFG.v6 && live(CFG.v5)) out.push({tag: "v5", addr: CFG.v5.cases}); if (CFG.v4 && CFG.v4.cases) out.push({tag: "v4", addr: CFG.v4.cases}); return out.filter(o => o.addr.toLowerCase() !== act.cases.toLowerCase()); };
+  let LEGACY = ""; window.addEventListener("hashchange", () => { if (!/^#pk\/v[45]case\//.test(location.hash)) LEGACY = ""; });
+  const legacyCases = async () => (await Promise.all(OLDER().map(async o => (await scan(o.addr, id => call(o.addr, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: o.tag}))))).flat();
+  const caseHref = c => (c.legacy ? "#pk/" + c.legacy + "case/" : "#pk/case/") + c.id;
+  const V4 = () => { const base = CFG.v4 || {}; if (LEGACY) return {...base, cases: LEGACY}; const a = ACTIVE(); return a ? {...base, cases: a.cases} : base; }, deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -29,7 +31,7 @@
   const readKeyCount = async id => Number(words(await call(V4().passkeys, enc("keyCount", ["uint256"], [id])))[0]);
   function decodeAgreement(h) { const w = words(h); return {proposer: {wallet: addrOf(w[0]), passkey: w[1]}, counterparty: {wallet: addrOf(w[2]), passkey: w[3]}, ruleSetId: Number(w[4]), termsHash: "0x" + w[5].toString(16).padStart(64, "0"), reviewer: addrOf(w[6]), answerWindow: Number(w[7]), reviewWindow: Number(w[8]), proposedAt: Number(w[9]), acceptedAt: Number(w[10]), cancelled: w[11] === 1n}; }
   function decodeCase(h) { const w = words(h); return {ruleSetId: Number(w[0]), filer: {wallet: addrOf(w[1]), passkey: w[2]}, decider: {wallet: addrOf(w[3]), passkey: w[4]}, reviewer: addrOf(w[5]), filerOp: addrOf(w[6]), deciderOp: addrOf(w[7]), evidenceHash: w[8], agreementId: Number(w[9]), openedAt: Number(w[10]), answerBy: Number(w[11]), reviewWindow: Number(w[12]), reviewBy: Number(w[13]),
-    filerAnswers: w[14], deciderAnswers: w[15], filerIn: w[16] === 1n, deciderIn: w[17] === 1n, disputed: w[18], finalAnswers: w[19], result: Number(w[20]), filerOk: w[21] === 1n, deciderOk: w[22] === 1n, reviewerAcked: w[23] === 1n, status: Number(w[24])}; }
+    filerAnswers: w[14], deciderAnswers: w[15], filerIn: w[16] === 1n, deciderIn: w[17] === 1n, disputed: w[18], finalAnswers: w[19], result: Number(w[20]), filerOk: w[21] === 1n, deciderOk: w[22] === 1n, reviewerAcked: w[23] === 1n, ...(w.length >= 28 ? {autoMask: w[24], autoBits: w[25], status: Number(w[27])} : {autoMask: 0n, autoBits: 0n, status: Number(w[24])})}; }   /* V6 adds autoMask, autoBits, evMask before status */
   const readEvidence = async id => {
     const n = Number(words(await call(V4().cases, enc("evidenceCount", ["uint256"], [id])))[0]), out = [];
     for (let i = 0; i < n; i++) {
@@ -456,5 +458,5 @@
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: id => { LEGACY = true; return pkCase(id); }, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = tag === "v5" && live(CFG.v5) ? CFG.v5.cases : (CFG.v4 || {}).cases; return pkCase(id); }, parseClaim, createPasskey, signAction};
 })();

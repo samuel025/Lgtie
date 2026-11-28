@@ -1,11 +1,11 @@
 // How LGtie earns revenue, on the page: the pricing page (#pricing), subscribing, and the small fee when a case is opened.
 // Everything is paid in a 6-decimal dollar token straight to the treasury by the LGtieBilling contract, which never holds funds. Static: no server.
-// The contract addresses come from TB_CONFIG.v5; until they are deployed the page shows the planned prices and says nothing is charged yet.
+// The contract addresses come from TB_CONFIG.v6 (else v5): the newest billing contract is the one that charges; until they are deployed the page shows the planned prices and says nothing is charged yet.
 (function () {
   "use strict";
   const K = window.TB_PK, CFG = window.TB_CONFIG, W = () => window.TB_WALLET, main = document.querySelector("#main"), $ = s => document.querySelector(s);
   const ZERO = "0x" + "0".repeat(40);
-  const V5 = () => CFG.v5 || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
+  const V5 = () => (CFG.v6 && CFG.v6.billing ? CFG.v6 : CFG.v5) || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
   const enc = (name, types = [], vals = []) => K.hex(K.call(name, types, vals));
@@ -89,7 +89,7 @@
         <li>${inf.live ? `Every payment goes straight to <code>${esc(inf.treasury)}</code>.` : "Every payment goes straight to LGtie's address."} The billing contract never holds any money, and a test checks that after every kind of payment it holds exactly nothing.</li>
         <li>Prices can be changed, but never above caps written into the contract: at most 10 USDT per case, 500 per month and 5,000 per year. The reviewer's own fee, if any, is agreed and paid directly between the parties, and LGtie takes no cut of it.</li>
         <li>A plan does not renew by itself, because there is no server to charge you. Subscribe again before it ends; time is added on top. Switching to a higher plan starts it now and does not refund the rest of the old one.</li>
-        <li>The contracts are unaudited. Everything recorded is public.</li></ul></div>`;
+        <li>The contracts are unaudited. Everything recorded is public.</li>${CFG.v6 && CFG.v6.billing && CFG.v5 && CFG.v5.billing && CFG.v5.billing.toLowerCase() !== CFG.v6.billing.toLowerCase() ? `<li>New cases now open on a newer contract with its own billing. A plan bought earlier, on <code>${short(CFG.v5.billing)}</code>, does not cover them: subscribe again here.</li>` : ""}</ul></div>`;
     const msg = (t, cls) => { const m = $("#minebody"); if (m) m.innerHTML = `<p class="small ${cls || "mute"}">${esc(t)}</p>`; };
     const showPlan = async () => {
       try {

@@ -2674,6 +2674,7 @@ window.TB_CONFIG = {
   showcase: {caseId: 1, agreementId: 1},                           // the real mainnet case shown on the home page (played by the team)
   v4: {passkeys: "0xC3c0E2Fa6D8452A14063c01DC50159487E78522E", agreements: "0x802995325A576b69175DCE24e8D643553C9ba2ed", cases: "0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0"},   // passkey parties: PasskeyRegistry, AgreementRegistryV2, TiebreakCaseV4 (set by scripts/deploy-v4.sh)
   v5: {billing: "0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De", cases: "0x1c261952b583fc6DA59e1525Ff52c15b39eD146a", token: "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", treasury: "0x0aE117C07A277D74D9326eb4e33013439dC68fD5", caseFee: 3000000},   // revenue: LGtieBilling and TiebreakCaseV5 (set by scripts/deploy-v5.sh)
+  v6: {billing: "0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf", cases: "0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36", facts: "0x735021f45B93ecb23B006B57795b455703f27542", token: "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", treasury: "0x0aE117C07A277D74D9326eb4e33013439dC68fD5", caseFee: 3000000},   // automatic questions: FactSpecRegistry, a new LGtieBilling and TiebreakCaseV6 (set by scripts/deploy-v6.sh; the site does not read it yet)
   published: {warranty: {circuitId: 13, ruleSetId: 1}}
 };
 
@@ -3983,7 +3984,7 @@ MY POLICY:
         if (!Number.isInteger(s.deadline) || s.deadline <= 0) bad.push(at + "the deadline must be a unix time");
       } else {
         if (!/^0x[0-9a-fA-F]{40}$/.test(String(s.target || ""))) bad.push(at + "the source must be a contract address");
-        if (!/^0x[0-9a-fA-F]{8}$/.test(String(s.selector || ""))) bad.push(at + "the function must be a 4-byte selector");
+        if (!/^0x(?:[0-9a-fA-F]{2}){4,100}$/.test(String(s.data || ""))) bad.push(at + "the call must be a 4-byte selector then arguments, at most 100 bytes");
         if (!["gte", "eq"].includes(s.cmp)) bad.push(at + "the comparison must be gte or eq");
         if (big(s.threshold) === null || big(s.threshold) < 0n) bad.push(at + "the threshold must be a whole number");
       }
@@ -4070,7 +4071,7 @@ MY POLICY:
         if (v(".ap-f").checked) filer |= 1n << BigInt(i); if (v(".ap-c").checked) decider |= 1n << BigInt(i);
         if (kind === "evidenceBy") { specs.push({kind, q: i, role: 0, question: i, withinSeconds: (+v(".ap-days").value || 14) * DAY}); if (v(".ap-got").value !== "") evidence.push({role: 0, question: i, at: NOW + (+v(".ap-got").value) * DAY}); }
         if (kind === "openedBefore") specs.push({kind, q: i, deadline: NOW - (+v(".ap-open").value) * DAY});
-        if (kind === "readAtLeast") { specs.push({kind, q: i, target: "0x" + "00".repeat(20), selector: "0x70a08231", cmp: "gte", threshold: String(Math.max(0, Math.floor(+v(".ap-thr").value || 0)))}); reads[i] = v(".ap-fail").checked ? {ok: false} : {ok: true, value: BigInt(Math.max(0, Math.floor(+v(".ap-val").value || 0)))}; }
+        if (kind === "readAtLeast") { specs.push({kind, q: i, target: "0x" + "00".repeat(20), data: "0x70a08231", cmp: "gte", threshold: String(Math.max(0, Math.floor(+v(".ap-thr").value || 0)))}); reads[i] = v(".ap-fail").checked ? {ok: false} : {ok: true, value: BigInt(Math.max(0, Math.floor(+v(".ap-val").value || 0)))}; }
       });
       const out = document.querySelector("#ap-out"), bad = A.validate(specs, nQ);
       if (bad.length) { out.innerHTML = `<p class="err">${bad.map(esc).join("<br>")}</p>`; return; }
@@ -4091,12 +4092,12 @@ MY POLICY:
 </script><script>/* billing.js */
 // How LGtie earns revenue, on the page: the pricing page (#pricing), subscribing, and the small fee when a case is opened.
 // Everything is paid in a 6-decimal dollar token straight to the treasury by the LGtieBilling contract, which never holds funds. Static: no server.
-// The contract addresses come from TB_CONFIG.v5; until they are deployed the page shows the planned prices and says nothing is charged yet.
+// The contract addresses come from TB_CONFIG.v6 (else v5): the newest billing contract is the one that charges; until they are deployed the page shows the planned prices and says nothing is charged yet.
 (function () {
   "use strict";
   const K = window.TB_PK, CFG = window.TB_CONFIG, W = () => window.TB_WALLET, main = document.querySelector("#main"), $ = s => document.querySelector(s);
   const ZERO = "0x" + "0".repeat(40);
-  const V5 = () => CFG.v5 || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
+  const V5 = () => (CFG.v6 && CFG.v6.billing ? CFG.v6 : CFG.v5) || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
   const enc = (name, types = [], vals = []) => K.hex(K.call(name, types, vals));
@@ -4180,7 +4181,7 @@ MY POLICY:
         <li>${inf.live ? `Every payment goes straight to <code>${esc(inf.treasury)}</code>.` : "Every payment goes straight to LGtie's address."} The billing contract never holds any money, and a test checks that after every kind of payment it holds exactly nothing.</li>
         <li>Prices can be changed, but never above caps written into the contract: at most 10 USDT per case, 500 per month and 5,000 per year. The reviewer's own fee, if any, is agreed and paid directly between the parties, and LGtie takes no cut of it.</li>
         <li>A plan does not renew by itself, because there is no server to charge you. Subscribe again before it ends; time is added on top. Switching to a higher plan starts it now and does not refund the rest of the old one.</li>
-        <li>The contracts are unaudited. Everything recorded is public.</li></ul></div>`;
+        <li>The contracts are unaudited. Everything recorded is public.</li>${CFG.v6 && CFG.v6.billing && CFG.v5 && CFG.v5.billing && CFG.v5.billing.toLowerCase() !== CFG.v6.billing.toLowerCase() ? `<li>New cases now open on a newer contract with its own billing. A plan bought earlier, on <code>${short(CFG.v5.billing)}</code>, does not cover them: subscribe again here.</li>` : ""}</ul></div>`;
     const msg = (t, cls) => { const m = $("#minebody"); if (m) m.innerHTML = `<p class="small ${cls || "mute"}">${esc(t)}</p>`; };
     const showPlan = async () => {
       try {
@@ -4219,13 +4220,15 @@ MY POLICY:
   const ZERO = "0x" + "0".repeat(40), DAY = 86400, STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
-  // once the revenue contracts are live, cases are opened on TiebreakCaseV5 (V4 plus a billing call); the passkeys and agreements stay the same
-  // Cases opened before the revenue contracts live on TiebreakCaseV4; they stay readable and usable at #pk/v4case/<id> (the same agreements and passkeys)
-  let LEGACY = false; window.addEventListener("hashchange", () => { if (!/^#pk\/v4case\//.test(location.hash)) LEGACY = false; });
-  const hasV5 = () => !!(CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO && CFG.v4 && CFG.v4.cases && CFG.v4.cases.toLowerCase() !== CFG.v5.cases.toLowerCase());
-  const legacyCases = async () => hasV5() ? (await scan(CFG.v4.cases, id => call(CFG.v4.cases, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: true})) : [];
-  const caseHref = c => (c.legacy ? "#pk/v4case/" : "#pk/case/") + c.id;
-  const V4 = () => (!LEGACY && CFG.v5 && CFG.v5.cases && CFG.v5.cases !== ZERO) ? {...(CFG.v4 || {}), cases: CFG.v5.cases} : (CFG.v4 || {}), deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  // The newest case contract that is live is the one cases open on: TiebreakCaseV6 (V5 plus automatic questions), else V5 (V4 plus billing), else V4.
+  // The passkeys and agreements never changed. Cases opened on an older contract stay readable and usable at #pk/v5case/<id> and #pk/v4case/<id>.
+  const live = c => !!(c && c.cases && c.cases !== ZERO);
+  const ACTIVE = () => live(CFG.v6) ? CFG.v6 : live(CFG.v5) ? CFG.v5 : null;
+  const OLDER = () => { const act = ACTIVE(); if (!act) return []; const out = []; if (act === CFG.v6 && live(CFG.v5)) out.push({tag: "v5", addr: CFG.v5.cases}); if (CFG.v4 && CFG.v4.cases) out.push({tag: "v4", addr: CFG.v4.cases}); return out.filter(o => o.addr.toLowerCase() !== act.cases.toLowerCase()); };
+  let LEGACY = ""; window.addEventListener("hashchange", () => { if (!/^#pk\/v[45]case\//.test(location.hash)) LEGACY = ""; });
+  const legacyCases = async () => (await Promise.all(OLDER().map(async o => (await scan(o.addr, id => call(o.addr, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: o.tag}))))).flat();
+  const caseHref = c => (c.legacy ? "#pk/" + c.legacy + "case/" : "#pk/case/") + c.id;
+  const V4 = () => { const base = CFG.v4 || {}; if (LEGACY) return {...base, cases: LEGACY}; const a = ACTIVE(); return a ? {...base, cases: a.cases} : base; }, deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -4241,7 +4244,7 @@ MY POLICY:
   const readKeyCount = async id => Number(words(await call(V4().passkeys, enc("keyCount", ["uint256"], [id])))[0]);
   function decodeAgreement(h) { const w = words(h); return {proposer: {wallet: addrOf(w[0]), passkey: w[1]}, counterparty: {wallet: addrOf(w[2]), passkey: w[3]}, ruleSetId: Number(w[4]), termsHash: "0x" + w[5].toString(16).padStart(64, "0"), reviewer: addrOf(w[6]), answerWindow: Number(w[7]), reviewWindow: Number(w[8]), proposedAt: Number(w[9]), acceptedAt: Number(w[10]), cancelled: w[11] === 1n}; }
   function decodeCase(h) { const w = words(h); return {ruleSetId: Number(w[0]), filer: {wallet: addrOf(w[1]), passkey: w[2]}, decider: {wallet: addrOf(w[3]), passkey: w[4]}, reviewer: addrOf(w[5]), filerOp: addrOf(w[6]), deciderOp: addrOf(w[7]), evidenceHash: w[8], agreementId: Number(w[9]), openedAt: Number(w[10]), answerBy: Number(w[11]), reviewWindow: Number(w[12]), reviewBy: Number(w[13]),
-    filerAnswers: w[14], deciderAnswers: w[15], filerIn: w[16] === 1n, deciderIn: w[17] === 1n, disputed: w[18], finalAnswers: w[19], result: Number(w[20]), filerOk: w[21] === 1n, deciderOk: w[22] === 1n, reviewerAcked: w[23] === 1n, status: Number(w[24])}; }
+    filerAnswers: w[14], deciderAnswers: w[15], filerIn: w[16] === 1n, deciderIn: w[17] === 1n, disputed: w[18], finalAnswers: w[19], result: Number(w[20]), filerOk: w[21] === 1n, deciderOk: w[22] === 1n, reviewerAcked: w[23] === 1n, ...(w.length >= 28 ? {autoMask: w[24], autoBits: w[25], status: Number(w[27])} : {autoMask: 0n, autoBits: 0n, status: Number(w[24])})}; }   /* V6 adds autoMask, autoBits, evMask before status */
   const readEvidence = async id => {
     const n = Number(words(await call(V4().cases, enc("evidenceCount", ["uint256"], [id])))[0]), out = [];
     for (let i = 0; i < n; i++) {
@@ -4668,7 +4671,7 @@ MY POLICY:
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: id => { LEGACY = true; return pkCase(id); }, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = tag === "v5" && live(CFG.v5) ? CFG.v5.cases : (CFG.v4 || {}).cases; return pkCase(id); }, parseClaim, createPasskey, signAction};
 })();
 
 </script><script>/* app.js */
@@ -5038,7 +5041,7 @@ MY POLICY:
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "v4case" ? window.TB_PASSKEYS.legacyCase(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "v4case" || key === "v5case" ? window.TB_PASSKEYS.legacyCase(rest[0] || 1, key === "v5case" ? "v5" : "v4") : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build(key);
     if (view === "templates") return window.TB_TEMPLATES.page();
