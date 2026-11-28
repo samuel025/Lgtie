@@ -39,10 +39,27 @@ ok("choosing another situation switches the page", await until(async () => /Free
 const o = await page(); await o.goto(BASE + "#d/" + payload);
 ok("the deal page names who sent it and the item", await until(async () => { const t = await T(o, "main"); return /Samuel wants to agree the rules first/.test(t) && /iPhone 12/.test(t) && /₦250,000/.test(t); }), await T(o, "main"));
 ok("it lists the five questions", (await o.$$("main ol")).length >= 1 && (await o.$$eval("main .card:nth-of-type(2) li", l => l.length)) === 5, await T(o, "main"));
-ok("it links to the free checker and to creating a passkey", (await o.$eval('a[href="#check/secondhand"]', a => a.textContent)).length > 0 && !!(await o.$('a[href="#join"]')));
+ok("it links to the free checker and offers one button to agree with a passkey", (await o.$eval('a[href="#check/secondhand"]', a => a.textContent)).length > 0 && /Agree with my passkey/.test(await T(o, "#dd-go")));
+ok("the free part comes before the agreement step", /Read it first \(free, no wallet\)/.test(await T(o, "main")) && (await o.$eval("#dd-agree", e => e.previousElementSibling.innerText)).includes("Read it first"));
 ok("it says plainly it is not binding until accepted on X Layer, and not legal advice", /Not binding by itself/.test(await T(o, "main")) && /not a court/.test(await T(o, "main")));
 ok("it shows a fingerprint of the terms", /Fingerprint of these terms: 0x[0-9a-f]{16}/.test(await T(o, "main")));
 ok("secondhand rules are not published, so the creator is told to publish first and cannot invite yet", /not published on X Layer yet/.test(await T(o, "main")) && !(await o.$("#dd-inv")));
+
+// ---- the recipient agrees in one tap, and the sender's link opens the invite already filled in
+const rp = await page(), cdp = await rp.target().createCDPSession(); await cdp.send("WebAuthn.enable");
+await cdp.send("WebAuthn.addVirtualAuthenticator", {options: {protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}});
+await rp.goto(BASE + "#d/" + b64({t: "warranty", a: "Samuel", b: "Amina", w: "Laptop repair"})); await w(1200);
+await rp.click("#dd-go");
+ok("one tap makes the passkey and gives a reply ready to send", await until(async () => /^This is Amina\. I agree to the rules for Laptop repair\./.test(await rp.$eval("#dd-msg", e => e.value).catch(() => ""))), await T(rp, "#dd-out"));
+const reply = await rp.$eval("#dd-msg", e => e.value), rlink = reply.split(": ").pop();
+ok("the reply's link carries the passkey code and the deal details", /#pk\/agree\/lgtie1\.[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/.test(rlink), rlink);
+ok("it offers WhatsApp, Telegram and copy, and says what to do next", (await rp.$eval("#dd-share a:nth-child(1)", a => a.href)).startsWith("https://wa.me/?text=") && (await rp.$eval("#dd-share a:nth-child(2)", a => a.href)).startsWith("https://t.me/share/url?url=") && /open My cases/.test(await T(rp, "#dd-out")) && /Samuel/.test(await T(rp, "#dd-out")));
+ok("the claim code in the reply never contains a private key (it is a public key only)", !/private|"d":/.test(Buffer.from(rlink.split("/")[0].split("lgtie1.")[1] || "", "base64url").toString()));
+const snd = await page(); await snd.goto(rlink);
+ok("the sender taps it and the invite page is already filled in: claim code, terms and rule set", await until(async () => /^lgtie1\./.test(await snd.$eval("#cc", e => e.value).catch(() => "")) && /LGtie deal/.test(await snd.$eval("#terms", e => e.value).catch(() => "")) && /Laptop repair/.test(await snd.$eval("#terms", e => e.value).catch(() => "")) && (await snd.$eval("#rs", e => e.value).catch(() => "")) === "1"), await T(snd, "main"));
+ok("and it says where this came from", /From a deal link: Amina agreed to the rules for Laptop repair/.test(await T(snd, "main")));
+await rp.reload(); await w(1500); await rp.evaluate(() => document.querySelector("#dd-go").click());   // a DOM click: a mouse click right after a reload can stall in this browser build
+ok("tapping again on the same phone reuses the passkey instead of making another", await until(async () => /Using the passkey already on this phone/.test(await T(rp, "#dd-out"))), await T(rp, "#dd-out"));
 
 // ---- hostile and broken links
 const h = await page(); await h.goto(BASE + "#d/" + b64({t: "secondhand", a: '<img src=x onerror="window.__pwn=1">', w: "<b>bold</b>", p: "x".repeat(500), d: "not a date", r: -5}));

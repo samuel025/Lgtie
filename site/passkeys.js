@@ -329,6 +329,7 @@
   // ---------- telling the reviewer ----------
   const reviewerInviteCard = (text, note) => `<div class="card invite" id="rvinv"><h3>Tell your reviewer</h3><p class="small mute">${note}</p><textarea id="rvtxt" rows="5" readonly>${esc(text)}</textarea><div class="row"><button class="btn small" id="rvcp" type="button">Copy message</button></div></div>`;
   const bindReviewerInvite = () => { const b = $("#rvcp"); if (b) b.onclick = () => copy($("#rvtxt").value, b); };
+  const appPage = () => location.href.split("#")[0];
   const siteBase = () => location.href.split("#")[0];
 
   // ---------- #inbox: signed actions customers have posted for this wallet ----------
@@ -380,7 +381,7 @@
   // ---------- the business and the reviewer (wallets) ----------
   const needWallet = async () => { if (!W().account()) await W().connect(); return W().account(); };
   const logTopic = (rc, addr) => { const l = rc.logs.find(l => l.address.toLowerCase() === addr.toLowerCase() && l.topics.length > 1); return l ? Number(BigInt(l.topics[1])) : 0; };
-  function pkAgree(prefill) {
+  function pkAgree(prefill, dealPayload) {
     if (!deployed()) { notDeployed("Invite a customer by passkey"); return; }
     main.innerHTML = `<h1>Invite a customer who has no wallet</h1><p class="lede">Paste the claim code your customer created at <code>#join</code>. We register their passkey (a small network fee, paid by you) and propose an agreement to them. They accept with their fingerprint or face, and you submit it.</p>
       <div class="card formcard">
@@ -395,6 +396,9 @@
         <label class="field"><span>Reviewer's signed identity (recommended)</span><textarea id="rvp" rows="2" placeholder="Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page."></textarea><em class="small mute" id="rvpmsg"></em></label>
         <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button></div><p id="msg" class="small"></p></div>`;
     if (prefill) $("#cc").value = prefill;
+    // a deal link's payload fills in the written terms and the rules, and says what this is for
+    if (dealPayload && window.TB_DEAL) { const dr = window.TB_DEAL.parseDeal(dealPayload); if (dr.deal) { const dl = dr.deal, rid = window.TB_DEAL.ruleOf(dl); $("#terms").value = window.TB_DEAL.termsText(dl); if (rid) { if (!$("#rs").querySelector(`option[value="${rid}"]`)) $("#rs").insertAdjacentHTML("beforeend", `<option value="${rid}">Rule set #${rid}</option>`); $("#rs").value = String(rid); }
+      $("h1").insertAdjacentHTML("afterend", `<div class="note"><b>From a deal link:</b> ${esc(dl.b || "The other person")} agreed to the rules${dl.w ? " for " + esc(dl.w) : ""}. Their passkey code and the terms are filled in below: check them, add the reviewer's address and tap the button.</div>`); } }
     try { const t = sessionStorage.getItem("lgtie.dealTerms"), r = Number(sessionStorage.getItem("lgtie.dealRule")); if (t) { $("#terms").value = t; sessionStorage.removeItem("lgtie.dealTerms"); }   // a deal link fills in the written terms and its rules
       if (r > 0 && !$("#rs").querySelector(`option[value="${r}"]`)) { $("#rs").insertAdjacentHTML("beforeend", `<option value="${r}">Rule set #${r}</option>`); } if (r > 0) { $("#rs").value = String(r); sessionStorage.removeItem("lgtie.dealRule"); } } catch (e) {}
     // The reviewer's identity line is added to the written terms, so it is part of what both sides fingerprint and accept.
@@ -429,8 +433,10 @@
       ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.${a.proposer.passkey ? " This was proposed by a passkey, so only that passkey can withdraw it, from My cases." : ""}</div>` : ""}
       ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
       ${a.cancelled ? "" : inForce ? `<div class="note ok-note"><b>A standing agreement.</b> It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.</div>` : `<div class="note">Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.</div>`}
+      ${!inForce && !a.cancelled && a.counterparty.passkey && window.TB_DEAL ? (() => { const link = appPage() + "#mine", text = `I have set up our agreement on LGtie. Open ${link} on your phone, tap "Find my cases with my passkey" and accept it.`; return `<div class="card" id="tellcard"><h3>Tell them it is ready</h3><p class="small mute">They accept with their passkey on their phone. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</p>${window.TB_DEAL.shareHtml("tellshare", text, link)}</div>`; })() : ""}
       <div class="row" id="acts"></div><div id="amsg" class="small"></div><div class="card" id="cases"><h3>Cases under this agreement</h3><p class="small mute">Reading from X Layer…</p></div>`;
     bindReviewerInvite();
+    if ($("#tellshare") && window.TB_DEAL) { const ln = appPage() + "#mine"; window.TB_DEAL.bindShare("tellshare", `I have set up our agreement on LGtie. Open ${ln} on your phone, tap "Find my cases with my passkey" and accept it.`); }
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled && a.proposer.wallet !== ZERO) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
@@ -516,5 +522,5 @@
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: [...(await scan(V4().agreements, readAgreement)), ...(await legacyAgreements())], cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = {cases: eraOf(tag) || (CFG.v4 || {}).cases, agreements: V2AG()}; return pkCase(id); }, legacyAgreement: id => { LEGACY = {cases: (OLDER()[0] || {}).addr || (CFG.v4 || {}).cases, agreements: V2AG(), v2: true}; return pkAgreement(id); }, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: [...(await scan(V4().agreements, readAgreement)), ...(await legacyAgreements())], cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, myPasskey: mine,  agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = {cases: eraOf(tag) || (CFG.v4 || {}).cases, agreements: V2AG()}; return pkCase(id); }, legacyAgreement: id => { LEGACY = {cases: (OLDER()[0] || {}).addr || (CFG.v4 || {}).cases, agreements: V2AG(), v2: true}; return pkAgreement(id); }, parseClaim, createPasskey, signAction};
 })();

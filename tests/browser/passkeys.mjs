@@ -49,6 +49,7 @@ await p.click("#go");
 ok("the business registers the customer and lands on the agreement", await until(async () => /^#pk\/agreement\/1$/.test(await p.evaluate(() => location.hash))), await T("#msg"));
 await w(800);
 ok("the agreement shows a passkey customer and waits for her", /passkey account #1/.test(await T("main")) && /waiting for the customer/i.test(await T("main")), await T("main"));
+ok("it also gives the business a ready message to tell her it is set up, with WhatsApp, Telegram and copy", /Tell them it is ready/.test(await T("#tellcard")) && (await p.$eval("#tellshare a:nth-child(1)", a => a.href).catch(() => "")).startsWith("https://wa.me/?text=") && (await p.$eval("#tellshare a:nth-child(2)", a => a.href).catch(() => "")).startsWith("https://t.me/share/url?url=") && /#mine/.test(decodeURIComponent(await p.$eval("#tellshare a:nth-child(1)", a => a.href).catch(() => ""))), await T("#tellcard"));
 
 // ---- 3. Maya finds her agreement with her passkey, and the page proves the account is hers.
 await as("", "#mine"); await p.click("#find");

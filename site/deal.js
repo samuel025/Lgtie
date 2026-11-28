@@ -36,6 +36,10 @@
   }
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
 
+  /// WhatsApp, Telegram and copy buttons for a message that already ends with its link.
+  const shareHtml = (id, text, link) => { const enc = encodeURIComponent; return `<div class="row" id="${id}"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${enc(text)}">Send on WhatsApp</a><a class="btn" target="_blank" rel="noopener" href="https://t.me/share/url?url=${enc(link)}&text=${enc(text.replace(link, "").trim())}">Send on Telegram</a><button class="btn ghost" data-copy type="button">Copy message</button></div>`; };
+  const bindShare = (id, text) => { const b = document.querySelector("#" + id + " [data-copy]"); if (b) b.onclick = e => copy(text, e.target); };
+  const appPage = () => location.href.split("#")[0];
   // ---------- the creator: #deal/<template> ----------
   function create(key) {
     const k = keys().includes(key) ? key : "secondhand", i = info(k), n = nQ(k);
@@ -86,18 +90,32 @@
       <p class="lede">${d.w ? `For <b>${esc(d.w)}</b>. ` : ""}Before any money moves, you both see the same ${qs.length} yes/no questions. If something goes wrong, you each answer them. Where you agree, that settles it. Only the questions you answer differently go to a neutral person you both accept first.</p>
       <div class="card"><h3>The deal</h3><table class="small vt"><tbody>${row("From", d.a)}${row("With", d.b)}${row("About", d.w)}${row("Price", d.p)}${row("Date", d.d)}<tr><td>Rules</td><td>${esc(i.title)}${d.r ? ` (rule set #${d.r})` : ""}</td></tr></tbody></table>
         <p class="small mute">Fingerprint of these terms: <code>${fp.slice(0, 18)}…</code> · <button class="btn small ghost" id="dd-ct" type="button">Copy the terms</button></p></div>
-      <div class="card"><h3>The ${qs.length} questions</h3><ol class="small">${qs.map(q => `<li>${esc(q.text)}</li>`).join("")}</ol>
-        <div class="row"><a class="btn" href="#check/${esc(d.t)}">Try the checker (free, no wallet)</a></div></div>
-      <div class="card" id="dd-agree"><h3>To agree, with no wallet</h3>
-        <ol class="small"><li>On your phone, open <a href="#join">Create your passkey</a>. It is the same thing that unlocks your phone. You get a claim code that holds nothing secret.</li>
-          <li>Send that code back in the chat${d.a ? " to " + esc(d.a) : ""}. They register it and propose the agreement.</li>
-          <li>You accept on your own device with your passkey. No wallet and no OKB needed.</li></ol>
+      <div class="card"><h3>Read it first (free, no wallet)</h3><p class="small mute">The ${qs.length} questions you would both answer:</p><ol class="small">${qs.map(q => `<li>${esc(q.text)}</li>`).join("")}</ol>
+        <div class="row"><a class="btn ghost" href="#check/${esc(d.t)}">Try the checker</a></div></div>
+      <div class="card" id="dd-agree"><h3>Happy with it? Agree with your passkey</h3>
+        <p class="small">Takes about a minute. No wallet and no app: you make a passkey on this phone (the same thing that unlocks it), then send a short reply${d.a ? " to " + esc(d.a) : ""}. They set the agreement up; you accept it on this phone.</p>
+        <div class="row"><button class="btn" id="dd-go" type="button">Agree with my passkey</button></div><div id="dd-out"></div>
         <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p></div>
       <div class="card" id="dd-mine"><h3>If you made this link</h3>
-        ${rule ? `<p class="small">Wait for their claim code, then invite them. The rules (rule set #${rule}) and these terms are filled in for you.</p><div class="row"><button class="btn ghost" id="dd-inv" type="button">Invite them by passkey</button></div>`
+        ${rule ? `<p class="small">When they reply, tap the link in their message: it opens the invite already filled in with their passkey, these terms and the rules (rule set #${rule}). Or, if you were sent a bare code, you can start here.</p><div class="row"><button class="btn ghost" id="dd-inv" type="button">Invite them by passkey</button></div>`
           : `<p class="small">These rules are not published on X Layer yet, so an agreement cannot use them. Publish them in the <a href="#build/${esc(d.t)}">builder</a> (a small fee), then make the link again with the rule set number. The free checker works already.</p>`}</div>`;
+    const payload = encodeDeal(d), goBtn = $("#dd-go");
+    goBtn.onclick = async () => {
+      const out = $("#dd-out"); goBtn.disabled = true; out.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`;
+      try {
+        const P = window.TB_PASSKEYS, have = P.myPasskey && P.myPasskey(), info = have && have.claim ? have : await P.createPasskey(d.b || "LGtie deal");
+        const link = appPage() + "#pk/agree/" + info.claim + "/" + payload;
+        const text = lang() === "zh" ? `${d.b ? "我是" + d.b + "。" : ""}我同意这些规则${d.w ? "（" + d.w + "）" : ""}。点这个链接把我们的协议建好（里面有我的通行密钥代码）：${link}`
+          : `${d.b ? "This is " + d.b + ". " : ""}I agree to the rules${d.w ? " for " + d.w : ""}. Tap this link to set up our agreement (it carries my passkey code): ${link}`;
+        out.innerHTML = `<div class="note ok-note"><b>✓ ${have && have.claim ? "Using the passkey already on this phone." : "Your passkey is ready on this phone."}</b></div>
+          <p class="small"><b>Next:</b> send this${d.a ? " to " + esc(d.a) : " back in the chat"}.</p><textarea id="dd-msg" rows="4" readonly>${esc(text)}</textarea>${shareHtml("dd-share", text, link)}
+          <p class="small"><b>Then:</b> when they tell you it is ready, open <a href="#mine">My cases</a> on this phone, tap <i>Find my cases with my passkey</i> and accept.</p>`;
+        bindShare("dd-share", text); const m = $("#dd-msg"); m.style.height = "auto"; m.style.height = Math.max(100, m.scrollHeight + 4) + "px";
+        goBtn.hidden = true;
+      } catch (e) { out.innerHTML = `<p class="small err">${esc((e && e.message) || String(e))}</p>`; goBtn.disabled = false; }
+    };
     $("#dd-ct").onclick = e => copy(terms, e.target);
     if ($("#dd-inv")) $("#dd-inv").onclick = () => { try { sessionStorage.setItem("lgtie.dealTerms", terms); sessionStorage.setItem("lgtie.dealRule", String(rule)); } catch (e) {} location.hash = "#pk/agree"; };
   }
-  window.TB_DEAL = {create, deal, encodeDeal, parseDeal, clean, termsText, message, shareLink};
+  window.TB_DEAL = {create, deal, encodeDeal, parseDeal, clean, termsText, message, shareLink, ruleOf, shareHtml, bindShare};
 })();

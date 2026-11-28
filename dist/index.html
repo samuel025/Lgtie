@@ -3996,6 +3996,10 @@ MY POLICY:
   }
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
 
+  /// WhatsApp, Telegram and copy buttons for a message that already ends with its link.
+  const shareHtml = (id, text, link) => { const enc = encodeURIComponent; return `<div class="row" id="${id}"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=${enc(text)}">Send on WhatsApp</a><a class="btn" target="_blank" rel="noopener" href="https://t.me/share/url?url=${enc(link)}&text=${enc(text.replace(link, "").trim())}">Send on Telegram</a><button class="btn ghost" data-copy type="button">Copy message</button></div>`; };
+  const bindShare = (id, text) => { const b = document.querySelector("#" + id + " [data-copy]"); if (b) b.onclick = e => copy(text, e.target); };
+  const appPage = () => location.href.split("#")[0];
   // ---------- the creator: #deal/<template> ----------
   function create(key) {
     const k = keys().includes(key) ? key : "secondhand", i = info(k), n = nQ(k);
@@ -4046,20 +4050,34 @@ MY POLICY:
       <p class="lede">${d.w ? `For <b>${esc(d.w)}</b>. ` : ""}Before any money moves, you both see the same ${qs.length} yes/no questions. If something goes wrong, you each answer them. Where you agree, that settles it. Only the questions you answer differently go to a neutral person you both accept first.</p>
       <div class="card"><h3>The deal</h3><table class="small vt"><tbody>${row("From", d.a)}${row("With", d.b)}${row("About", d.w)}${row("Price", d.p)}${row("Date", d.d)}<tr><td>Rules</td><td>${esc(i.title)}${d.r ? ` (rule set #${d.r})` : ""}</td></tr></tbody></table>
         <p class="small mute">Fingerprint of these terms: <code>${fp.slice(0, 18)}…</code> · <button class="btn small ghost" id="dd-ct" type="button">Copy the terms</button></p></div>
-      <div class="card"><h3>The ${qs.length} questions</h3><ol class="small">${qs.map(q => `<li>${esc(q.text)}</li>`).join("")}</ol>
-        <div class="row"><a class="btn" href="#check/${esc(d.t)}">Try the checker (free, no wallet)</a></div></div>
-      <div class="card" id="dd-agree"><h3>To agree, with no wallet</h3>
-        <ol class="small"><li>On your phone, open <a href="#join">Create your passkey</a>. It is the same thing that unlocks your phone. You get a claim code that holds nothing secret.</li>
-          <li>Send that code back in the chat${d.a ? " to " + esc(d.a) : ""}. They register it and propose the agreement.</li>
-          <li>You accept on your own device with your passkey. No wallet and no OKB needed.</li></ol>
+      <div class="card"><h3>Read it first (free, no wallet)</h3><p class="small mute">The ${qs.length} questions you would both answer:</p><ol class="small">${qs.map(q => `<li>${esc(q.text)}</li>`).join("")}</ol>
+        <div class="row"><a class="btn ghost" href="#check/${esc(d.t)}">Try the checker</a></div></div>
+      <div class="card" id="dd-agree"><h3>Happy with it? Agree with your passkey</h3>
+        <p class="small">Takes about a minute. No wallet and no app: you make a passkey on this phone (the same thing that unlocks it), then send a short reply${d.a ? " to " + esc(d.a) : ""}. They set the agreement up; you accept it on this phone.</p>
+        <div class="row"><button class="btn" id="dd-go" type="button">Agree with my passkey</button></div><div id="dd-out"></div>
         <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p></div>
       <div class="card" id="dd-mine"><h3>If you made this link</h3>
-        ${rule ? `<p class="small">Wait for their claim code, then invite them. The rules (rule set #${rule}) and these terms are filled in for you.</p><div class="row"><button class="btn ghost" id="dd-inv" type="button">Invite them by passkey</button></div>`
+        ${rule ? `<p class="small">When they reply, tap the link in their message: it opens the invite already filled in with their passkey, these terms and the rules (rule set #${rule}). Or, if you were sent a bare code, you can start here.</p><div class="row"><button class="btn ghost" id="dd-inv" type="button">Invite them by passkey</button></div>`
           : `<p class="small">These rules are not published on X Layer yet, so an agreement cannot use them. Publish them in the <a href="#build/${esc(d.t)}">builder</a> (a small fee), then make the link again with the rule set number. The free checker works already.</p>`}</div>`;
+    const payload = encodeDeal(d), goBtn = $("#dd-go");
+    goBtn.onclick = async () => {
+      const out = $("#dd-out"); goBtn.disabled = true; out.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`;
+      try {
+        const P = window.TB_PASSKEYS, have = P.myPasskey && P.myPasskey(), info = have && have.claim ? have : await P.createPasskey(d.b || "LGtie deal");
+        const link = appPage() + "#pk/agree/" + info.claim + "/" + payload;
+        const text = lang() === "zh" ? `${d.b ? "我是" + d.b + "。" : ""}我同意这些规则${d.w ? "（" + d.w + "）" : ""}。点这个链接把我们的协议建好（里面有我的通行密钥代码）：${link}`
+          : `${d.b ? "This is " + d.b + ". " : ""}I agree to the rules${d.w ? " for " + d.w : ""}. Tap this link to set up our agreement (it carries my passkey code): ${link}`;
+        out.innerHTML = `<div class="note ok-note"><b>✓ ${have && have.claim ? "Using the passkey already on this phone." : "Your passkey is ready on this phone."}</b></div>
+          <p class="small"><b>Next:</b> send this${d.a ? " to " + esc(d.a) : " back in the chat"}.</p><textarea id="dd-msg" rows="4" readonly>${esc(text)}</textarea>${shareHtml("dd-share", text, link)}
+          <p class="small"><b>Then:</b> when they tell you it is ready, open <a href="#mine">My cases</a> on this phone, tap <i>Find my cases with my passkey</i> and accept.</p>`;
+        bindShare("dd-share", text); const m = $("#dd-msg"); m.style.height = "auto"; m.style.height = Math.max(100, m.scrollHeight + 4) + "px";
+        goBtn.hidden = true;
+      } catch (e) { out.innerHTML = `<p class="small err">${esc((e && e.message) || String(e))}</p>`; goBtn.disabled = false; }
+    };
     $("#dd-ct").onclick = e => copy(terms, e.target);
     if ($("#dd-inv")) $("#dd-inv").onclick = () => { try { sessionStorage.setItem("lgtie.dealTerms", terms); sessionStorage.setItem("lgtie.dealRule", String(rule)); } catch (e) {} location.hash = "#pk/agree"; };
   }
-  window.TB_DEAL = {create, deal, encodeDeal, parseDeal, clean, termsText, message, shareLink};
+  window.TB_DEAL = {create, deal, encodeDeal, parseDeal, clean, termsText, message, shareLink, ruleOf, shareHtml, bindShare};
 })();
 
 </script><script>/* autoq.js */
@@ -4726,6 +4744,7 @@ MY POLICY:
   // ---------- telling the reviewer ----------
   const reviewerInviteCard = (text, note) => `<div class="card invite" id="rvinv"><h3>Tell your reviewer</h3><p class="small mute">${note}</p><textarea id="rvtxt" rows="5" readonly>${esc(text)}</textarea><div class="row"><button class="btn small" id="rvcp" type="button">Copy message</button></div></div>`;
   const bindReviewerInvite = () => { const b = $("#rvcp"); if (b) b.onclick = () => copy($("#rvtxt").value, b); };
+  const appPage = () => location.href.split("#")[0];
   const siteBase = () => location.href.split("#")[0];
 
   // ---------- #inbox: signed actions customers have posted for this wallet ----------
@@ -4777,7 +4796,7 @@ MY POLICY:
   // ---------- the business and the reviewer (wallets) ----------
   const needWallet = async () => { if (!W().account()) await W().connect(); return W().account(); };
   const logTopic = (rc, addr) => { const l = rc.logs.find(l => l.address.toLowerCase() === addr.toLowerCase() && l.topics.length > 1); return l ? Number(BigInt(l.topics[1])) : 0; };
-  function pkAgree(prefill) {
+  function pkAgree(prefill, dealPayload) {
     if (!deployed()) { notDeployed("Invite a customer by passkey"); return; }
     main.innerHTML = `<h1>Invite a customer who has no wallet</h1><p class="lede">Paste the claim code your customer created at <code>#join</code>. We register their passkey (a small network fee, paid by you) and propose an agreement to them. They accept with their fingerprint or face, and you submit it.</p>
       <div class="card formcard">
@@ -4792,6 +4811,9 @@ MY POLICY:
         <label class="field"><span>Reviewer's signed identity (recommended)</span><textarea id="rvp" rows="2" placeholder="Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page."></textarea><em class="small mute" id="rvpmsg"></em></label>
         <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button></div><p id="msg" class="small"></p></div>`;
     if (prefill) $("#cc").value = prefill;
+    // a deal link's payload fills in the written terms and the rules, and says what this is for
+    if (dealPayload && window.TB_DEAL) { const dr = window.TB_DEAL.parseDeal(dealPayload); if (dr.deal) { const dl = dr.deal, rid = window.TB_DEAL.ruleOf(dl); $("#terms").value = window.TB_DEAL.termsText(dl); if (rid) { if (!$("#rs").querySelector(`option[value="${rid}"]`)) $("#rs").insertAdjacentHTML("beforeend", `<option value="${rid}">Rule set #${rid}</option>`); $("#rs").value = String(rid); }
+      $("h1").insertAdjacentHTML("afterend", `<div class="note"><b>From a deal link:</b> ${esc(dl.b || "The other person")} agreed to the rules${dl.w ? " for " + esc(dl.w) : ""}. Their passkey code and the terms are filled in below: check them, add the reviewer's address and tap the button.</div>`); } }
     try { const t = sessionStorage.getItem("lgtie.dealTerms"), r = Number(sessionStorage.getItem("lgtie.dealRule")); if (t) { $("#terms").value = t; sessionStorage.removeItem("lgtie.dealTerms"); }   // a deal link fills in the written terms and its rules
       if (r > 0 && !$("#rs").querySelector(`option[value="${r}"]`)) { $("#rs").insertAdjacentHTML("beforeend", `<option value="${r}">Rule set #${r}</option>`); } if (r > 0) { $("#rs").value = String(r); sessionStorage.removeItem("lgtie.dealRule"); } } catch (e) {}
     // The reviewer's identity line is added to the written terms, so it is part of what both sides fingerprint and accept.
@@ -4826,8 +4848,10 @@ MY POLICY:
       ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.${a.proposer.passkey ? " This was proposed by a passkey, so only that passkey can withdraw it, from My cases." : ""}</div>` : ""}
       ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
       ${a.cancelled ? "" : inForce ? `<div class="note ok-note"><b>A standing agreement.</b> It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.</div>` : `<div class="note">Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.</div>`}
+      ${!inForce && !a.cancelled && a.counterparty.passkey && window.TB_DEAL ? (() => { const link = appPage() + "#mine", text = `I have set up our agreement on LGtie. Open ${link} on your phone, tap "Find my cases with my passkey" and accept it.`; return `<div class="card" id="tellcard"><h3>Tell them it is ready</h3><p class="small mute">They accept with their passkey on their phone. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</p>${window.TB_DEAL.shareHtml("tellshare", text, link)}</div>`; })() : ""}
       <div class="row" id="acts"></div><div id="amsg" class="small"></div><div class="card" id="cases"><h3>Cases under this agreement</h3><p class="small mute">Reading from X Layer…</p></div>`;
     bindReviewerInvite();
+    if ($("#tellshare") && window.TB_DEAL) { const ln = appPage() + "#mine"; window.TB_DEAL.bindShare("tellshare", `I have set up our agreement on LGtie. Open ${ln} on your phone, tap "Find my cases with my passkey" and accept it.`); }
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled && a.proposer.wallet !== ZERO) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
@@ -4913,7 +4937,7 @@ MY POLICY:
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: [...(await scan(V4().agreements, readAgreement)), ...(await legacyAgreements())], cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = {cases: eraOf(tag) || (CFG.v4 || {}).cases, agreements: V2AG()}; return pkCase(id); }, legacyAgreement: id => { LEGACY = {cases: (OLDER()[0] || {}).addr || (CFG.v4 || {}).cases, agreements: V2AG(), v2: true}; return pkAgreement(id); }, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: [...(await scan(V4().agreements, readAgreement)), ...(await legacyAgreements())], cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, myPasskey: mine,  agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = {cases: eraOf(tag) || (CFG.v4 || {}).cases, agreements: V2AG()}; return pkCase(id); }, legacyAgreement: id => { LEGACY = {cases: (OLDER()[0] || {}).addr || (CFG.v4 || {}).cases, agreements: V2AG(), v2: true}; return pkAgreement(id); }, parseClaim, createPasskey, signAction};
 })();
 
 </script><script>/* app.js */
@@ -5285,7 +5309,7 @@ MY POLICY:
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : /^v[456]case$/.test(key) ? window.TB_PASSKEYS.legacyCase(rest[0] || 1, key.slice(0, 2)) : key === "v2agreement" ? window.TB_PASSKEYS.legacyAgreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "", rest[1] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : /^v[456]case$/.test(key) ? window.TB_PASSKEYS.legacyCase(rest[0] || 1, key.slice(0, 2)) : key === "v2agreement" ? window.TB_PASSKEYS.legacyAgreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build(key);
     if (view === "templates") return window.TB_TEMPLATES.page();
