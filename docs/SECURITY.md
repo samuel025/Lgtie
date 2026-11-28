@@ -117,3 +117,33 @@ Deployed on X Layer mainnet (LGtieBilling `0x03a36B3183b2Be2dCe7F821db674DeD9B6C
 - **Approvals.** The site asks for an approval of exactly the amount due, not an unlimited one, so one case costs two wallet confirmations (allow, then open) unless a subscription covers it.
 - **Token.** Any 6-decimal token that returns `true` or nothing from `transferFrom` works. The deploy script checks the decimals on-chain. A token that can freeze or blacklist the payer or treasury (USDT-style) can stop a payment; a failed payment reverts the whole opening.
 - **Limits.** A subscription does not renew by itself. Switching to a higher plan starts now and does not refund the rest of the old one. A lower plan is refused until the current one ends. Only the V5 case contract is billed: cases opened on V3 are free. Fees and subscriptions are public on-chain, including who opened which case.
+
+## Automatic questions (FactSpecRegistry, TiebreakCaseV6 and a second LGtieBilling; deployed Nov 28, 2026)
+
+These contracts are on X Layer mainnet but **no site page uses them yet**, so no real case runs on them. Unaudited, like the others. Design and limits:
+`docs/AUTO-QUESTIONS.md`.
+
+| Contract | Address |
+|---|---|
+| FactSpecRegistry | `0x735021f45B93ecb23B006B57795b455703f27542` |
+| LGtieBilling (second instance, linked to V6 only) | `0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf` |
+| TiebreakCaseV6 | `0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36` |
+
+They reuse the live RuleSetRegistry, AgreementRegistryV2, PasskeyRegistry and processor. Read back on mainnet after deployment: the billing contract is linked to V6, V6
+points at that billing contract and at the spec registry, and none of the three holds any OKB.
+
+What was checked (242 contract tests, including the whole V5 suite re-run against V6 with no spec set):
+
+- **Nothing changes when unused.** A rule set with no spec behaves exactly like V5.
+- **The parties cannot move an automatic question.** It is never in the disputed set, both sides' claims on it are discarded, and a reviewer's answer on it is ignored.
+- **Published rules cannot change under a signed agreement.** A spec applies only if it was written before the agreement was accepted (or before the case was opened, with no agreement). Only the rule set's publisher can write it, once.
+- **A hostile source cannot make opening expensive or freeze a case.** An on-chain read is one static call, capped at 100,000 gas, that copies only the first word of the answer. A reverting, short, gas-hungry, oversized or non-contract source leaves that question to the parties. Opening stays under 400,000 gas in the worst cases tested.
+- **Bounded work.** At most 8 automatic questions per rule set, at most 15 evidence items per side, so the evidence check has a fixed upper cost.
+
+Known limits, stated plainly:
+
+- A source the publisher or a party controls can be made to fail or to change before a case opens. The page for a rule set should pin only sources neither party controls.
+- An on-chain read reflects the state at the moment the case opens, not at a past block. Past events and balances at an old block cannot be read by a contract.
+- Evidence timing counts only what was attached by the moment both sides have answered.
+- Evidence timestamps show when a hash was attached, not that what it points to is true.
+- Billing for V6 is a second contract instance, so subscriptions bought on the first one do not carry over. The treasury and prices are the same.
