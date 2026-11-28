@@ -147,3 +147,27 @@ Known limits, stated plainly:
 - Evidence timing counts only what was attached by the moment both sides have answered.
 - Evidence timestamps show when a hash was attached, not that what it points to is true.
 - Billing for V6 is a second contract instance, so subscriptions bought on the first one do not carry over. The treasury and prices are the same.
+
+## AgreementRegistryV3 and its companions (deployed Nov 28, 2026)
+
+Unaudited, like the others. Design: `docs/AGREEMENTS-V3.md`. The site now opens cases and charges through these.
+
+| Contract | Address |
+|---|---|
+| AgreementRegistryV3 | `0xd8506F400064086ddfD98195bDd4DDb287bCE790` |
+| LGtieBilling (third instance, linked to the case contract below only) | `0x63a4972f4e34ac588698Dc0f3101578a318D836F` |
+| TiebreakCaseV6 (second instance, pointed at AgreementRegistryV3) | `0x61Cb55451028AEf609461e6b258DeCbA87D42eCf` |
+
+They reuse the live RuleSetRegistry, PasskeyRegistry, processor and FactSpecRegistry. Read back on mainnet after deployment: the registry points at the live rule-set and passkey registries; the billing contract is linked to the case contract; the case contract points back at the billing contract, the new registry, the spec registry and the live processor; none holds any OKB.
+
+What was checked (291 contract tests; the whole earlier suite was re-run against V3 and a case contract pointed at it):
+
+- **A passkey can propose, and nothing else changes.** `proposeSigned` signs every term (proposer account, counterparty, rule set, terms hash, reviewer, both windows). Changing any one invalidates the signature. The signed action is bound to this registry, so it cannot be spent on another, and its nonce is used up, so it cannot be replayed. A key for another account cannot propose for the account.
+- **Withdrawing.** A passkey proposer can withdraw a proposal that has not been accepted, by signature. Nobody else can, and an accepted agreement cannot be withdrawn.
+- **Same interface as V2.** The agreement struct and reads are identical, which is why the existing case contract code works against it unchanged.
+
+Known limits, stated plainly:
+
+- **Whoever submits pays.** A passkey can sign but not send. Between two people with no wallet at all, nobody can submit; LGtie runs no relayer. A proposal signed by a passkey proposer is public once someone submits it, and anyone can submit it, so the submitter chooses when it lands, not what it says.
+- **A signed proposal that nobody submits does nothing**, and it stays valid until its account's nonce moves on (signing something else that is submitted first invalidates it).
+- Subscriptions bought on earlier billing contracts do not carry over to this one.

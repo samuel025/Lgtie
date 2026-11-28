@@ -35,7 +35,7 @@ await e.goto(BASE + "#agreement/1");
 ok("the agreement page links its rule set to the history", await until(async () => !!(await e.$('a[href="#rules/1"]'))) && /\(rules #1\)/.test(await T(e, "main")));
 await e.$eval('a[href="#rules/1"]', a => { a.scrollIntoView({block: "center", behavior: "instant"}); a.click(); }); await w(600);
 ok("and the link opens it", (await e.evaluate(() => location.hash)) === "#rules/1");
-await e.goto(BASE + "#pk/agreement/1");
+await e.goto(BASE + "#pk/v2agreement/1");
 ok("the passkey agreement page links to it too", await until(async () => !!(await e.$('a[href="#rules/1"]'))));
 await e.goto(BASE + "#business/0x0ae117c07a277d74d9326eb4e33013439dc68fd5");
 ok("the business record links each rule set to its history", await until(async () => !!(await e.$('a[href="#rules/1"]'))));

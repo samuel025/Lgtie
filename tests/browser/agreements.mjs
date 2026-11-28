@@ -31,21 +31,21 @@ const top1 = await e.$eval("#acts", x => Math.round(x.getBoundingClientRect().to
 ok("the action buttons sit above the case list and the clause", await e.evaluate(() => { const a = document.querySelector("#acts").getBoundingClientRect().top, c = document.querySelector("#agcases").getBoundingClientRect().top, k = document.querySelector("#clausecard").getBoundingClientRect().top; return a < c && a < k; }));
 ok("and do not move while those cards load", Math.abs(top1 - top0) <= 2, top0 + " -> " + top1);
 
-await e.goto(BASE + "#pk/agreement/1");
+await e.goto(BASE + "#pk/v2agreement/1");
 ok("the passkey agreement page says the same", await until(async () => /A standing agreement\./.test(await T(e, "main"))), (await T(e, "main")).slice(0, 200));
 ok("and lists its cases with a count and outcomes", await until(async () => (await e.$$("#cases .agc li")).length >= 1 && /\d+ cases?/.test(await T(e, "#cases"))), await T(e, "#cases"));
 ok("several cases can sit under one agreement (agreement #1 has more than one)", (await e.$$("#cases .agc li")).length >= 2, String((await e.$$("#cases .agc li")).length));
-ok("each links to its passkey case page (cases from before billing are on the earlier contract and link to #pk/v4case/)", await e.$$eval("#cases .agc a", as => as.every(a => /^#pk\/(v4case|case)\/\d+$/.test(a.getAttribute("href")))));
+ok("each links to its passkey case page (cases on earlier contracts link to #pk/v4case/, v5case or v6case)", await e.$$eval("#cases .agc a", as => as.every(a => /^#pk\/(v[456]case|case)\/\d+$/.test(a.getAttribute("href")))));
 await e.$eval("#cases .agc a", a => a.click()); await w(800);
 ok("an earlier-contract case still opens and shows its result", await until(async () => /Case #\d+/.test(await T(e, "main")) && /Decided|Waiting|No decision/.test(await T(e, "main"))), (await T(e, "main")).slice(0, 300));
-await e.goto(BASE + "#pk/agreement/1"); await until(async () => (await e.$$("#cases .agc li")).length >= 1);
+await e.goto(BASE + "#pk/v2agreement/1"); await until(async () => (await e.$$("#cases .agc li")).length >= 1);
 ok("the count matches the list here too", await e.$eval("#cases", c => { const m = /(\d+) cases?/.exec(c.querySelector("h3").innerText); return !!m && Number(m[1]) === c.querySelectorAll(".agc li").length; }));
 
 const z = await page("zh");
 await z.goto(BASE + "#agreement/1");
 ok("in Chinese: the standing-agreement note and the case list are translated", await until(async () => /常设协议/.test(await T(z, "main")) && /这份协议下的案件/.test(await T(z, "#agcases")) && /\d+ 个案件/.test(await T(z, "#agcases")) && /已裁决/.test(await T(z, "#agcases"))), await T(z, "#agcases"));
 ok("and the Chinese note says no new agreement is needed for every claim", /每一次索赔都不需要重新订立协议/.test(await T(z, "main")));
-await z.goto(BASE + "#pk/agreement/1");
+await z.goto(BASE + "#pk/v2agreement/1");
 ok("in Chinese the passkey page too", await until(async () => /这份协议下的案件/.test(await T(z, "#cases")) && /个案件/.test(await T(z, "#cases"))), await T(z, "#cases"));
 
 ok("no page errors", errs.length === 0, errs.join(" | "));

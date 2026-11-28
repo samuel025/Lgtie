@@ -1,4 +1,4 @@
-# AgreementRegistryV3: a passkey can propose (built and tested, not deployed)
+# AgreementRegistryV3: a passkey can propose (deployed Nov 28, 2026)
 
 Today a person with no wallet can only be the *other* side of an agreement: the proposer has to be a wallet (`AgreementRegistryV2`). V3 lets the proposer be a
 passkey account too, so a seller or freelancer without a wallet can start a deal.

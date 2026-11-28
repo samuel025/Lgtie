@@ -71,7 +71,7 @@ flowchart TD
 
 - **A static site.** No server and no database: the web app, the rule compiler and the checks run in the browser (`site/`). The built site is one page in `dist/`.
 - **Rules are data, not code.** A rule set compiles to a small circuit of NAND gates and is stored on the existing **TapeOut processor**, so it cannot hold hidden state or an admin key.
-- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. `AgreementRegistryV3` (a passkey account can also propose an agreement) is built, tested and wired into the site, but not deployed yet. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
+- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. `AgreementRegistryV3` lets a passkey account propose an agreement, not only accept one. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
 - **No wallet for customers.** A passkey signs each action; any wallet (usually the business's) submits it and pays the small fee. Signed actions travel through public Nostr relays to the business's inbox.
 - **Optional bridge** (`bridge/`): a script a business runs itself to forward those messages to Slack, Discord or any webhook.
 
@@ -164,8 +164,11 @@ LGtie holds no money and takes no cut of any dispute. It earns from using the sy
 | `LGtieBilling` | `0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De` (pays USD₮0 `0x779D…3736` straight to the treasury `0x0aE1…8fD5`; holds nothing) |
 | `TiebreakCaseV5` | `0x1c261952b583fc6DA59e1525Ff52c15b39eD146a` (V4 plus billing; superseded by V6, its cases stay readable) |
 | `FactSpecRegistry` | `0x735021f45B93ecb23B006B57795b455703f27542` (a rule set's publisher writes once which questions the chain answers) |
-| `LGtieBilling` (second instance) | `0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf` (same token, treasury and prices; linked to V6; the site charges here) |
-| `TiebreakCaseV6` | `0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36` (V5 plus automatic questions; the site opens cases here) |
+| `LGtieBilling` (second instance) | `0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf` (same token, treasury and prices; linked to the first V6; superseded) |
+| `TiebreakCaseV6` | `0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36` (V5 plus automatic questions; superseded by the instance below, its cases stay readable) |
+| `AgreementRegistryV3` | `0xd8506F400064086ddfD98195bDd4DDb287bCE790` (a passkey account can propose, and withdraw, by signature; the site uses it) |
+| `LGtieBilling` (third instance) | `0x63a4972f4e34ac588698Dc0f3101578a318D836F` (same token, treasury and prices; linked to the case contract below; the site charges here) |
+| `TiebreakCaseV6` (second instance) | `0x61Cb55451028AEf609461e6b258DeCbA87D42eCf` (the same code, pointed at `AgreementRegistryV3`; the site opens cases here) |
 
 The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the project's builder; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
 

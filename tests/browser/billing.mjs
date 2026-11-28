@@ -13,7 +13,7 @@ const send = (from, to, sig, ...args) => sh(`cast send ${to} "${sig}" ${args.map
 const read = (to, sig, ...args) => sh(`cast call ${to} "${sig}" ${args.map(a => `"${a}"`).join(" ")} --rpc-url ${ANVIL}`).split(" ")[0];
 // ---- set up: a mock dollar token, then the same deploy script that is used for mainnet
 const TOKEN = /Deployed to: (0x[0-9a-fA-F]{40})/.exec(sh(`cd contracts && forge create test/MockUSD.sol:MockUSD --from ${OWNER} --unlocked --broadcast --rpc-url ${ANVIL} 2>&1`))[1];
-const CFG = "/tmp/lgtie-billing-config.js"; fs.writeFileSync(CFG, fs.readFileSync(SITE + "/site/config.js", "utf8").replace(/\n\s*v6: \{[^}]*\},[^\n]*/, ""));   // this story tests the V5 flow it deploys, so the repo's live v6 line is dropped
+const CFG = "/tmp/lgtie-billing-config.js"; fs.writeFileSync(CFG, fs.readFileSync(SITE + "/site/config.js", "utf8").replace(/\n\s*v[67]: \{[^}]*\},[^\n]*/g, ""));   // this story tests the V5 flow it deploys, so the repo's live v6 and v7 lines are dropped
 const dep = sh(`TOKEN=${TOKEN} TREASURY=${TREASURY} DEPLOYER=${OWNER} RPC_URL=${ANVIL} CONFIG=${CFG} SIGNER_ARGS="--unlocked --from ${OWNER}" scripts/deploy-v5.sh deploy 2>&1 | tail -3`);
 const BILLING = /LGtieBilling:\s+(0x[0-9a-fA-F]{40})/.exec(dep)[1], CASES = /TiebreakCaseV5:\s+(0x[0-9a-fA-F]{40})/.exec(dep)[1];
 const AG = /v4: \{[^}]*agreements: "(0x[0-9a-fA-F]{40})"/.exec(fs.readFileSync(CFG, "utf8"))[1];
@@ -112,7 +112,7 @@ ok("the pricing page is in Chinese", await until(async () => { const t = await T
 
 // ---- before deployment: the repo's own config has no revenue contracts, so the page shows planned prices and nothing is charged
 const m = await b.newPage(); m.on("pageerror", e => errs.push(e.message)); await m.evaluateOnNewDocument(() => localStorage.setItem("lgtie.lang", "en")); await m.goto(BASE + "#pricing");
-const live = /v[56]:/.test(fs.readFileSync(SITE + "/site/config.js", "utf8"));
+const live = /v[567]:/.test(fs.readFileSync(SITE + "/site/config.js", "utf8"));
 ok(live ? "(the repo config has revenue contracts: skipping the not-deployed check)" : "with no revenue contracts deployed the page shows planned prices, says nothing is charged and offers no subscribe button",
   live || await until(async () => /not deployed on X Layer yet/.test(await T(m, "main")) && /Not on sale yet/.test(await T(m, "main")) && !(await m.$("[data-sub]"))), (await T(m, "main")).slice(0, 300));
 
