@@ -27,7 +27,7 @@
         if (!Number.isInteger(s.deadline) || s.deadline <= 0) bad.push(at + "the deadline must be a unix time");
       } else {
         if (!/^0x[0-9a-fA-F]{40}$/.test(String(s.target || ""))) bad.push(at + "the source must be a contract address");
-        if (!/^0x[0-9a-fA-F]{8}$/.test(String(s.selector || ""))) bad.push(at + "the function must be a 4-byte selector");
+        if (!/^0x(?:[0-9a-fA-F]{2}){4,100}$/.test(String(s.data || ""))) bad.push(at + "the call must be a 4-byte selector then arguments, at most 100 bytes");
         if (!["gte", "eq"].includes(s.cmp)) bad.push(at + "the comparison must be gte or eq");
         if (big(s.threshold) === null || big(s.threshold) < 0n) bad.push(at + "the threshold must be a whole number");
       }

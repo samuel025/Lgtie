@@ -30,7 +30,7 @@
         if (v(".ap-f").checked) filer |= 1n << BigInt(i); if (v(".ap-c").checked) decider |= 1n << BigInt(i);
         if (kind === "evidenceBy") { specs.push({kind, q: i, role: 0, question: i, withinSeconds: (+v(".ap-days").value || 14) * DAY}); if (v(".ap-got").value !== "") evidence.push({role: 0, question: i, at: NOW + (+v(".ap-got").value) * DAY}); }
         if (kind === "openedBefore") specs.push({kind, q: i, deadline: NOW - (+v(".ap-open").value) * DAY});
-        if (kind === "readAtLeast") { specs.push({kind, q: i, target: "0x" + "00".repeat(20), selector: "0x70a08231", cmp: "gte", threshold: String(Math.max(0, Math.floor(+v(".ap-thr").value || 0)))}); reads[i] = v(".ap-fail").checked ? {ok: false} : {ok: true, value: BigInt(Math.max(0, Math.floor(+v(".ap-val").value || 0)))}; }
+        if (kind === "readAtLeast") { specs.push({kind, q: i, target: "0x" + "00".repeat(20), data: "0x70a08231", cmp: "gte", threshold: String(Math.max(0, Math.floor(+v(".ap-thr").value || 0)))}); reads[i] = v(".ap-fail").checked ? {ok: false} : {ok: true, value: BigInt(Math.max(0, Math.floor(+v(".ap-val").value || 0)))}; }
       });
       const out = document.querySelector("#ap-out"), bad = A.validate(specs, nQ);
       if (bad.length) { out.innerHTML = `<p class="err">${bad.map(esc).join("<br>")}</p>`; return; }

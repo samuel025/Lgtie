@@ -28,7 +28,7 @@ for (const [name, openedAt, yes] of [["before", 100, 1n], ["exactly on the deadl
 });
 
 // ---- readAtLeast, and the fallback when the source fails
-const RD = {kind: "readAtLeast", q: 1, target: "0x" + "ab".repeat(20), selector: "0x70a08231", cmp: "gte", threshold: "1000000"};
+const RD = {kind: "readAtLeast", q: 1, target: "0x" + "ab".repeat(20), data: "0x70a08231", cmp: "gte", threshold: "1000000"};
 for (const [name, read, yes, isAuto] of [
   ["above the threshold", {ok: true, value: 2000000n}, 1n, 1n], ["exactly the threshold", {ok: true, value: "1000000"}, 1n, 1n],
   ["below", {ok: true, value: 999999n}, 0n, 1n],
@@ -97,7 +97,8 @@ for (const [name, specs, n_, re] of [
   ["a time limit over 90 days", [{...EV, withinSeconds: 91 * DAY}], 4, /1 hour to 90 days/],
   ["a bad role", [{...EV, role: 2}], 4, /role/],
   ["a source that is not an address", [{...RD, target: "0x12"}], 4, /contract address/],
-  ["a selector of the wrong length", [{...RD, selector: "0x1234"}], 4, /4-byte/],
+  ["a call shorter than a selector", [{...RD, data: "0x1234"}], 4, /4-byte/],
+  ["a call longer than 100 bytes", [{...RD, data: "0x" + "ab".repeat(101)}], 4, /at most 100/],
   ["a negative threshold", [{...RD, threshold: -1}], 4, /whole number/],
   ["an unknown kind", [{kind: "magic", q: 0}], 4, /unknown kind/],
 ]) await ok("validate rejects " + name, () => assert.match(A.validate(specs, n_).join("|"), re));

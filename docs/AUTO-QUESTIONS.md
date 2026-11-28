@@ -133,3 +133,16 @@ Contract changes the tests force, beyond what is listed above:
 - "Exactly on the limit" counts as on time (`<=`), the same convention as the existing deadlines.
 - A spec list needs a hard cap on its length (suggest 8) so the check cannot become expensive.
 - With no specs the behaviour must be identical to V5 (tested here as "exactly the old behaviour"; repeat it against the real contract).
+
+## Phase 1 contracts: built and tested, not deployed
+
+- `contracts/src/FactSpecRegistry.sol`: the publisher writes the spec once (at most 8 entries, one per question, all limits in code).
+- `contracts/src/TiebreakCaseV6.sol`: V5 plus automatic questions. Kinds 2 and 3 are fixed when the case opens; kind 1 (evidence timing) is fixed
+  the moment both sides have answered, so evidence attached later does not change it. Evidence now records its `role`, so a helper who was later
+  replaced still counts as the side. The on-chain read is one static call with a 100,000-gas cap that copies only the first word of the answer.
+  A failing, short, non-contract or gas-hungry source leaves the question to the parties.
+- Runtime size 18.9 KB (limit 24.6 KB).
+- `contracts/test/AutoQuestions.t.sol` (24 tests, the same cases as `tests/autoq.test.mjs`) and `contracts/test/PasskeyV6.t.sol` (the whole V5 suite
+  against V6 with no spec set, 36 tests). All 242 contract tests pass.
+- Not built yet: per-agreement values (`AgreementRegistryV3`), the deploy script, a new `LGtieBilling` for V6, the site reading V6 cases, and the
+  builder control to publish a spec. Deploying V6 needs a new billing contract because `setCases` can be called only once.
