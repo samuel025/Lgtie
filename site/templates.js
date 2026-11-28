@@ -215,9 +215,6 @@ default: 予以保修 : 保修的所有条件均已满足。
   // ---------- the #templates page ----------
   const main = document.querySelector("#main"), esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const base = () => location.href.split("#")[0];
-  const message = key => lang() === "zh"
-    ? `在开始之前，我们能不能先约定好万一出问题怎么处理？这是我们双方都会回答的问题，以及决定结果的规则：${base()}#check/${key}\n如果将来有分歧，只有我们答案不一致的问题才会交给中立的第三方。你接受 LGtie 协议吗？`
-    : `Before we go ahead, can we agree in advance what happens if something goes wrong? Here are the questions we would both answer, and the rules that decide the result: ${base()}#check/${key}\nIf we ever disagree, only the questions we answer differently go to a neutral person. Do you accept an LGtie agreement?`;
 
   // The clause card, used on the templates page (controls on the left, the clause on the right) and on an agreement page (the agreement's own
   // reviewer and time limits, so only the effect can be chosen). o: {key, fixed, reviewer, answerDays, reviewDays, link}
@@ -269,7 +266,7 @@ default: 予以保修 : 保修的所有条件均已满足。
       const i = info(t.key), n = TB.parse(templateText(t.key, true)).policy.questions.length, pub = published(t.key);
       return `<div class="card tpl"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[t.key] || SHIELD}</svg></div>
         <div class="txt"><h3>${esc(i.title)}</h3><p class="small">${esc(i.blurb)}</p><div class="meta"><span class="badge">${n} questions</span>${pub ? `<span class="badge ok">Published on X Layer</span>` : ""}</div></div>
-        <div class="acts"><a class="btn small" href="#check/${t.key}">Try the checker</a><a class="btn small ghost" href="#build/${t.key}">Use in the builder</a><button class="btn small ghost" data-msg="${t.key}" type="button">Copy a message to send</button></div></div>`;
+        <div class="acts"><a class="btn small" href="#check/${t.key}">Try the checker</a><a class="btn small ghost" href="#build/${t.key}">Use in the builder</a><a class="btn small ghost" href="#deal/${t.key}">Create deal link</a></div></div>`;
     }).join("");
     main.innerHTML = `<h1>Start from a template</h1><p class="lede">Pick a common situation, try its checker for free, then make the rules your own in the builder. Templates are starting points, not legal advice.</p>
       <div class="tpllist">${rows}</div>
@@ -279,7 +276,6 @@ default: 予以保修 : 保修的所有条件均已满足。
         <div><h4>Selling or providing</h4><p class="small">Show the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.</p></div></div>
       <div class="card" id="clausecard"></div>`;
     clauseCard(main.querySelector("#clausecard"), {key: "freelance"});
-    main.querySelectorAll("[data-msg]").forEach(b => b.onclick = async () => { const t = message(b.dataset.msg); try { await navigator.clipboard.writeText(t); const o = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = o, 1400); } catch { prompt("Copy:", t); } });
   }
   root.TB_TEMPLATES = Object.assign(api, {page, clauseCard});
 })(typeof window !== "undefined" ? window : globalThis);

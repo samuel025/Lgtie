@@ -462,6 +462,7 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 .langsw button{font:400 13px/1 var(--sans);padding:7px 11px;border:0;background:transparent;color:var(--ink);cursor:pointer;letter-spacing:0}
 .langsw button.on{background:var(--ink);color:#fff}
 .langsw button:not(.on):hover{background:rgba(0,0,0,.06)}
+.dealcard{display:flex;max-width:520px;border:1px solid var(--warm);border-radius:14px;overflow:hidden;background:#fff;margin:8px 0 14px}.dc-img{flex:0 0 130px;background:var(--paper);display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px;border-right:1px solid var(--warm)}.dc-img b{font-size:20px}.dc-img span{font-size:12px;color:var(--stone)}.dc-txt{display:flex;flex-direction:column;gap:3px;padding:12px 14px;min-width:0}.dc-txt b{font-size:15px}.dc-txt span{font-size:13px;color:var(--stone)}.dc-txt em{font-size:12px;color:var(--ash);font-style:normal}#dl-msg{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--warm);border-radius:10px;resize:vertical}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
@@ -2092,9 +2093,6 @@ default: 予以保修 : 保修的所有条件均已满足。
   // ---------- the #templates page ----------
   const main = document.querySelector("#main"), esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const base = () => location.href.split("#")[0];
-  const message = key => lang() === "zh"
-    ? `在开始之前，我们能不能先约定好万一出问题怎么处理？这是我们双方都会回答的问题，以及决定结果的规则：${base()}#check/${key}\n如果将来有分歧，只有我们答案不一致的问题才会交给中立的第三方。你接受 LGtie 协议吗？`
-    : `Before we go ahead, can we agree in advance what happens if something goes wrong? Here are the questions we would both answer, and the rules that decide the result: ${base()}#check/${key}\nIf we ever disagree, only the questions we answer differently go to a neutral person. Do you accept an LGtie agreement?`;
 
   // The clause card, used on the templates page (controls on the left, the clause on the right) and on an agreement page (the agreement's own
   // reviewer and time limits, so only the effect can be chosen). o: {key, fixed, reviewer, answerDays, reviewDays, link}
@@ -2146,7 +2144,7 @@ default: 予以保修 : 保修的所有条件均已满足。
       const i = info(t.key), n = TB.parse(templateText(t.key, true)).policy.questions.length, pub = published(t.key);
       return `<div class="card tpl"><div class="ico"><svg viewBox="0 0 24 24" aria-hidden="true">${ICON[t.key] || SHIELD}</svg></div>
         <div class="txt"><h3>${esc(i.title)}</h3><p class="small">${esc(i.blurb)}</p><div class="meta"><span class="badge">${n} questions</span>${pub ? `<span class="badge ok">Published on X Layer</span>` : ""}</div></div>
-        <div class="acts"><a class="btn small" href="#check/${t.key}">Try the checker</a><a class="btn small ghost" href="#build/${t.key}">Use in the builder</a><button class="btn small ghost" data-msg="${t.key}" type="button">Copy a message to send</button></div></div>`;
+        <div class="acts"><a class="btn small" href="#check/${t.key}">Try the checker</a><a class="btn small ghost" href="#build/${t.key}">Use in the builder</a><a class="btn small ghost" href="#deal/${t.key}">Create deal link</a></div></div>`;
     }).join("");
     main.innerHTML = `<h1>Start from a template</h1><p class="lede">Pick a common situation, try its checker for free, then make the rules your own in the builder. Templates are starting points, not legal advice.</p>
       <div class="tpllist">${rows}</div>
@@ -2156,7 +2154,6 @@ default: 予以保修 : 保修的所有条件均已满足。
         <div><h4>Selling or providing</h4><p class="small">Show the rules first. The receipt of a decided case shows which rules both sides agreed and who settled each question. It is useful supporting evidence if a payment company or a platform asks, but they decide what they accept.</p></div></div>
       <div class="card" id="clausecard"></div>`;
     clauseCard(main.querySelector("#clausecard"), {key: "freelance"});
-    main.querySelectorAll("[data-msg]").forEach(b => b.onclick = async () => { const t = message(b.dataset.msg); try { await navigator.clipboard.writeText(t); const o = b.textContent; b.textContent = "Copied"; setTimeout(() => b.textContent = o, 1400); } catch { prompt("Copy:", t); } });
   }
   root.TB_TEMPLATES = Object.assign(api, {page, clauseCard});
 })(typeof window !== "undefined" ? window : globalThis);
@@ -3956,6 +3953,110 @@ MY POLICY:
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_RID = api;
 })();
 
+</script><script>/* deal.js */
+// Deal links: agree the rules before money moves, from inside a chat.
+//   #deal/<template>   the person who starts a deal fills in a few details and gets a message and a link to send (WhatsApp, Telegram, email, copy).
+//   #d/<details>       the page the other person opens: the deal, the yes/no questions, how to agree with a passkey. Details live after the # in the link,
+//                      so they are never sent to a server by the page; anyone who has the link can read them.
+// The shared link is <site>/deal/<template>.html#<details>. That static page carries the preview card (title, text, picture) that chat apps show, and
+// then opens the app with the details. Static: no server.
+(function () {
+  "use strict";
+  const TB = window.TB, CFG = window.TB_CONFIG, main = document.querySelector("#main"), $ = s => document.querySelector(s);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+  const lang = () => (window.TB_I18N && window.TB_I18N.lang) || "en";
+  const LIM = {a: 40, b: 40, w: 120, p: 40};
+  const keys = () => TB.LIBRARY.map(t => t.key);
+  const b64e = s => btoa(String.fromCharCode(...new TextEncoder().encode(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(String(s).replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
+  const info = k => TB.templateInfo(k), nQ = k => TB.parse(TB.templateText(k, true)).policy.questions.length;
+  /// Only known fields, plain text, bounded lengths; a deal from a link is never trusted as it comes.
+  function clean(o) {
+    if (!o || typeof o !== "object" || !keys().includes(String(o.t || ""))) return null;
+    const s = k => String(o[k] == null ? "" : o[k]).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, LIM[k]);
+    return {t: String(o.t), a: s("a"), b: s("b"), w: s("w"), p: s("p"), d: /^\d{4}-\d{2}-\d{2}$/.test(String(o.d || "")) ? o.d : "", r: Number.isInteger(o.r) && o.r > 0 && o.r < 1e9 ? o.r : 0};
+  }
+  const encodeDeal = o => { const c = clean(o), out = {}; Object.keys(c).forEach(k => { if (c[k]) out[k] = c[k]; }); return b64e(JSON.stringify(out)); };
+  const parseDeal = str => { try { const d = clean(JSON.parse(b64d(str))); return d ? {deal: d} : {error: "This link is for rules this page does not have."}; } catch { return {error: "This link is not valid. Ask the person who sent it to send it again."}; } };
+  /// The exact text both people can check: it is what a written agreement would fingerprint.
+  const termsText = d => ["LGtie deal", "Rules: " + info(d.t).title + (d.r ? " (rule set #" + d.r + ")" : ""), d.a && "From: " + d.a, d.b && "With: " + d.b, d.w && "About: " + d.w, d.p && "Price: " + d.p, d.d && "Date: " + d.d].filter(Boolean).join("\n");
+  const siteBase = () => location.href.split("#")[0].replace(/[^/]*$/, "");
+  const shareLink = d => siteBase() + "deal/" + d.t + ".html#" + encodeDeal(d);
+  const ruleOf = d => d.r || (CFG.published && CFG.published[d.t] ? CFG.published[d.t].ruleSetId : 0);
+  /// The chat message. It names the sender, the thing, the questions, and says only the disagreements go to someone neutral.
+  function message(d, link) {
+    const n = nQ(d.t), extra = [d.p && (lang() === "zh" ? "价格：" : "Price: ") + d.p, d.d && (lang() === "zh" ? "日期：" : "By: ") + d.d].filter(Boolean).join(" · ");
+    if (lang() === "zh") return [`${d.a ? d.a + " 邀请你" : "我想和你"}在付款之前先约定好：万一出问题，怎么处理${d.w ? "（" + d.w + "）" : ""}。`, extra, `点开看 ${n} 个是非题。如果我们有分歧，只有答案不一致的问题才会交给我们双方事先同意的中立第三方。你不需要钱包，用通行密钥（passkey）确认即可。`, link].filter(Boolean).join("\n");
+    return [`${d.a ? d.a + " invited you to agree" : "I'd like us to agree"} what happens if something goes wrong${d.w ? " with " + d.w : ""}, before any money moves.`, extra,
+      `Tap to read the ${n} yes/no questions. If we disagree, only the questions we answer differently go to a neutral person we both accept first. No wallet needed: you approve with a passkey.`, link].filter(Boolean).join("\n");
+  }
+  const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
+
+  // ---------- the creator: #deal/<template> ----------
+  function create(key) {
+    const k = keys().includes(key) ? key : "secondhand", i = info(k), n = nQ(k);
+    main.innerHTML = `<h1>Create a deal link</h1><p class="lede">Send this to the other person in WhatsApp, Telegram or email <b>before</b> any money moves. They read the ${n} yes/no questions and see who decides if you disagree. Nothing is uploaded and nobody needs a wallet to read it.</p>
+      <div class="card formcard">
+        <label class="field"><span>Situation</span><select id="dl-t">${TB.LIBRARY.map(t => `<option value="${esc(t.key)}"${t.key === k ? " selected" : ""}>${esc(info(t.key).title)}</option>`).join("")}</select></label>
+        <div class="fgrid"><label class="field"><span>Your name (optional)</span><input id="dl-a" maxlength="${LIM.a}" autocomplete="off" placeholder="e.g. Samuel"></label>
+          <label class="field"><span>Their name (optional)</span><input id="dl-b" maxlength="${LIM.b}" autocomplete="off" placeholder="e.g. Amina"></label></div>
+        <label class="field"><span>What is the deal about? (optional)</span><input id="dl-w" maxlength="${LIM.w}" autocomplete="off" placeholder="e.g. iPhone 12, 128GB, blue"></label>
+        <div class="fgrid"><label class="field"><span>Price (optional)</span><input id="dl-p" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
+          <label class="field"><span>Date (optional)</span><input id="dl-d" type="date"></label></div>
+        <label class="field"><span>Rule set number, if you have published these rules on X Layer (optional)</span><input id="dl-r" type="number" min="1" step="1" placeholder="${CFG.published && CFG.published[k] ? "default: " + CFG.published[k].ruleSetId : "leave empty"}"></label></div>
+      <div class="card" id="dl-out"></div>`;
+    const val = id => $(id).value, build = () => ({t: val("#dl-t"), a: val("#dl-a"), b: val("#dl-b"), w: val("#dl-w"), p: val("#dl-p"), d: val("#dl-d"), r: Number(val("#dl-r")) || 0});
+    let edited = false;
+    function render() {
+      const d = clean(build()), link = shareLink(d), text = edited && $("#dl-msg") ? $("#dl-msg").value : message(d, link), enc = encodeURIComponent, tg = text.replace(link, "").trim();
+      $("#dl-out").innerHTML = `<h3>Your message</h3><p class="small mute">Edit it if you like. The link at the end is the deal.</p>
+        <textarea id="dl-msg" rows="7" aria-label="Message to send">${esc(text)}</textarea>
+        <div class="row">
+          <a class="btn" id="dl-wa" target="_blank" rel="noopener" href="https://wa.me/?text=${enc(text)}">Send on WhatsApp</a>
+          <a class="btn" id="dl-tg" target="_blank" rel="noopener" href="https://t.me/share/url?url=${enc(link)}&text=${enc(tg)}">Send on Telegram</a>
+          <a class="btn ghost" id="dl-em" href="mailto:?subject=${enc("Let's agree the rules first")}&body=${enc(text)}">Email</a>
+          ${navigator.share ? `<button class="btn ghost" id="dl-sh" type="button">More…</button>` : ""}
+          <button class="btn ghost" id="dl-cm" type="button">Copy message</button><button class="btn ghost" id="dl-cl" type="button">Copy link</button></div>
+        <h3>How it will look in the chat</h3>
+        <div class="dealcard"><div class="dc-img" aria-hidden="true"><b>LGtie</b><span>${esc(info(d.t).title)}</span></div><div class="dc-txt"><b>${esc(info(d.t).title)}: agree the rules before any money moves</b><span>${esc(info(d.t).blurb)} ${nQ(d.t)} yes/no questions. Tap to read them.</span><em>${esc(location.host || "lgtie")}</em></div></div>
+        <p class="small mute">The details (names, price, date) are inside the link after the <code>#</code>, so this page sends them nowhere. Anyone who gets the link can read them, so share it only with the person you mean. The picture and title chat apps show come from the rules, not from your details.</p>
+        <p class="small"><a href="${esc(link.replace(/^.*?#/, "#d/"))}">Open it as the other person will see it</a></p>`;
+      $("#dl-msg").oninput = () => { edited = true; const t = $("#dl-msg").value; $("#dl-wa").href = "https://wa.me/?text=" + enc(t); $("#dl-tg").href = "https://t.me/share/url?url=" + enc(link) + "&text=" + enc(t.replace(link, "").trim()); $("#dl-em").href = "mailto:?subject=" + enc("Let's agree the rules first") + "&body=" + enc(t); };
+      $("#dl-cm").onclick = e => copy($("#dl-msg").value, e.target); $("#dl-cl").onclick = e => copy(link, e.target);
+      if ($("#dl-sh")) $("#dl-sh").onclick = () => navigator.share({text: $("#dl-msg").value}).catch(() => {});
+    }
+    ["#dl-a", "#dl-b", "#dl-w", "#dl-p", "#dl-d", "#dl-r"].forEach(s => { $(s).oninput = () => { edited = false; render(); }; });
+    $("#dl-t").onchange = () => { location.hash = "#deal/" + val("#dl-t"); };
+    render();
+  }
+
+  // ---------- the other person (and the creator): #d/<details> ----------
+  async function deal(str) {
+    const r = parseDeal(str);
+    if (r.error) { main.innerHTML = `<h1>Deal</h1><p class="err">${esc(r.error)}</p><p><a class="btn" href="#templates">See the templates</a></p>`; return; }
+    const d = r.deal, i = info(d.t), qs = TB.parse(TB.templateText(d.t, true)).policy.questions, terms = termsText(d), rule = ruleOf(d);
+    const fp = "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(terms)))].map(b => b.toString(16).padStart(2, "0")).join("");
+    const row = (l, v) => v ? `<tr><td>${l}</td><td>${esc(v)}</td></tr>` : "";
+    main.innerHTML = `<h1>${d.a ? esc(d.a) + " wants to agree the rules first" : "Agree the rules first"}</h1>
+      <p class="lede">${d.w ? `For <b>${esc(d.w)}</b>. ` : ""}Before any money moves, you both see the same ${qs.length} yes/no questions. If something goes wrong, you each answer them. Where you agree, that settles it. Only the questions you answer differently go to a neutral person you both accept first.</p>
+      <div class="card"><h3>The deal</h3><table class="small vt"><tbody>${row("From", d.a)}${row("With", d.b)}${row("About", d.w)}${row("Price", d.p)}${row("Date", d.d)}<tr><td>Rules</td><td>${esc(i.title)}${d.r ? ` (rule set #${d.r})` : ""}</td></tr></tbody></table>
+        <p class="small mute">Fingerprint of these terms: <code>${fp.slice(0, 18)}…</code> · <button class="btn small ghost" id="dd-ct" type="button">Copy the terms</button></p></div>
+      <div class="card"><h3>The ${qs.length} questions</h3><ol class="small">${qs.map(q => `<li>${esc(q.text)}</li>`).join("")}</ol>
+        <div class="row"><a class="btn" href="#check/${esc(d.t)}">Try the checker (free, no wallet)</a></div></div>
+      <div class="card" id="dd-agree"><h3>To agree, with no wallet</h3>
+        <ol class="small"><li>On your phone, open <a href="#join">Create your passkey</a>. It is the same thing that unlocks your phone. You get a claim code that holds nothing secret.</li>
+          <li>Send that code back in the chat${d.a ? " to " + esc(d.a) : ""}. They register it and propose the agreement.</li>
+          <li>You accept on your own device with your passkey. No wallet and no OKB needed.</li></ol>
+        <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p>
+        <h3>If you made this link</h3>
+        ${rule ? `<p class="small">Wait for their claim code, then invite them. The rules (rule set #${rule}) and these terms are filled in for you.</p><div class="row"><button class="btn ghost" id="dd-inv" type="button">Invite them by passkey</button></div>`
+          : `<p class="small">These rules are not published on X Layer yet, so an agreement cannot use them. Publish them in the <a href="#build/${esc(d.t)}">builder</a> (a small fee), then make the link again with the rule set number. The free checker works already.</p>`}</div>`;
+    $("#dd-ct").onclick = e => copy(terms, e.target);
+    if ($("#dd-inv")) $("#dd-inv").onclick = () => { try { sessionStorage.setItem("lgtie.dealTerms", terms); sessionStorage.setItem("lgtie.dealRule", String(rule)); } catch (e) {} location.hash = "#pk/agree"; };
+  }
+  window.TB_DEAL = {create, deal, encodeDeal, parseDeal, clean, termsText, message, shareLink};
+})();
+
 </script><script>/* autoq.js */
 // Automatic questions, reference implementation (design: docs/AUTO-QUESTIONS.md, Phase 0). Pure functions, no DOM, no network, nothing deployed.
 // A future TiebreakCaseV6 must give exactly these answers for the same inputs; tests/autoq.test.mjs is the table it is checked against.
@@ -4635,6 +4736,8 @@ MY POLICY:
         <label class="field"><span>Reviewer's signed identity (recommended)</span><textarea id="rvp" rows="2" placeholder="Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page."></textarea><em class="small mute" id="rvpmsg"></em></label>
         <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button></div><p id="msg" class="small"></p></div>`;
     if (prefill) $("#cc").value = prefill;
+    try { const t = sessionStorage.getItem("lgtie.dealTerms"), r = Number(sessionStorage.getItem("lgtie.dealRule")); if (t) { $("#terms").value = t; sessionStorage.removeItem("lgtie.dealTerms"); }   // a deal link fills in the written terms and its rules
+      if (r > 0 && !$("#rs").querySelector(`option[value="${r}"]`)) { $("#rs").insertAdjacentHTML("beforeend", `<option value="${r}">Rule set #${r}</option>`); } if (r > 0) { $("#rs").value = String(r); sessionStorage.removeItem("lgtie.dealRule"); } } catch (e) {}
     // The reviewer's identity line is added to the written terms, so it is part of what both sides fingerprint and accept.
     const rvLine = () => { const code = $("#rvp").value.trim(); if (!code) return {line: ""}; const r = window.TB_RID.parse(code); if (!r.ok) return {error: r.error}; if (r.profile.address !== $("#rv").value.trim().toLowerCase()) return {error: "This profile belongs to a different wallet than the reviewer address above."}; return {line: window.TB_RID.termsLine(r.profile)}; };
     const showLine = () => { const r = rvLine(), m = $("#rvpmsg"); m.className = "small " + (r.error ? "err" : "mute"); m.textContent = r.error ? r.error : r.line ? "Added to your terms, so both sides agree to it: " + r.line : ""; };
@@ -5116,6 +5219,8 @@ MY POLICY:
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "rules") return window.TB_CASES.rules(key);
     if (view === "pricing") return window.TB_BILLING.page();
+    if (view === "deal") return window.TB_DEAL.create(key);
+    if (view === "d") return window.TB_DEAL.deal([key, ...rest].join("/"));
     if (view === "auto") return window.TB_AUTOPREVIEW.page(key);   // unlisted preview, see docs/AUTO-QUESTIONS.md
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();

@@ -104,6 +104,7 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 - **Embeddable checker.** Put the claim checker on your own website with one line, so customers get a result and a reason without leaving your page (see below).
 - **Agreements and cases.** Agree rules, a neutral reviewer and deadlines up front, then open as many cases as you need under one agreement. A business inbox collects what customers sign with a passkey.
 - **Contract clause.** Generates a short clause for your written contract that points disagreements at the published rules. It is a template, not legal advice.
+- **Deal links.** On any template, "Create deal link" makes a chat-ready message and a link to send on WhatsApp, Telegram or email before money moves. The other person opens a page with the deal, the yes/no questions and a free checker, and agrees with a passkey. The details stay in the link after the `#`, so the page sends them to no server, and chat apps show a preview card for the template. [How it works](docs/FEATURES.md).
 - **Automatic questions.** A publisher marks questions the chain answers (evidence attached in time, case opened by a date, or a value read from another contract) at `#auto/<rule set number>`, with a review screen before writing it once. Case pages mark them "Answered by the chain" and do not ask the sides about them.
 - **Pricing and subscriptions** on the `#pricing` page.
 

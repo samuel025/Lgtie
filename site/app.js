@@ -356,6 +356,8 @@
     if (view === "business") return key ? window.TB_CASES.business(key) : window.TB_CASES.list();
     if (view === "rules") return window.TB_CASES.rules(key);
     if (view === "pricing") return window.TB_BILLING.page();
+    if (view === "deal") return window.TB_DEAL.create(key);
+    if (view === "d") return window.TB_DEAL.deal([key, ...rest].join("/"));
     if (view === "auto") return window.TB_AUTOPREVIEW.page(key);   // unlisted preview, see docs/AUTO-QUESTIONS.md
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();

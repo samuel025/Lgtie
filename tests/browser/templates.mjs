@@ -20,7 +20,7 @@ const answer = async (p, i, v) => { const g = (await p.$$(".yn"))[i], btn = awai
 const e = await page("en");
 await e.goto(BASE + "#templates"); await w(1200);
 ok("the page lists the five templates", (await e.$$eval(".tpl h3", hs => hs.map(h => h.textContent))).join("|") === "Second-hand sale|Freelance milestone|Rental deposit|Bug bounty severity|Warranty claim", (await e.$$eval(".tpl h3", hs => hs.map(h => h.textContent))).join("|"));
-ok("each card offers the checker, the builder and a message to send", (await e.$$(".tpl")).length === 5 && (await e.$$('.tpl a[href^="#check/"]')).length === 5 && (await e.$$('.tpl a[href^="#build/"]')).length === 5 && (await e.$$("[data-msg]")).length === 5);
+ok("each card offers the checker, the builder and a deal link to send", (await e.$$(".tpl")).length === 5 && (await e.$$('.tpl a[href^="#check/"]')).length === 5 && (await e.$$('.tpl a[href^="#build/"]')).length === 5 && (await e.$$('.tpl a[href^="#deal/"]')).length === 5);
 ok("only the warranty rules say they are published on X Layer", (await e.$$eval(".tpl", cs => cs.filter(c => /Published on X Layer/.test(c.innerText)).length)) === 1);
 ok("it says plainly that trying a checker is free and that publishing costs a fee", /free and needs no wallet/.test(await T(e, "main")) && /small fee/.test(await T(e, "main")));
 ok("it carries the 'ask for an LGtie agreement' advice for buyers and sellers", /Will you accept an LGtie agreement\?/.test(await T(e, "main")) && /supporting evidence/.test(await T(e, "main")) && !/proves|guarantee/i.test(await T(e, "main")));

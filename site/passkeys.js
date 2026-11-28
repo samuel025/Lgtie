@@ -344,6 +344,8 @@
         <label class="field"><span>Reviewer's signed identity (recommended)</span><textarea id="rvp" rows="2" placeholder="Paste the reviewer's profile code (lgtie-reviewer1.…). They create it on their own reviewer page."></textarea><em class="small mute" id="rvpmsg"></em></label>
         <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button></div><p id="msg" class="small"></p></div>`;
     if (prefill) $("#cc").value = prefill;
+    try { const t = sessionStorage.getItem("lgtie.dealTerms"), r = Number(sessionStorage.getItem("lgtie.dealRule")); if (t) { $("#terms").value = t; sessionStorage.removeItem("lgtie.dealTerms"); }   // a deal link fills in the written terms and its rules
+      if (r > 0 && !$("#rs").querySelector(`option[value="${r}"]`)) { $("#rs").insertAdjacentHTML("beforeend", `<option value="${r}">Rule set #${r}</option>`); } if (r > 0) { $("#rs").value = String(r); sessionStorage.removeItem("lgtie.dealRule"); } } catch (e) {}
     // The reviewer's identity line is added to the written terms, so it is part of what both sides fingerprint and accept.
     const rvLine = () => { const code = $("#rvp").value.trim(); if (!code) return {line: ""}; const r = window.TB_RID.parse(code); if (!r.ok) return {error: r.error}; if (r.profile.address !== $("#rv").value.trim().toLowerCase()) return {error: "This profile belongs to a different wallet than the reviewer address above."}; return {line: window.TB_RID.termsLine(r.profile)}; };
     const showLine = () => { const r = rvLine(), m = $("#rvpmsg"); m.className = "small " + (r.error ? "err" : "mute"); m.textContent = r.error ? r.error : r.line ? "Added to your terms, so both sides agree to it: " + r.line : ""; };
