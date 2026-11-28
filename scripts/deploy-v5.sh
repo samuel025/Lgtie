@@ -24,7 +24,9 @@ cmd="${1:-preflight}"
 get() { sed -n "s/.*$1: \"\(0x[0-9a-fA-F]*\)\".*/\1/p" "$CONFIG" | head -1; }
 REG="$(get registry)"; PROC="$(get processor)"
 PK="$(sed -n 's/.*v4: {passkeys: "\(0x[0-9a-fA-F]*\)".*/\1/p' "$CONFIG" | head -1)"; AG="$(sed -n 's/.*v4: {.*agreements: "\(0x[0-9a-fA-F]*\)".*/\1/p' "$CONFIG" | head -1)"
-[ "$(cast chain-id --rpc-url "$RPC")" = "$CHAIN_ID" ] || { echo "RPC is not X Layer (chain $CHAIN_ID). Refusing."; exit 1; }
+got=""; for try in 1 2 3 4 5; do got="$(cast chain-id --rpc-url "$RPC" 2>/dev/null || true)"; [ -n "$got" ] && break; echo "RPC did not answer (try $try of 5), retrying…" >&2; sleep 3; done
+[ -n "$got" ] || { echo "Could not reach $RPC. It is a network problem, not a problem with the script. Try again, or set RPC_URL to another X Layer endpoint."; exit 1; }
+[ "$got" = "$CHAIN_ID" ] || { echo "RPC is not X Layer (chain $CHAIN_ID, got $got). Refusing."; exit 1; }
 for v in REG PROC PK AG; do [ -n "${!v}" ] || { echo "Could not read $v from $CONFIG."; exit 1; }; done
 [ -n "${SIGNER_ARGS:-}" ] || [ -f "$HOME/.foundry/keystores/$ACCOUNT" ] || { echo "No keystore '$ACCOUNT'. Create one: cast wallet import $ACCOUNT --interactive"; exit 1; }
 # the token must really be a 6-decimal token on this chain, and the treasury must be a plain address
