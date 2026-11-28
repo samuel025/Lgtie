@@ -26,7 +26,8 @@ ok("it shows the publisher, the date, the circuit and the rules fingerprint the 
 ok("the first version says it replaces nothing and nothing has replaced it yet", /nothing: the first version/.test(await T(e, "#v1")) && /nothing yet/.test(await T(e, "#v1")));
 ok("it states that agreements keep the version they accepted and that the chain cannot be forged", /Agreements keep the version they accepted/.test(await T(e, "main")) && /A newer version never changes it/.test(await T(e, "main")) && /cannot be forged by someone else/.test(await T(e, "main")));
 ok("it counts the real agreements and cases that use this version (wallet and passkey)", await until(async () => { const m = /(\d+) agreements? and (\d+) cases? use this version/.exec(await T(e, "#v1")); return !!m && Number(m[1]) >= 2 && Number(m[2]) >= 4; }), await T(e, "#v1"));
-ok("it links to the checker for the rules it knows", await e.$eval("#v1 a.btn", a => a.getAttribute("href")) === "#check/warranty");
+ok("it links to the checker for the rules it knows", await e.$eval('#v1 a[href^="#check/"]', a => a.getAttribute("href")) === "#check/warranty");
+ok("it links to the automatic questions of each version", await e.$eval('#v1 a[href^="#auto/"]', a => a.getAttribute("href")) === "#auto/1");
 ok("the fingerprint shown is the one the checker computes for the published warranty rules", await e.evaluate(async () => { const c = TB.canonical(TB.parse(TB.TEMPLATES.warranty).policy), h = "0x" + [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(c)))].map(x => x.toString(16).padStart(2, "0")).join(""); return document.querySelector("#v1").innerText.includes(h); }));
 
 // links from the rest of the site

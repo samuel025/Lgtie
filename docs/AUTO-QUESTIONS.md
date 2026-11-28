@@ -148,3 +148,11 @@ Contract changes the tests force, beyond what is listed above:
   (read-only, about 0.0002 OKB estimated) and a full deploy was run on a local fork; it writes a `v6:` line to `site/config.js`, which the site does not read yet.
 - Not built yet: per-agreement values (`AgreementRegistryV3`), the site reading V6 cases, and the
   builder control to publish a spec. Deploying V6 needs a new billing contract because `setCases` can be called only once.
+
+## Site: how a publisher sets it, and how everyone reads it
+
+- `#auto/<rule set number>` reads `FactSpecRegistry` for that rule set. With a spec it shows each automatic question in plain words and when it was written. With none, a visitor sees that the two sides answer everything.
+- The rule set's publisher, with that wallet connected, gets an editor: for each question choose who answers it (the two sides, evidence attached in time, case opened by a date, or a value on another contract). A review screen lists every question in plain words and warns that the write is **once only and permanent**; the button stays off until a box is ticked. The page checks the choices with the same `autoq.js` the tests use before anything is sent.
+- The builder's "published" box and the rules history link to it. `#auto/<template name>` is still the unpublished preview.
+- Case pages mark automatic questions "Answered by the chain" and do not ask the sides about them.
+- `site/pkcore.js` now encodes lists of tuples with bytes, checked byte for byte against `cast` in `tests/pkcore.test.mjs`.

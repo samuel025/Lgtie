@@ -61,4 +61,11 @@ ok("a DER signature becomes the right r and s", () => {
   const { r, s } = K.derToRS(der);
   assert.equal(r, BigInt("0x" + "aa".repeat(32))); assert.equal(s, BigInt("0x" + "bb".repeat(32)));
 });
+ok("a dynamic list of tuples that hold bytes (the automatic-questions spec) encodes exactly as cast does", () => {
+  const SPEC = {tuple: ["uint8", "uint8", "uint8", "uint8", "uint32", "uint64", "address", "uint8", "uint256", "bytes"]}, Z = "0x" + "00".repeat(20), TOK = "0x779Ded0c9e1022225f8E0630b35a9b54bE713736";
+  const mine = K.hex(K.call("set", ["uint256", {array: SPEC}], [3, [[1, 0, 0, 2, 1209600, 0, Z, 0, 0, "0x"], [3, 2, 0, 0, 0, 0, TOK, 1, 1000000, "0x70a08231000000000000000000000000000000000000000000000000000000000000dead"]]]));
+  const theirs = cast("calldata", "set(uint256,(uint8,uint8,uint8,uint8,uint32,uint64,address,uint8,uint256,bytes)[])", "3", "[(1,0,0,2,1209600,0," + Z + ",0,0,0x),(3,2,0,0,0,0," + TOK + ",1,1000000,0x70a08231000000000000000000000000000000000000000000000000000000000000dead)]");
+  assert.equal(mine, theirs);
+  assert.equal(K.hex(K.call("set", ["uint256", {array: SPEC}], [1, []])), cast("calldata", "set(uint256,(uint8,uint8,uint8,uint8,uint32,uint64,address,uint8,uint256,bytes)[])", "1", "[]"));
+});
 console.log(process.exitCode ? "FAILED" : `all ${n} passed`);

@@ -41,9 +41,10 @@
   const kHex = s => hex(keccak256(typeof s === "string" ? utf8(s) : s));
 
   // ---------- ABI encoding (the parts we use) ----------
-  // A type is "uint256" | "uint64" | "uint8" | "bool" | "address" | "bytes32" | "bytes" | "string" | {tuple: [types]}.
+  // A type is "uint256" | "uint64" | "uint8" | "uint32" | "bool" | "address" | "bytes32" | "bytes" | "string" | {tuple: [types]} | {array: type} (a dynamic list).
   const isTuple = t => typeof t === "object" && t !== null && Array.isArray(t.tuple);
-  const isDyn = t => t === "bytes" || t === "string" || (isTuple(t) && t.tuple.some(isDyn));
+  const isArr = t => typeof t === "object" && t !== null && t.array !== undefined;
+  const isDyn = t => t === "bytes" || t === "string" || isArr(t) || (isTuple(t) && t.tuple.some(isDyn));
   const staticSize = t => isTuple(t) ? t.tuple.reduce((n, c) => n + staticSize(c), 0) : 32;
   function encStatic(t, v) {
     if (isTuple(t)) return concat(t.tuple.map((c, i) => encStatic(c, v[i])));
@@ -55,6 +56,7 @@
   }
   function encDyn(t, v) {
     if (t === "bytes" || t === "string") { const d = t === "string" ? utf8(v) : (typeof v === "string" ? unhex(v) : v), pad = (32 - d.length % 32) % 32; return concat([u256(d.length), d, new Uint8Array(pad)]); }
+    if (isArr(t)) return concat([u256(v.length), encode(v.map(() => t.array), v)]);   // length, then the items (offsets are relative to the start of the items)
     return encode(t.tuple, v);   // a dynamic tuple is encoded like a list of its members
   }
   function encode(types, values) {
@@ -67,7 +69,7 @@
     });
     return concat([...head, ...tail]);
   }
-  const typeStr = t => isTuple(t) ? "(" + t.tuple.map(typeStr).join(",") + ")" : t;
+  const typeStr = t => isArr(t) ? typeStr(t.array) + "[]" : isTuple(t) ? "(" + t.tuple.map(typeStr).join(",") + ")" : t;
   // calldata for a function: 4-byte selector from its canonical signature, then the encoded arguments
   const call = (name, types, values) => concat([keccak256(utf8(name + "(" + types.map(typeStr).join(",") + ")")).slice(0, 4), encode(types, values)]);
 

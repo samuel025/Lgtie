@@ -436,7 +436,7 @@
         ${prev ? `<p class="small">${prev.hash === s.hash ? "The same fingerprint as the previous version, so the rules text did not change." : "A different fingerprint from the previous version, so the rules changed."}</p>` : ""}
         ${others.length ? `<p class="small mute">The publisher also published ${others.map(x => "#" + x.id).join(", ")} as a replacement for this version.</p>` : ""}
         <p class="small" data-use="${s.id}"><span class="mute">Counting the agreements and cases that use this version…</span></p>
-        <div class="row">${K ? `<a class="btn small ghost" href="#check/${K.key}">Open the checker</a>` : `<span class="small mute">The registry keeps a fingerprint, not the text. The publisher's own checker link shows the rules and confirms they match this fingerprint.</span>`}</div></div>`;
+        <div class="row"><a class="btn small ghost" href="#auto/${s.id}">Automatic questions</a>${K ? `<a class="btn small ghost" href="#check/${K.key}">Open the checker</a>` : `<span class="small mute">The registry keeps a fingerprint, not the text. The publisher's own checker link shows the rules and confirms they match this fingerprint.</span>`}</div></div>`;
     };
     main.innerHTML = `<h1>Rules history</h1><p class="lede">${esc(target.name)}: ${chain.length} version${chain.length === 1 ? "" : "s"} published by ${short(target.publisher)}. Rule sets are permanent, so a change is always a new version, and the old one stays on-chain.</p>
       <div class="note"><b>Agreements keep the version they accepted.</b> An agreement is bound to one rule set number for good. A newer version never changes it, and any case under it is decided by that version's circuit, which anyone can still re-run.</div>
