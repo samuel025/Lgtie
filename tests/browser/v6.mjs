@@ -34,23 +34,26 @@ const p = await b.newPage(); await p.setViewport({width: 1280, height: 1000}); p
 await p.setRequestInterception(true); p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", body: cfg}); else r.continue(); });
 await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });
 const T = (pg, sel) => pg.$eval(sel, e => e.innerText).catch(() => "");
+const go = async h => { await p.goto("about:blank"); await p.goto(BASE + h); };   // a clean load, so a slow render from the previous page cannot overwrite this one
 async function until(fn, ms = 30000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await w(400); } return false; }
 
 ok("the case really opened on the V6 contract", Number(CID) >= 1);
 await p.goto(BASE + "#pk/case/" + CID);
 ok("the case page reads a V6 case and shows it as waiting for answers (the status is not shifted by the new fields)", await until(async () => { const t = await T(p, "main"); return new RegExp("Case #" + CID).test(t) && /Waiting for answers/.test(t); }), await T(p, "main"));
+ok("Q1 is shown as answered by the chain, with the explanation, before anyone has answered", await until(async () => { const t = await T(p, "main"); return /Answered by the chain: Yes/.test(t) && /Neither side can answer or dispute them/.test(t); }), await T(p, "main"));
 send(BIZ, CASES, "submit(uint256,bool,uint64)", CID, "true", "127"); send(CUST, CASES, "submit(uint256,bool,uint64)", CID, "false", "127");
 await p.reload();
 ok("after both sides answer, the page shows it as decided", await until(async () => /Decided/.test(await T(p, "main"))), await T(p, "main"));
+ok("the decided case still shows the chain's answer for Q1 and 'Agreed' for the questions the sides answered alike", /Answered by the chain: Yes/.test(await T(p, "main")) && /Agreed/.test(await T(p, "main")), await T(p, "main"));
 const raw = (await rpc("eth_call", [{to: CASES, data: sh('cast calldata "get(uint256)" ' + CID)}, "latest"])).result.slice(2), word = k => BigInt("0x" + raw.slice(k * 64, k * 64 + 64));
 ok("the case records that the chain answered Q1 (autoMask 1, autoBits 1) and the reviewer was not needed (status Final)", word(24) === 1n && word(25) === 1n && word(27) === 2n, [word(24), word(25), word(27)].join(","));
-await p.goto(BASE + "#pk/v5case/1");
+await go("#pk/v5case/1");
 ok("an older V5 case address still routes without errors", await until(async () => /Case #1|does not exist/.test(await T(p, "main"))), await T(p, "main"));
-await p.goto(BASE + "#pk/v4case/1");
+await go("#pk/v4case/1");
 ok("an older V4 case address still routes without errors", await until(async () => /Case #1|does not exist/.test(await T(p, "main"))), await T(p, "main"));
-await p.goto(BASE + "#pricing");
+await go("#pricing");
 ok("the pricing page reads the V6 billing contract and tells earlier subscribers to subscribe again", await until(async () => { const t = await T(p, "main"); return /3 USDT|0 USDT/.test(t) && /subscribe again here/.test(t) && /Subscribe monthly/.test(t); }), (await T(p, "main")).slice(0, 400));
-await p.goto(BASE + "#pk/agreement/" + AID);
+await go("#pk/agreement/" + AID);
 ok("the agreement page lists the V6 case", await until(async () => new RegExp("Case #" + CID).test(await T(p, "main"))), await T(p, "main"));
 ok("no page errors", errs.length === 0, errs.join(" | "));
 await b.close(); console.log(fails ? fails + " FAILED" : "all passed"); process.exit(fails ? 1 : 0);
