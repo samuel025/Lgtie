@@ -21,3 +21,11 @@ marketplace submits. A sponsored-fee service could be added later; it is not par
 `scripts/deploy-v7.sh preflight`, then `scripts/deploy-v7.sh deploy`: four transactions (AgreementRegistryV3, a new `LGtieBilling` because the live one can be linked to a
 case contract only once, a second `TiebreakCaseV6`, the link). It reuses the live passkey registry, rule-set registry, processor and spec registry, and writes a `v7:` line to
 `site/config.js`. Existing subscribers would subscribe again on the new billing contract. Unaudited.
+
+## On the site (built, tested on a fork)
+- When `site/config.js` has a `v7:` line (written by `scripts/deploy-v7.sh`), the site uses the V3 registry, the second case contract and the new billing contract. Without it nothing changes.
+- On **My cases** (`#mine`), after "Find my cases with my passkey", a person with only a passkey sees **Propose an agreement with my passkey**: the other side (a wallet address or a passkey account number), the reviewer, the rules, the time limits and written terms. They sign every term; the page then offers a link (and an inbox message) for someone with a wallet to submit.
+- A pending proposal made by a passkey can be withdrawn the same way (**Withdraw this proposal**), and the agreement and case pages say "passkey account #n" for the proposer.
+- Agreements on the older registry stay at `#pk/v2agreement/<id>`; cases on older contracts at `#pk/v6case`, `#pk/v5case` and `#pk/v4case`.
+- A **deal link** (`#deal/<template>`) can carry a rule set number and fills in the terms when the sender invites someone or proposes with a passkey.
+- `tests/browser/v7.mjs` runs the whole path on the real deployed contracts (on a fork): a person with only a virtual passkey proposes, someone else submits, the other side accepts, she opens a case, and a second proposal is withdrawn.

@@ -2530,6 +2530,9 @@ default: 予以保修 : 保修的所有条件均已满足。
     open: (agreementId, evidenceHash, asProposer) => keccak256(encode(["string", "uint256", "bytes32", "bool"], ["OPEN_CASE", agreementId, evidenceHash, asProposer])),
     // the agreement's terms digest is keccak256(abi.encode(proposer, counterparty, ruleSetId, termsHash, reviewer, answerWindow, reviewWindow))
     termsDigest: a => keccak256(encode([PARTY, PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], [[a.proposerWallet, a.proposerPasskey], [a.counterpartyWallet, a.counterpartyPasskey], a.ruleSetId, a.termsHash, a.reviewer, a.answerWindow, a.reviewWindow])),
+    // AgreementRegistryV3: a passkey proposes (every term is signed) or withdraws its own proposal
+    propose: p => keccak256(encode(["string", "uint256", PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], ["PROPOSE_AGREEMENT", p.proposerPasskey, [p.counterpartyWallet, p.counterpartyPasskey], p.ruleSetId, p.termsHash, p.reviewer, p.answerWindow, p.reviewWindow])),
+    cancelAgreement: id => keccak256(encode(["string", "uint256"], ["CANCEL_AGREEMENT", id])),
     accept: (id, termsDigest) => keccak256(encode(["string", "uint256", "bytes32"], ["ACCEPT_AGREEMENT", id, hex(termsDigest)])),
     addKey: key => keccak256(encode(["string", "uint256", "uint256", "bytes32"], ["ADD_KEY", key.x, key.y, key.rpIdHash])),
     removeKey: index => keccak256(encode(["string", "uint8"], ["REMOVE_KEY", index]))
@@ -4276,7 +4279,7 @@ MY POLICY:
   "use strict";
   const K = window.TB_PK, CFG = window.TB_CONFIG, W = () => window.TB_WALLET, main = document.querySelector("#main"), $ = s => document.querySelector(s);
   const ZERO = "0x" + "0".repeat(40);
-  const V5 = () => (CFG.v6 && CFG.v6.billing ? CFG.v6 : CFG.v5) || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
+  const V5 = () => (CFG.v7 && CFG.v7.billing ? CFG.v7 : CFG.v6 && CFG.v6.billing ? CFG.v6 : CFG.v5) || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
   const enc = (name, types = [], vals = []) => K.hex(K.call(name, types, vals));
@@ -4325,7 +4328,7 @@ MY POLICY:
   /// For a signed action someone is about to submit: if it opens a case, make the fee payable first.
   async function before(o, say) {
     if (!deployed() || !o || !o.to || o.to.toLowerCase() !== V5().cases.toLowerCase() || !String(o.data).startsWith(SEL_OPEN_SIGNED)) return {fee: 0n, covered: true};
-    const id = BigInt("0x" + String(o.data).slice(10, 74)), ag = (CFG.v4 || {}).agreements;
+    const id = BigInt("0x" + String(o.data).slice(10, 74)), ag = V5().agreements || (CFG.v4 || {}).agreements;   // the registry the agreement lives in
     const business = "0x" + words(await call(ag, enc("get", ["uint256"], [id])))[0].toString(16).padStart(40, "0");   // the proposer's wallet is the first word
     return ensureFee(business, say);
   }
@@ -4360,7 +4363,7 @@ MY POLICY:
         <li>${inf.live ? `Every payment goes straight to <code>${esc(inf.treasury)}</code>.` : "Every payment goes straight to LGtie's address."} The billing contract never holds any money, and a test checks that after every kind of payment it holds exactly nothing.</li>
         <li>Prices can be changed, but never above caps written into the contract: at most 10 USDT per case, 500 per month and 5,000 per year. The reviewer's own fee, if any, is agreed and paid directly between the parties, and LGtie takes no cut of it.</li>
         <li>A plan does not renew by itself, because there is no server to charge you. Subscribe again before it ends; time is added on top. Switching to a higher plan starts it now and does not refund the rest of the old one.</li>
-        <li>The contracts are unaudited. Everything recorded is public.</li>${CFG.v6 && CFG.v6.billing && CFG.v5 && CFG.v5.billing && CFG.v5.billing.toLowerCase() !== CFG.v6.billing.toLowerCase() ? `<li>New cases now open on a newer contract with its own billing. A plan bought earlier, on <code>${short(CFG.v5.billing)}</code>, does not cover them: subscribe again here.</li>` : ""}</ul></div>`;
+        <li>The contracts are unaudited. Everything recorded is public.</li>${(() => { const act = (V5().billing || "").toLowerCase(), old = [CFG.v6, CFG.v5].filter(c => c && c.billing && c.billing.toLowerCase() !== act).map(c => c.billing); return old.length && act ? `<li>New cases now open on a newer contract with its own billing. A plan bought earlier, on ${old.map(a => `<code>${short(a)}</code>`).join(" or ")}, does not cover them: subscribe again here.</li>` : ""; })()}</ul></div>`;
     const msg = (t, cls) => { const m = $("#minebody"); if (m) m.innerHTML = `<p class="small ${cls || "mute"}">${esc(t)}</p>`; };
     const showPlan = async () => {
       try {
@@ -4399,15 +4402,27 @@ MY POLICY:
   const ZERO = "0x" + "0".repeat(40), DAY = 86400, STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
-  // The newest case contract that is live is the one cases open on: TiebreakCaseV6 (V5 plus automatic questions), else V5 (V4 plus billing), else V4.
-  // The passkeys and agreements never changed. Cases opened on an older contract stay readable and usable at #pk/v5case/<id> and #pk/v4case/<id>.
+  // The newest contracts that are live are the ones used: v7 (AgreementRegistryV3, where a passkey can also PROPOSE, and a second TiebreakCaseV6), else v6
+  // (TiebreakCaseV6, automatic questions), else v5 (V4 plus billing), else the original V4 pair. The passkey registry never changed. Agreements and cases
+  // on older contracts stay readable and usable at #pk/v2agreement/<id> and #pk/v6case, #pk/v5case, #pk/v4case/<id>.
   const live = c => !!(c && c.cases && c.cases !== ZERO);
-  const ACTIVE = () => live(CFG.v6) ? CFG.v6 : live(CFG.v5) ? CFG.v5 : null;
-  const OLDER = () => { const act = ACTIVE(); if (!act) return []; const out = []; if (act === CFG.v6 && live(CFG.v5)) out.push({tag: "v5", addr: CFG.v5.cases}); if (CFG.v4 && CFG.v4.cases) out.push({tag: "v4", addr: CFG.v4.cases}); return out.filter(o => o.addr.toLowerCase() !== act.cases.toLowerCase()); };
-  let LEGACY = ""; window.addEventListener("hashchange", () => { if (!/^#pk\/v[45]case\//.test(location.hash)) LEGACY = ""; });
+  const ACTIVE = () => live(CFG.v7) ? CFG.v7 : live(CFG.v6) ? CFG.v6 : live(CFG.v5) ? CFG.v5 : null;
+  const V2AG = () => (CFG.v4 || {}).agreements;
+  const activeAg = () => { const a = ACTIVE(); return a && a.agreements ? a.agreements : V2AG(); };
+  const canProposeSigned = () => !!(ACTIVE() && ACTIVE().agreements);   // only AgreementRegistryV3 has proposeSigned
+  /// Case contracts before the active one, newest first. Their cases refer to agreements in the V2 registry.
+  const OLDER = () => { const act = ACTIVE(); if (!act) return []; const out = [];
+    [["v6", CFG.v6], ["v5", CFG.v5]].forEach(([tag, c]) => { if (live(c)) out.push({tag, addr: c.cases}); }); if (CFG.v4 && CFG.v4.cases) out.push({tag: "v4", addr: CFG.v4.cases});
+    return out.filter(o => o.addr.toLowerCase() !== act.cases.toLowerCase()); };
+  const eraOf = tag => (OLDER().find(o => o.tag === tag) || {}).addr;
+  let LEGACY = null; window.addEventListener("hashchange", () => { if (!/^#pk\/(v[456]case|v2agreement)\//.test(location.hash)) LEGACY = null; });
   const legacyCases = async () => (await Promise.all(OLDER().map(async o => (await scan(o.addr, id => call(o.addr, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: o.tag}))))).flat();
+  /// Agreements in the older V2 registry, when a newer registry is the active one.
+  const legacyAgreements = async () => { const v2 = V2AG(); if (!v2 || v2.toLowerCase() === (activeAg() || "").toLowerCase()) return []; return (await scan(v2, id => call(v2, enc("get", ["uint256"], [id])).then(decodeAgreement)).catch(() => [])).map(a => ({...a, legacy: true})); };
+  const sameRegistry = () => (activeAg() || "").toLowerCase() === (V2AG() || "").toLowerCase();   // older cases refer to the same agreement ids only if the registry did not change
   const caseHref = c => (c.legacy ? "#pk/" + c.legacy + "case/" : "#pk/case/") + c.id;
-  const V4 = () => { const base = CFG.v4 || {}; if (LEGACY) return {...base, cases: LEGACY}; const a = ACTIVE(); return a ? {...base, cases: a.cases} : base; }, deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  const agHref = a => (a.legacy || (LEGACY && LEGACY.v2) ? "#pk/v2agreement/" : "#pk/agreement/") + (a.id != null ? a.id : a);
+  const V4 = () => { const base = CFG.v4 || {}; if (LEGACY) return {...base, cases: LEGACY.cases, agreements: LEGACY.agreements}; const a = ACTIVE(); return a ? {...base, cases: a.cases, agreements: activeAg()} : base; }, deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -4559,18 +4574,57 @@ MY POLICY:
     const mineCases = cases.filter(c => c.filer.passkey === BigInt(accountId) || c.decider.passkey === BigInt(accountId));
     list.innerHTML = `<h2>Agreements</h2><div id="ags">${mineAg.length ? "" : `<p class="mute">None yet.</p>`}</div><h2>Cases</h2><div id="cs">${mineCases.length ? "" : `<p class="mute">None yet.</p>`}</div>`;
     mineAg.forEach(a => agreementCard(a, accountId, credentialId)); mineCases.forEach(c => caseCard(c, accountId, credentialId));
+    if (canProposeSigned()) list.insertAdjacentElement("afterbegin", proposeCard(accountId, credentialId));
+  }
+  /// AgreementRegistryV3: a passkey account proposes an agreement. The person signs every term here; whoever submits the signed link pays the network fee.
+  function proposeCard(accountId, credentialId) {
+    const card = document.createElement("div"); card.className = "card formcard"; card.id = "propcard";
+    let dealTerms = "", dealRule = 0; try { dealTerms = sessionStorage.getItem("lgtie.dealTerms") || ""; dealRule = Number(sessionStorage.getItem("lgtie.dealRule")) || 0; } catch (e) {}
+    const rules = Object.values(CFG.published || {}).map(v => v.ruleSetId); if (dealRule > 0 && !rules.includes(dealRule)) rules.push(dealRule);
+    card.innerHTML = `<h3>Propose an agreement with my passkey</h3><p class="small mute">You sign every term with your passkey. Then someone with a wallet submits it and pays the small network fee: the other side, a friend, or a business. Nothing is sent from here.</p>
+      <label class="field"><span>The other side: a wallet address, or a passkey account number</span><input id="pp-cp" type="text" autocomplete="off" placeholder="0x… or 12"></label>
+      <label class="field"><span>Neutral reviewer's wallet address</span><input id="pp-rv" type="text" autocomplete="off" placeholder="0x… (neither of you)"><em class="small mute">The person you both accept to decide only the questions you disagree on.</em></label>
+      <div class="fgrid"><label class="field"><span>Rules</span><select id="pp-rs">${rules.map(r => `<option value="${r}"${r === (dealRule || rules[0]) ? " selected" : ""}>Rule set #${r}</option>`).join("")}</select></label>
+        <label class="field"><span>Time to answer</span><select id="pp-aw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label>
+        <label class="field"><span>Time for the reviewer</span><select id="pp-rw"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days</option></select></label></div>
+      <label class="field"><span>Written terms (optional)</span><textarea id="pp-terms" rows="3" placeholder="Only a fingerprint of this text goes on-chain"></textarea></label>
+      <div class="row"><button class="btn" id="pp-go" type="button">Sign the proposal with my passkey</button></div><p id="pp-msg" class="small"></p><div id="pp-out"></div>`;
+    card.querySelector("#pp-terms").value = dealTerms;
+    card.querySelector("#pp-go").onclick = async () => {
+      const msg = card.querySelector("#pp-msg"), say = (t, c) => { msg.className = "small " + (c || "mute"); msg.textContent = t; };
+      try {
+        const v = card.querySelector("#pp-cp").value.trim(), rv = card.querySelector("#pp-rv").value.trim();
+        const cp = isAddr(v) ? {w: v, p: 0} : /^[0-9]+$/.test(v) && Number(v) > 0 ? {w: ZERO, p: Number(v)} : null;
+        if (!cp) throw new Error("Enter the other side's wallet address (0x…) or their passkey account number.");
+        if (cp.p === Number(accountId)) throw new Error("The other side has to be someone else.");
+        if (!isAddr(rv) || isRealAddr(rv) === false) throw new Error("Enter the reviewer's wallet address."); if (cp.w.toLowerCase() === rv.toLowerCase()) throw new Error("The reviewer cannot be one of the two sides.");
+        const terms = card.querySelector("#pp-terms").value.trim(), th = terms ? await hashText(terms) : "0x" + "0".repeat(64), rs = Number(card.querySelector("#pp-rs").value), aw = Number(card.querySelector("#pp-aw").value) * DAY, rw = Number(card.querySelector("#pp-rw").value) * DAY;
+        say("Follow your device's prompt…");
+        const payloadHash = K.payload.propose({proposerPasskey: accountId, counterpartyWallet: cp.w, counterpartyPasskey: cp.p, ruleSetId: rs, termsHash: th, reviewer: rv, answerWindow: aw, reviewWindow: rw});
+        const sig = await signAction({accountId, consumer: V4().agreements, payloadHash, credentialId});
+        card.querySelector("#pp-out").innerHTML = packBox(V4().agreements, enc("proposeSigned", ["uint256", K.PARTY, "uint256", "bytes32", "address", "uint32", "uint32", K.SIGAUTH], [accountId, [cp.w, cp.p], rs, th, rv, aw, rw, sig]), "Propose an agreement (rule set #" + rs + ") to " + (cp.p ? "passkey account #" + cp.p : short(cp.w)), cp.w);
+        const cpl = card.querySelector("#cplink"); if (cpl) cpl.onclick = e => copy(cpl.dataset.link, e.target); say("");
+        try { sessionStorage.removeItem("lgtie.dealTerms"); sessionStorage.removeItem("lgtie.dealRule"); } catch (e) {}
+      } catch (e) { say((e && e.message) || String(e), "err"); }
+    };
+    return card;
   }
   const ctx = {};   // the account and credential in use, for the buttons below
   function agreementCard(a, accountId, credentialId) {
     const P = policyOf(a.ruleSetId), inForce = a.acceptedAt !== 0 && !a.cancelled, state = a.cancelled ? "Withdrawn" : inForce ? "In force since " + when(a.acceptedAt) : "Waiting for you to accept", div = document.createElement("div"); div.className = "card";
     div.innerHTML = `<h3>Agreement #${a.id}: ${esc(P ? P.name : "rule set " + a.ruleSetId)}</h3><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
-      <p class="small">Proposed by <code>${short(a.proposer.wallet)}</code>. The neutral reviewer is <code>${short(a.reviewer)}</code> <span data-rid="${a.reviewer}"></span>. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
+      <p class="small">Proposed by ${a.proposer.passkey ? (a.proposer.passkey === BigInt(accountId) ? "you" : "passkey account #" + a.proposer.passkey) : `<code>${short(a.proposer.wallet)}</code>`}. The neutral reviewer is <code>${short(a.reviewer)}</code> <span data-rid="${a.reviewer}"></span>. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="note consent" data-consent="${a.reviewer}"></div>` : ""}
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="row"><button class="btn" data-act="accept" type="button">Accept with my passkey</button></div>` : ""}
+      ${!inForce && !a.cancelled && a.proposer.passkey === BigInt(accountId) ? `<div class="row"><button class="btn ghost" data-act="withdraw" type="button">Withdraw this proposal</button></div>` : ""}
       ${inForce ? `<div class="row"><button class="btn ghost" data-act="open" type="button">Start a dispute under this agreement</button></div>` : ""}<div class="act"></div>`;
     $("#ags").appendChild(div);
     const box = div.querySelector(".act"), run = async (fn, signedNote, btnEl) => { try { box.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`; box.innerHTML = await fn(); if (btnEl) { btnEl.hidden = true; const bd = div.querySelector(".badge"); if (bd && signedNote) { bd.className = "badge warn"; bd.textContent = signedNote; } } const cp = box.querySelector("#cplink"); if (cp) cp.onclick = e => copy(cp.dataset.link, e.target); } catch (e) { box.innerHTML = `<p class="small err">${esc((e && e.message) || String(e))}</p>`; } };
-    const accept = div.querySelector('[data-act="accept"]'), open = div.querySelector('[data-act="open"]');
+    const accept = div.querySelector('[data-act="accept"]'), open = div.querySelector('[data-act="open"]'), withdraw = div.querySelector('[data-act="withdraw"]');
+    if (withdraw) withdraw.onclick = () => run(async () => {
+      const s = await signAction({accountId, consumer: V4().agreements, payloadHash: K.payload.cancelAgreement(a.id), credentialId});
+      return packBox(V4().agreements, enc("cancelSigned", ["uint256", K.SIGAUTH], [a.id, s]), "Withdraw agreement #" + a.id, a.counterparty.wallet);
+    }, "Signed. Not withdrawn until someone submits the link", withdraw);
     if (accept) accept.onclick = () => run(async () => {
       const digest = K.payload.termsDigest({proposerWallet: a.proposer.wallet, proposerPasskey: a.proposer.passkey, counterpartyWallet: a.counterparty.wallet, counterpartyPasskey: a.counterparty.passkey, ruleSetId: a.ruleSetId, termsHash: a.termsHash, reviewer: a.reviewer, answerWindow: a.answerWindow, reviewWindow: a.reviewWindow});
       const s = await signAction({accountId, consumer: V4().agreements, payloadHash: K.payload.accept(a.id, digest), credentialId});
@@ -4615,7 +4669,7 @@ MY POLICY:
 
   // ---------- #relay/<pack>: send a signed action with a wallet ----------
   // A relay pack is only sent if it points at one of the three LGtie passkey contracts on this chain.
-  const parsePack = pack => { let o; try { o = JSON.parse(new TextDecoder().decode(K.unb64u(pack))); } catch { return {damaged: true}; } const ok = o && o.v === 1 && isAddr(o.to) && /^0x[0-9a-f]+$/.test(o.data || "") && o.chainId === CFG.chainId && [V4().cases, V4().agreements, V4().passkeys].some(a => a && a.toLowerCase() === o.to.toLowerCase()); return ok ? {o} : {bad: true}; };
+  const parsePack = pack => { let o; try { o = JSON.parse(new TextDecoder().decode(K.unb64u(pack))); } catch { return {damaged: true}; } const ok = o && o.v === 1 && isAddr(o.to) && /^0x[0-9a-f]+$/.test(o.data || "") && o.chainId === CFG.chainId && [V4().cases, V4().agreements, V4().passkeys, V2AG(), ...OLDER().map(x => x.addr)].some(a => a && a.toLowerCase() === o.to.toLowerCase()); return ok ? {o} : {bad: true}; };
   async function relay(pack) {
     if (!deployed()) { notDeployed("Send a signed action"); return; }
     const pp = parsePack(pack), o = pp.o; if (pp.damaged) { main.innerHTML = `<h1>Send a signed action</h1><p class="err">This link is damaged.</p>`; return; }
@@ -4763,27 +4817,27 @@ MY POLICY:
     let a; try { a = await readAgreement(id); } catch { main.innerHTML = `<h1>Agreement #${esc(id)}</h1><p class="err">That agreement does not exist, or X Layer could not be reached.</p>`; return; }
     const P = policyOf(a.ruleSetId), inForce = a.acceptedAt !== 0 && !a.cancelled, state = a.cancelled ? "Withdrawn" : inForce ? "In force since " + when(a.acceptedAt) : "Proposed, waiting for the customer";
     main.innerHTML = `<h1>Agreement #${id}</h1><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
-      <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody><tr><td>Proposed by</td><td><code>${a.proposer.wallet}</code></td></tr>
+      <div class="card"><table style="font-size:15px;border-collapse:collapse"><tbody><tr><td>Proposed by</td><td>${a.proposer.passkey ? `passkey account #${a.proposer.passkey}` : `<code>${a.proposer.wallet}</code>`}</td></tr>
         <tr><td>Customer</td><td>${a.counterparty.passkey ? `passkey account #${a.counterparty.passkey}` : `<code>${a.counterparty.wallet}</code>`}</td></tr>
         <tr><td>Rules</td><td>${esc(P ? P.name : "rule set " + a.ruleSetId)} <a href="#rules/${a.ruleSetId}">(rules #${a.ruleSetId})</a></td></tr><tr><td>Reviewer</td><td><code>${a.reviewer}</code>, agreed in advance<br><span data-rid="${a.reviewer}"></span></td></tr>
         <tr><td>Time limits</td><td>${a.answerWindow / DAY} day(s) to answer, then ${a.reviewWindow / DAY} day(s) for the reviewer</td></tr><tr><td>Terms fingerprint</td><td><code>${a.termsHash}</code></td></tr></tbody></table></div>
-      ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.</div>` : ""}
+      ${!inForce && !a.cancelled ? `<div class="note">Waiting for the customer. Tell them to open <b>${esc(location.href.split("#")[0])}#mine</b> and accept with their passkey. Their acceptance then arrives in your <a href="#inbox">inbox</a> for you to submit.${a.proposer.passkey ? " This was proposed by a passkey, so only that passkey can withdraw it, from My cases." : ""}</div>` : ""}
       ${reviewerInviteCard(`You have been named the neutral reviewer for agreement #${id} (${P ? P.name : "rules"}) on LGtie. If the two sides disagree about any answer, the case will wait for you and you decide only the questions they disagree on, with written reasons. Open ${siteBase()}#inbox, connect your wallet, and any case waiting for you appears there. You pay a small network fee. Nothing is held in escrow.`, "The reviewer has no way of knowing unless you tell them. Send them this.")}
       ${a.cancelled ? "" : inForce ? `<div class="note ok-note"><b>A standing agreement.</b> It stays in force: either of you can open as many cases under it as you need, and the same rules, reviewer and time limits apply to each. You do not need a new agreement for every claim.</div>` : `<div class="note">Once both sides have accepted, this is a standing agreement: you can open as many cases under it as you need, with the same rules, reviewer and time limits each time.</div>`}
       <div class="row" id="acts"></div><div id="amsg" class="small"></div><div class="card" id="cases"><h3>Cases under this agreement</h3><p class="small mute">Reading from X Layer…</p></div>`;
     bindReviewerInvite();
     const acts = $("#acts"), me = W().account();
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
-    if (!inForce && !a.cancelled) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
+    if (!inForce && !a.cancelled && a.proposer.wallet !== ZERO) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
     if (inForce) add("Open a dispute under this agreement", "", async () => { await window.TB_BILLING.ensureFee(a.proposer.wallet, t => { $("#amsg").textContent = t; }); $("#amsg").textContent = "Confirm in your wallet…"; const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
-    try { const cs = [...(await scan(V4().cases, readCase)), ...(LEGACY ? [] : await legacyCases())].filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: caseHref}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
+    try { const cs = (LEGACY && LEGACY.v2 ? await legacyCases() : [...(await scan(V4().cases, readCase)), ...((LEGACY || !sameRegistry()) ? [] : await legacyCases())]).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: caseHref}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkAll() {
     if (!deployed()) { notDeployed("Passkey cases"); return; }
     main.innerHTML = `<h1>Passkey agreements and cases</h1><p class="lede">Everything opened with a customer's fingerprint or face. Cases between two wallets are on <a href="#case">the other case page</a>.</p><p class="mute" id="pkl">Reading from X Layer…</p>`;
     try {
-      const [ags, cs0, old] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase), legacyCases()]), cs = [...cs0, ...old];
-      $("#pkl").outerHTML = `<div class="card"><h3>Agreements</h3>${ags.length ? ags.map(a => { const P = policyOf(a.ruleSetId); return `<p><a href="#pk/agreement/${a.id}">Agreement #${a.id}</a> · ${esc(P ? P.name : "rule set " + a.ruleSetId)} · ${a.cancelled ? "Withdrawn" : a.acceptedAt ? "In force" : "Waiting for the customer"}</p>`; }).join("") : `<p class="mute">None yet.</p>`}<p class="small"><a href="#pk/agree">Invite a customer with a fingerprint</a></p></div>
+      const [ags0, cs0, old, oldAg] = await Promise.all([scan(V4().agreements, readAgreement), scan(V4().cases, readCase), legacyCases(), legacyAgreements()]), cs = [...cs0, ...old], ags = [...ags0, ...oldAg];
+      $("#pkl").outerHTML = `<div class="card"><h3>Agreements</h3>${ags.length ? ags.map(a => { const P = policyOf(a.ruleSetId); return `<p><a href="${agHref(a)}">Agreement #${a.id}</a>${a.legacy ? " (earlier contract)" : ""} · ${esc(P ? P.name : "rule set " + a.ruleSetId)} · ${a.cancelled ? "Withdrawn" : a.acceptedAt ? "In force" : "Waiting for the customer"}</p>`; }).join("") : `<p class="mute">None yet.</p>`}<p class="small"><a href="#pk/agree">Invite a customer with a fingerprint</a></p></div>
         <div class="card"><h3>Cases</h3>${cs.length ? cs.map(c => { const P = policyOf(c.ruleSetId); return `<p><a href="${caseHref(c)}">Case #${c.id}</a>${c.legacy ? " (earlier contract)" : ""} · ${esc(P ? P.name : "rule set " + c.ruleSetId)} · ${esc(STATUS[c.status])}</p>`; }).join("") : `<p class="mute">None yet. Once an agreement is in force, a customer can start a dispute from <a href="#mine">My cases</a>, or you can start one from the agreement page.</p>`}</div>`;
     } catch (e) { const l = $("#pkl"); if (l) l.textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
@@ -4800,7 +4854,7 @@ MY POLICY:
     const blind = RV.isReviewer(W().account(), cc) && namesFor2 !== Number(id), reasons = RV.reasonsOf(ev, cc);
     const evWho = e => String(e.by).toLowerCase() === c.reviewer.toLowerCase() ? "Reviewer" : e.passkey ? (blind ? (e.passkey === c.filer.passkey ? "Side A" : "Side B") : `passkey account #${e.passkey}`) : (blind ? RV.sideOf(e.by, cc) : `<code>${short(e.by)}</code>`);
     const qlabelV4 = q => q === 255 ? "The whole case" : (q + 1) + ". " + (P.questions[q] ? P.questions[q].text.slice(0, 60) : "?");
-    main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">${blind ? "Side A opened the case · Side B is the other side" : "Opened by " + who(c.filer) + " · Other side " + who(c.decider)} · <a href="#pk/agreement/${c.agreementId}">Agreement #${c.agreementId}</a></span></p>
+    main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">${blind ? "Side A opened the case · Side B is the other side" : "Opened by " + who(c.filer) + " · Other side " + who(c.decider)} · <a href="${agHref(c.agreementId)}">Agreement #${c.agreementId}</a></span></p>
       <div class="card">${chainNote(AQ)}<table class="ctab"><thead><tr><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td data-l="${blind ? "Side A" : "Opener"}">${AQ.all[i] ? "—" : c.filerIn ? yn(fa[i]) : "…"}</td><td data-l="${blind ? "Side B" : "Other side"}">${AQ.all[i] ? "—" : c.deciderIn ? yn(da[i]) : "…"}</td><td>${AQ.all[i] ? chainBadge(AQ, i) : c.filerIn && c.deciderIn ? (dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`) : ""}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`).join("")}</tbody></table></div>
       ${c.status === 2 ? `<div class="res static" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(TB.run(P, fin).why || "")}</div>${reasons.length ? `<p class="small">Reviewer's reason: “${esc(reasons[reasons.length - 1].note)}”</p>` : ""}${RV.isReviewer(W().account(), cc) && RV.saved(CFG.chainId, V4().cases, id) ? `<div class="row">${RV.downloadLink(RV.saved(CFG.chainId, V4().cases, id), id)}<span class="small">Send this file to both sides. They can drop it on this page to check it matches the recorded fingerprint.</span></div>` : ""}</div>` : ""}
       <p class="small">Reviewer: <code>${short(c.reviewer)}</code> <span data-rid="${c.reviewer}"></span></p>
@@ -4857,7 +4911,7 @@ MY POLICY:
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: await scan(V4().agreements, readAgreement), cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = tag === "v5" && live(CFG.v5) ? CFG.v5.cases : (CFG.v4 || {}).cases; return pkCase(id); }, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: [...(await scan(V4().agreements, readAgreement)), ...(await legacyAgreements())], cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = {cases: eraOf(tag) || (CFG.v4 || {}).cases, agreements: V2AG()}; return pkCase(id); }, legacyAgreement: id => { LEGACY = {cases: (OLDER()[0] || {}).addr || (CFG.v4 || {}).cases, agreements: V2AG(), v2: true}; return pkAgreement(id); }, parseClaim, createPasskey, signAction};
 })();
 
 </script><script>/* app.js */
@@ -5229,7 +5283,7 @@ MY POLICY:
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : key === "v4case" || key === "v5case" ? window.TB_PASSKEYS.legacyCase(rest[0] || 1, key === "v5case" ? "v5" : "v4") : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : /^v[456]case$/.test(key) ? window.TB_PASSKEYS.legacyCase(rest[0] || 1, key.slice(0, 2)) : key === "v2agreement" ? window.TB_PASSKEYS.legacyAgreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build(key);
     if (view === "templates") return window.TB_TEMPLATES.page();

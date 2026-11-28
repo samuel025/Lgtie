@@ -71,7 +71,7 @@ flowchart TD
 
 - **A static site.** No server and no database: the web app, the rule compiler and the checks run in the browser (`site/`). The built site is one page in `dist/`.
 - **Rules are data, not code.** A rule set compiles to a small circuit of NAND gates and is stored on the existing **TapeOut processor**, so it cannot hold hidden state or an admin key.
-- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
+- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. `AgreementRegistryV3` (a passkey account can also propose an agreement) is built, tested and wired into the site, but not deployed yet. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
 - **No wallet for customers.** A passkey signs each action; any wallet (usually the business's) submits it and pays the small fee. Signed actions travel through public Nostr relays to the business's inbox.
 - **Optional bridge** (`bridge/`): a script a business runs itself to forward those messages to Slack, Discord or any webhook.
 

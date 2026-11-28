@@ -68,4 +68,12 @@ ok("a dynamic list of tuples that hold bytes (the automatic-questions spec) enco
   assert.equal(mine, theirs);
   assert.equal(K.hex(K.call("set", ["uint256", {array: SPEC}], [1, []])), cast("calldata", "set(uint256,(uint8,uint8,uint8,uint8,uint32,uint64,address,uint8,uint256,bytes)[])", "1", "[]"));
 });
+ok("the V3 proposal and withdrawal payloads match what the contract hashes", () => {
+  const A = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", R = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", TH = "0x" + "ab".repeat(32);
+  const enc = cast("abi-encode", "f(string,uint256,(address,uint256),uint256,bytes32,address,uint32,uint32)", "PROPOSE_AGREEMENT", "7", "(" + A + ",0)", "1", TH, R, "259200", "172800");
+  assert.equal(K.hex(K.payload.propose({proposerPasskey: 7, counterpartyWallet: A, counterpartyPasskey: 0, ruleSetId: 1, termsHash: TH, reviewer: R, answerWindow: 259200, reviewWindow: 172800})), cast("keccak", enc));
+  const enc2 = cast("abi-encode", "f(string,uint256,(address,uint256),uint256,bytes32,address,uint32,uint32)", "PROPOSE_AGREEMENT", "7", "(0x0000000000000000000000000000000000000000,9)", "1", TH, R, "259200", "172800");
+  assert.equal(K.hex(K.payload.propose({proposerPasskey: 7, counterpartyWallet: "0x" + "00".repeat(20), counterpartyPasskey: 9, ruleSetId: 1, termsHash: TH, reviewer: R, answerWindow: 259200, reviewWindow: 172800})), cast("keccak", enc2));
+  assert.equal(K.hex(K.payload.cancelAgreement(5)), cast("keccak", cast("abi-encode", "f(string,uint256)", "CANCEL_AGREEMENT", "5")));
+});
 console.log(process.exitCode ? "FAILED" : `all ${n} passed`);

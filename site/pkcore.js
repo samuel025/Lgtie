@@ -88,6 +88,9 @@
     open: (agreementId, evidenceHash, asProposer) => keccak256(encode(["string", "uint256", "bytes32", "bool"], ["OPEN_CASE", agreementId, evidenceHash, asProposer])),
     // the agreement's terms digest is keccak256(abi.encode(proposer, counterparty, ruleSetId, termsHash, reviewer, answerWindow, reviewWindow))
     termsDigest: a => keccak256(encode([PARTY, PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], [[a.proposerWallet, a.proposerPasskey], [a.counterpartyWallet, a.counterpartyPasskey], a.ruleSetId, a.termsHash, a.reviewer, a.answerWindow, a.reviewWindow])),
+    // AgreementRegistryV3: a passkey proposes (every term is signed) or withdraws its own proposal
+    propose: p => keccak256(encode(["string", "uint256", PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], ["PROPOSE_AGREEMENT", p.proposerPasskey, [p.counterpartyWallet, p.counterpartyPasskey], p.ruleSetId, p.termsHash, p.reviewer, p.answerWindow, p.reviewWindow])),
+    cancelAgreement: id => keccak256(encode(["string", "uint256"], ["CANCEL_AGREEMENT", id])),
     accept: (id, termsDigest) => keccak256(encode(["string", "uint256", "bytes32"], ["ACCEPT_AGREEMENT", id, hex(termsDigest)])),
     addKey: key => keccak256(encode(["string", "uint256", "uint256", "bytes32"], ["ADD_KEY", key.x, key.y, key.rpIdHash])),
     removeKey: index => keccak256(encode(["string", "uint8"], ["REMOVE_KEY", index]))
