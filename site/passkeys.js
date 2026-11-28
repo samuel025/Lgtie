@@ -7,27 +7,38 @@
   const ZERO = "0x" + "0".repeat(40), DAY = 86400, STATUS = ["Waiting for answers", "Waiting for the reviewer", "Decided", "No decision (expired)"];
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4), isAddr = a => /^0x[0-9a-fA-F]{40}$/.test(a), hexw = n => K.hex(K.u256(n));
-  // The newest contracts that are live are the ones used: v7 (AgreementRegistryV3, where a passkey can also PROPOSE, and a second TiebreakCaseV6), else v6
-  // (TiebreakCaseV6, automatic questions), else v5 (V4 plus billing), else the original V4 pair. The passkey registry never changed. Agreements and cases
-  // on older contracts stay readable and usable at #pk/v2agreement/<id> and #pk/v6case, #pk/v5case, #pk/v4case/<id>.
+  // Contract "eras", newest first. The newest live one is used: v8 (AgreementRegistryV4: agreement cards, and TiebreakCaseV7: a reviewer can be agreed after a
+  // dispute starts), else v7 (AgreementRegistryV3: a passkey can propose, and a second TiebreakCaseV6), else v6 (TiebreakCaseV6: automatic questions), else v5
+  // (V4 plus billing), else the original V4 pair. Each era says which agreement registry its cases refer to. The passkey registry never changed. Agreements and
+  // cases on older contracts stay readable and usable at #pk/v2agreement|v7agreement/<id> and #pk/v4case|v5case|v6case|v7case/<id>.
   const live = c => !!(c && c.cases && c.cases !== ZERO);
-  const ACTIVE = () => live(CFG.v7) ? CFG.v7 : live(CFG.v6) ? CFG.v6 : live(CFG.v5) ? CFG.v5 : null;
   const V2AG = () => (CFG.v4 || {}).agreements;
-  const activeAg = () => { const a = ACTIVE(); return a && a.agreements ? a.agreements : V2AG(); };
-  const canProposeSigned = () => !!(ACTIVE() && ACTIVE().agreements);   // only AgreementRegistryV3 has proposeSigned
-  /// Case contracts before the active one, newest first. Their cases refer to agreements in the V2 registry.
-  const OLDER = () => { const act = ACTIVE(); if (!act) return []; const out = [];
-    [["v6", CFG.v6], ["v5", CFG.v5]].forEach(([tag, c]) => { if (live(c)) out.push({tag, addr: c.cases}); }); if (CFG.v4 && CFG.v4.cases) out.push({tag: "v4", addr: CFG.v4.cases});
-    return out.filter(o => o.addr.toLowerCase() !== act.cases.toLowerCase()); };
-  const eraOf = tag => (OLDER().find(o => o.tag === tag) || {}).addr;
-  let LEGACY = null; window.addEventListener("hashchange", () => { if (!/^#pk\/(v[456]case|v2agreement)\//.test(location.hash)) LEGACY = null; });
+  const ERAS = () => { const out = [];
+    [["v8", CFG.v8], ["v7", CFG.v7]].forEach(([tag, c]) => { if (live(c)) out.push({tag, cases: c.cases, ag: c.agreements}); });
+    [["v6", CFG.v6], ["v5", CFG.v5]].forEach(([tag, c]) => { if (live(c)) out.push({tag, cases: c.cases, ag: V2AG()}); });
+    if (CFG.v4 && CFG.v4.cases) out.push({tag: "v4", cases: CFG.v4.cases, ag: V2AG()});
+    return out; };
+  const ACTIVE = () => ERAS()[0] || null;
+  const same = (x, y) => !!x && !!y && x.toLowerCase() === y.toLowerCase();
+  const activeAg = () => (ACTIVE() && ACTIVE().ag) || V2AG();
+  const canProposeSigned = () => !!ACTIVE() && (ACTIVE().tag === "v7" || ACTIVE().tag === "v8");   // AgreementRegistryV3 and later have proposeSigned
+  const canCards = () => !!ACTIVE() && ACTIVE().tag === "v8";   // AgreementRegistryV4 has anchor (agreement cards)
+  /// Eras before the active one (their case contract differs), newest first.
+  const OLDER = () => { const act = ACTIVE(); return act ? ERAS().slice(1).filter(e => !same(e.cases, act.cases)).map(e => ({tag: e.tag, addr: e.cases, ag: e.ag})) : []; };
+  const eraOf = tag => OLDER().find(o => o.tag === tag);
+  /// A short tag for an agreement registry other than the active one: v7 (AgreementRegistryV3) or v2.
+  const regTag = ag => same(ag, (CFG.v7 || {}).agreements) ? "v7" : "v2";
+  let LEGACY = null; window.addEventListener("hashchange", () => { if (!/^#pk\/(v[4567]case|v[27]agreement)\//.test(location.hash)) LEGACY = null; });
   const legacyCases = async () => (await Promise.all(OLDER().map(async o => (await scan(o.addr, id => call(o.addr, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => [])).map(c => ({...c, legacy: o.tag}))))).flat();
-  /// Agreements in the older V2 registry, when a newer registry is the active one.
-  const legacyAgreements = async () => { const v2 = V2AG(); if (!v2 || v2.toLowerCase() === (activeAg() || "").toLowerCase()) return []; return (await scan(v2, id => call(v2, enc("get", ["uint256"], [id])).then(decodeAgreement)).catch(() => [])).map(a => ({...a, legacy: true})); };
-  const sameRegistry = () => (activeAg() || "").toLowerCase() === (V2AG() || "").toLowerCase();   // older cases refer to the same agreement ids only if the registry did not change
+  /// Agreements in registries older than the active one (V3 and/or V2).
+  const legacyAgreements = async () => { const regs = []; OLDER().forEach(o => { if (o.ag && !same(o.ag, activeAg()) && !regs.some(r => same(r, o.ag))) regs.push(o.ag); });
+    return (await Promise.all(regs.map(async r => (await scan(r, id => call(r, enc("get", ["uint256"], [id])).then(decodeAgreement)).catch(() => [])).map(a => ({...a, legacy: regTag(r)}))))).flat(); };
+  /// Every case from every era whose cases refer to this agreement registry (the active era's cases are not tagged as legacy).
+  const casesOnRegistry = async reg => { const out = []; for (const e of ERAS().filter(e => same(e.ag, reg))) { const rs = await scan(e.cases, id => call(e.cases, enc("get", ["uint256"], [id])).then(decodeCase)).catch(() => []); rs.forEach(c => out.push(same(e.cases, (ACTIVE() || {}).cases) ? c : {...c, legacy: e.tag})); } return out; };
   const caseHref = c => (c.legacy ? "#pk/" + c.legacy + "case/" : "#pk/case/") + c.id;
-  const agHref = a => (a.legacy || (LEGACY && LEGACY.v2) ? "#pk/v2agreement/" : "#pk/agreement/") + (a.id != null ? a.id : a);
+  const agHref = a => (typeof a === "object" && a.legacy ? "#pk/" + a.legacy + "agreement/" : LEGACY ? "#pk/" + LEGACY.agTag + "agreement/" : "#pk/agreement/") + (typeof a === "object" ? a.id : a);
   const V4 = () => { const base = CFG.v4 || {}; if (LEGACY) return {...base, cases: LEGACY.cases, agreements: LEGACY.agreements}; const a = ACTIVE(); return a ? {...base, cases: a.cases, agreements: activeAg()} : base; }, deployed = () => !!(V4().cases && V4().cases !== ZERO && V4().passkeys && V4().agreements);
+  const isZero = a => /^0x0*$/i.test(String(a || ""));
   const copy = async (t, btn) => { try { await navigator.clipboard.writeText(t); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1400); } catch { prompt("Copy this:", t); } };
   const when = sec => new Date(Number(sec) * 1000).toLocaleString([], {dateStyle: "medium", timeStyle: "short"});
   const notDeployed = title => { main.innerHTML = `<h1>${title}</h1><div class="note">Passkey cases are built and tested but not deployed on X Layer yet, so this page has nothing to talk to.</div>`; };
@@ -156,7 +167,7 @@
   async function mineView() {
     if (!deployed()) { notDeployed("My cases"); return; }
     main.innerHTML = `<h1>My cases</h1><p class="lede">Use your passkey to find the agreements and cases that name you, and to answer or accept. Nothing is sent from here: you sign, and the business (or anyone with a wallet) submits.</p>
-      <div class="card"><div class="row"><button class="btn" id="find" type="button">Find my cases with my passkey</button><a class="btn ghost" href="#join">I need a passkey first</a><span id="fm" class="small"></span></div></div><div id="list"></div>`;
+      <div class="card"><div class="row"><button class="btn" id="find" type="button">Find my cases with my passkey</button><a class="btn ghost" href="#join">I need a passkey first</a>${window.TB_CARDS && window.TB_CARDS.on() ? `<a class="btn ghost" href="#cards">My signed deals</a>` : ""}<span id="fm" class="small"></span></div></div><div id="list"></div>`;
     $("#find").onclick = async () => {
       const m = $("#fm"); m.className = "small mute"; m.textContent = "Follow your device's prompt…";
       try {
@@ -218,7 +229,7 @@
   function agreementCard(a, accountId, credentialId) {
     const P = policyOf(a.ruleSetId), inForce = a.acceptedAt !== 0 && !a.cancelled, state = a.cancelled ? "Withdrawn" : inForce ? "In force since " + when(a.acceptedAt) : "Waiting for you to accept", div = document.createElement("div"); div.className = "card";
     div.innerHTML = `<h3>Agreement #${a.id}: ${esc(P ? P.name : "rule set " + a.ruleSetId)}</h3><p><span class="badge${inForce ? " ok" : ""}">${esc(state)}</span></p>
-      <p class="small">Proposed by ${a.proposer.passkey ? (a.proposer.passkey === BigInt(accountId) ? "you" : "passkey account #" + a.proposer.passkey) : `<code>${short(a.proposer.wallet)}</code>`}. The neutral reviewer is <code>${short(a.reviewer)}</code> <span data-rid="${a.reviewer}"></span>. You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
+      <p class="small">Proposed by ${a.proposer.passkey ? (a.proposer.passkey === BigInt(accountId) ? "you" : "passkey account #" + a.proposer.passkey) : `<code>${short(a.proposer.wallet)}</code>`}. ${isZero(a.reviewer) ? "No reviewer is named yet: if you disagree about any answer, you agree on a neutral one together." : `The neutral reviewer is <code>${short(a.reviewer)}</code> <span data-rid="${a.reviewer}"></span>.`} You have ${a.answerWindow / DAY} day(s) to answer after a dispute starts, then the reviewer has ${a.reviewWindow / DAY} day(s). Once you accept, nothing can change.</p>
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="note consent" data-consent="${a.reviewer}"></div>` : ""}
       ${!inForce && !a.cancelled && a.counterparty.passkey === BigInt(accountId) ? `<div class="row"><button class="btn" data-act="accept" type="button">Accept with my passkey</button></div>` : ""}
       ${!inForce && !a.cancelled && a.proposer.passkey === BigInt(accountId) ? `<div class="row"><button class="btn ghost" data-act="withdraw" type="button">Withdraw this proposal</button></div>` : ""}
@@ -241,6 +252,23 @@
       return packBox(V4().cases, enc("openFromAgreementSigned", ["uint256", "bytes32", "bool", K.SIGAUTH], [a.id, eh, asProposer, s]), "Start a dispute under agreement #" + a.id, asProposer ? a.counterparty.wallet : a.proposer.wallet);
     }, "Signed. Not started until someone submits the link", open);
   }
+  /// A case whose agreement left the reviewer open: each side proposes or approves one, by passkey signature. The reviewer needs a wallet to decide.
+  function reviewerBox(div, c, accountId, credentialId, asFiler) {
+    const box = div.querySelector(".rvbox"); if (!box) return;
+    const myOk = asFiler ? c.filerOk : c.deciderOk, otherOk = asFiler ? c.deciderOk : c.filerOk, has = !isZero(c.reviewer), both = has && myOk && otherOk;
+    const form = (label) => `<div class="row"><input type="text" class="rv-in" placeholder="0x… the reviewer's wallet address" autocomplete="off" style="min-width:240px"><button class="btn small ghost" data-rv="propose" type="button">${label}</button></div>`;
+    box.innerHTML = `<div class="note"><b>Reviewer.</b> ` + (both ? `Agreed: <code>${short(c.reviewer)}</code>. They decide only the questions you answered differently.</div>`
+      : !has ? `None yet. If you and the other side answer any question differently, you must agree on a neutral person with a wallet to decide it. Propose one now (it can be a friend or someone you both trust); the other side approves.</div>${form("Propose this reviewer")}`
+      : !myOk ? `The other side proposed <code>${short(c.reviewer)}</code>. Approve them, or propose someone else.</div><div class="row"><button class="btn small" data-rv="approve" type="button">Approve ${short(c.reviewer)}</button></div>${form("Propose someone else")}`
+      : `You proposed <code>${short(c.reviewer)}</code>. Waiting for the other side to approve.</div>${form("Propose someone else")}`) + `<div class="rv-out"></div>`;
+    const out = box.querySelector(".rv-out"), run = async fn => { try { out.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`; out.innerHTML = await fn(); const cp = out.querySelector("#cplink"); if (cp) cp.onclick = e => copy(cp.dataset.link, e.target); } catch (e) { out.innerHTML = `<p class="small err">${esc((e && e.message) || String(e))}</p>`; } };
+    box.querySelectorAll("[data-rv]").forEach(b => b.onclick = () => run(async () => {
+      if (b.dataset.rv === "approve") { const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.approveReviewer(c.id, asFiler, c.reviewer), credentialId}); return packBox(V4().cases, enc("approveReviewerSigned", ["uint256", "bool", K.SIGAUTH], [c.id, asFiler, s]), "Approve the reviewer " + short(c.reviewer) + " for case #" + c.id, ZERO); }
+      const r = box.querySelector(".rv-in").value.trim(); if (!isAddr(r) || isZero(r)) throw new Error("Enter the reviewer's wallet address (0x…).");
+      const s = await signAction({accountId, consumer: V4().cases, payloadHash: K.payload.proposeReviewer(c.id, asFiler, r), credentialId});
+      return packBox(V4().cases, enc("proposeReviewerSigned", ["uint256", "bool", "address", K.SIGAUTH], [c.id, asFiler, r, s]), "Propose " + short(r) + " as the reviewer for case #" + c.id, ZERO);
+    }));
+  }
   function caseCard(c, accountId, credentialId) {
     const P = policyOf(c.ruleSetId); if (!P) return;
     const mySide = c.filer.passkey === BigInt(accountId), asFiler = mySide, nQ = P.questions.length, myIn = mySide ? c.filerIn : c.deciderIn, div = document.createElement("div"); div.className = "card";
@@ -249,6 +277,7 @@
       ${c.status >= 1 ? `${chainNote(AQ)}<table class="ctab"><thead><tr><th>Question</th><th>You</th><th>Other side</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td data-l="You">${AQ.all[i] ? "—" : yn((mySide ? fa : da)[i])}</td><td data-l="Other side">${AQ.all[i] ? "—" : yn((mySide ? da : fa)[i])}</td><td>${AQ.all[i] ? chainBadge(AQ, i) : c.status === 2 && dis[i] ? "Reviewer: " + yn(fin[i]) : dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`}</td></tr>`).join("")}</tbody></table>` : ""}
       ${c.status === 2 ? `<div class="res nodec"><div class="big">${esc(P.results[c.result])}</div></div>` : ""}
       ${c.status === 0 && !myIn ? `<div class="qs"></div><div class="row"><button class="btn" data-act="answer" type="button" disabled>Review and sign my answers</button></div>` : c.status === 0 ? `<p class="small mute">You have answered. Waiting for the other side.</p>` : ""}
+      <div class="rvbox"></div>
       <div class="evhead"><div><b>Evidence</b><div class="small mute">Photos, receipts or a written account</div></div>${c.status < 2 ? `<button class="btn small ghost plus" data-act="evidence" type="button">Add evidence</button>` : ""}</div><div class="evlist"></div><div class="act"></div>`;
     $("#cs").appendChild(div);
     readEvidence(c.id).then(list => { if (list.length) div.querySelector(".evlist").innerHTML = list.map(e => `<p class="small">${esc(e.question === 255 ? "The whole case" : (e.question + 1) + ". " + (P.questions[e.question] ? P.questions[e.question].text.slice(0, 40) : ""))}: “${esc(e.note)}” <span class="mute">· ${e.passkey ? (e.passkey === BigInt(accountId) ? "you" : "passkey account #" + e.passkey) : short(e.by)} · <code>${e.hash.slice(0, 10)}…</code></span></p>`).join(""); }).catch(() => {});
@@ -258,6 +287,7 @@
       const note = packBox(V4().cases, enc("attachEvidenceSigned", ["uint256", "bool", "uint8", "bytes32", "string", K.SIGAUTH], [c.id, mySide, e.question, e.hash, e.note, s]), "Evidence for case #" + c.id + ": " + e.note, mySide ? c.decider.wallet : c.filer.wallet);
       ebox.querySelector("#evout").insertAdjacentHTML("beforebegin", note); const cp = ebox.querySelector("#cplink"); if (cp) cp.onclick = ev => copy(cp.dataset.link, ev.target);
     }); };
+    if (c.status < 2 && canProposeSigned()) readAgreement(c.agreementId).then(ag => { if (isZero(ag.reviewer)) reviewerBox(div, c, accountId, credentialId, asFiler); }).catch(() => {});
     const box = div.querySelector(".act"), answers = Array(nQ).fill(null), btn = div.querySelector('[data-act="answer"]'), qs = div.querySelector(".qs");
     if (qs) { P.questions.forEach((q, i) => { const d = document.createElement("div"); d.className = "q"; if (AQ.all[i]) { answers[i] = false; d.innerHTML = `<div class="t">${i + 1}. ${esc(q.text)}</div><p class="small mute">Answered by the chain, not by you.</p>`; qs.appendChild(d); return; } d.innerHTML = `<div class="t">${i + 1}. ${esc(q.text)}</div>${q.hint ? `<div class="h">Evidence: ${esc(q.hint)}</div>` : ""}<div class="yn"><button type="button" data-v="1" aria-pressed="false">Yes</button><button type="button" data-v="0" aria-pressed="false">No</button></div>`;
         d.querySelectorAll("button").forEach(b => b.onclick = () => { answers[i] = b.dataset.v === "1"; d.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String((x.dataset.v === "1") === answers[i]))); btn.disabled = answers.some(x => x === null); }); qs.appendChild(d); }); }
@@ -274,7 +304,7 @@
 
   // ---------- #relay/<pack>: send a signed action with a wallet ----------
   // A relay pack is only sent if it points at one of the three LGtie passkey contracts on this chain.
-  const parsePack = pack => { let o; try { o = JSON.parse(new TextDecoder().decode(K.unb64u(pack))); } catch { return {damaged: true}; } const ok = o && o.v === 1 && isAddr(o.to) && /^0x[0-9a-f]+$/.test(o.data || "") && o.chainId === CFG.chainId && [V4().cases, V4().agreements, V4().passkeys, V2AG(), ...OLDER().map(x => x.addr)].some(a => a && a.toLowerCase() === o.to.toLowerCase()); return ok ? {o} : {bad: true}; };
+  const parsePack = pack => { let o; try { o = JSON.parse(new TextDecoder().decode(K.unb64u(pack))); } catch { return {damaged: true}; } const ok = o && o.v === 1 && isAddr(o.to) && /^0x[0-9a-f]+$/.test(o.data || "") && o.chainId === CFG.chainId && [V4().cases, V4().agreements, V4().passkeys, V2AG(), ...ERAS().flatMap(e => [e.cases, e.ag])].some(a => a && a.toLowerCase() === o.to.toLowerCase()); return ok ? {o} : {bad: true}; };
   async function relay(pack) {
     if (!deployed()) { notDeployed("Send a signed action"); return; }
     const pp = parsePack(pack), o = pp.o; if (pp.damaged) { main.innerHTML = `<h1>Send a signed action</h1><p class="err">This link is damaged.</p>`; return; }
@@ -443,7 +473,7 @@
     const add = (label, cls, fn) => { const b = document.createElement("button"); b.className = "btn " + cls; b.type = "button"; b.textContent = label; b.onclick = async () => { try { await needWallet(); $("#amsg").className = "small mute"; $("#amsg").textContent = "Confirm in your wallet…"; await fn(); } catch (e) { $("#amsg").className = "small err"; $("#amsg").textContent = (e && e.message) || String(e); } }; acts.appendChild(b); };
     if (!inForce && !a.cancelled && a.proposer.wallet !== ZERO) add("Withdraw the proposal", "ghost", async () => { await W().send(V4().agreements, enc("cancel", ["uint256"], [Number(id)])); pkAgreement(id); });
     if (inForce) add("Open a dispute under this agreement", "", async () => { await window.TB_BILLING.ensureFee(a.proposer.wallet, t => { $("#amsg").textContent = t; }); $("#amsg").textContent = "Confirm in your wallet…"; const rc = await W().send(V4().cases, enc("openFromAgreement", ["uint256", "bytes32"], [Number(id), "0x" + "0".repeat(64)])); location.hash = "#pk/case/" + logTopic(rc, V4().cases); });
-    try { const cs = (LEGACY && LEGACY.v2 ? await legacyCases() : [...(await scan(V4().cases, readCase)), ...((LEGACY || !sameRegistry()) ? [] : await legacyCases())]).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: caseHref}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
+    try { const cs = (await casesOnRegistry(V4().agreements)).filter(c => c.agreementId === Number(id)); if ($("#cases")) window.TB_CASES.casesCard($("#cases"), cs, {policy: P, hrefOf: caseHref}); } catch (e) { if ($("#cases")) $("#cases").querySelector("p").textContent = "Could not read from X Layer right now. Try again in a moment."; }
   }
   async function pkAll() {
     if (!deployed()) { notDeployed("Passkey cases"); return; }
@@ -470,12 +500,12 @@
     main.innerHTML = `<h1>Case #${id}: ${esc(P.name)}</h1><p><span class="badge${c.status === 2 ? " ok" : ""}">${esc(STATUS[c.status])}</span> <span class="small mute">${blind ? "Side A opened the case · Side B is the other side" : "Opened by " + who(c.filer) + " · Other side " + who(c.decider)} · <a href="${agHref(c.agreementId)}">Agreement #${c.agreementId}</a></span></p>
       <div class="card">${chainNote(AQ)}<table class="ctab"><thead><tr><th>Question</th><th>${blind ? "Side A" : "Opened the case"}</th><th>${blind ? "Side B" : "Other side"}</th><th></th></tr></thead><tbody>${P.questions.map((q, i) => `<tr><td>${i + 1}. ${esc(q.text)}</td><td data-l="${blind ? "Side A" : "Opener"}">${AQ.all[i] ? "—" : c.filerIn ? yn(fa[i]) : "…"}</td><td data-l="${blind ? "Side B" : "Other side"}">${AQ.all[i] ? "—" : c.deciderIn ? yn(da[i]) : "…"}</td><td>${AQ.all[i] ? chainBadge(AQ, i) : c.filerIn && c.deciderIn ? (dis[i] ? `<span class="badge warn">Disputed</span>` : `<span class="badge ok">Agreed</span>`) : ""}${c.status === 2 && dis[i] ? ` Reviewer: <b>${yn(fin[i])}</b>` : ""}</td></tr>`).join("")}</tbody></table></div>
       ${c.status === 2 ? `<div class="res static" role="status"><div class="big">${esc(P.results[c.result])}</div><div class="why">${esc(TB.run(P, fin).why || "")}</div>${reasons.length ? `<p class="small">Reviewer's reason: “${esc(reasons[reasons.length - 1].note)}”</p>` : ""}${RV.isReviewer(W().account(), cc) && RV.saved(CFG.chainId, V4().cases, id) ? `<div class="row">${RV.downloadLink(RV.saved(CFG.chainId, V4().cases, id), id)}<span class="small">Send this file to both sides. They can drop it on this page to check it matches the recorded fingerprint.</span></div>` : ""}</div>` : ""}
-      <p class="small">Reviewer: <code>${short(c.reviewer)}</code> <span data-rid="${c.reviewer}"></span></p>
+      <p class="small">Reviewer: ${isZero(c.reviewer) ? "none agreed yet (the two sides agree on one if they disagree)" : `<code>${short(c.reviewer)}</code> <span data-rid="${c.reviewer}"></span>`}</p>
       ${c.status === 0 ? `<p class="small mute">Answers due by ${when(c.answerBy)}.</p>` : c.status === 1 ? `<p class="small mute">The reviewer has until ${when(c.reviewBy)}. Reviewer ${c.reviewerAcked ? "has taken part" : "has not yet confirmed taking part"}.</p>` : ""}
       ${blind ? `<div class="note"><b>You are the reviewer, so names are hidden to reduce bias.</b> Side A opened the case and Side B is the other side. Addresses are still public on the blockchain; this only keeps them off the page you decide from. <button class="btn small ghost" id="shownames" type="button">Show addresses</button></div>` : ""}
       ${reasons.length ? `<div class="card" id="rvreasons"><h3>Reviewer's reasons</h3>${reasons.map(r => `<p>“${esc(r.note)}”</p><p class="small mute">The full written statement is kept by the reviewer. Its fingerprint is <code>${r.hash.slice(0, 18)}…</code>; drop the file you were sent below to check it is identical and to see which evidence it lists.</p>`).join("")}</div>` : c.status === 2 ? `<div class="note" id="rvreasons">The reviewer recorded no written reasons for this decision.</div>` : ""}
       ${ev.length ? `<div class="card"><h3>Evidence</h3><p class="small mute">Only fingerprints are recorded. Nothing is uploaded: the files stay with the people who share them.</p><table class="ctab"><thead><tr><th>About</th><th>By</th><th>Note</th><th>Fingerprint</th></tr></thead><tbody>${ev.map(e => `<tr class="evrow" data-h="${e.hash}"><td>${esc(qlabelV4(e.question))}</td><td data-l="By">${evWho(e)}</td><td data-l="Note">${esc(e.note)}</td><td data-l="Fingerprint"><code>${e.hash.slice(0, 12)}…</code></td></tr>`).join("")}</tbody></table><div id="fchk"></div></div>` : ""}
-      ${live && !blind && !RV.isReviewer(W().account(), cc) ? reviewerInviteCard(`You are the neutral reviewer for case #${id} (${P.name}) on LGtie. ${c.status === 1 ? "The two sides disagree on some answers and the case is waiting for you." : "The two sides are still answering. If they disagree, the case will wait for you."} Open ${siteBase()}#pk/case/${id}/decide, connect your wallet and decide only the questions they disagree on. You will write your reasons and confirm you have no conflict of interest. You pay a small network fee. Nothing is held in escrow.`, c.status === 1 ? "The case is waiting for the reviewer. They get no notification, so send them this." : "Send this so the reviewer is ready if the sides disagree.") : ""}
+      ${live && !blind && !isZero(c.reviewer) && !RV.isReviewer(W().account(), cc) ? reviewerInviteCard(`You are the neutral reviewer for case #${id} (${P.name}) on LGtie. ${c.status === 1 ? "The two sides disagree on some answers and the case is waiting for you." : "The two sides are still answering. If they disagree, the case will wait for you."} Open ${siteBase()}#pk/case/${id}/decide, connect your wallet and decide only the questions they disagree on. You will write your reasons and confirm you have no conflict of interest. You pay a small network fee. Nothing is held in escrow.`, c.status === 1 ? "The case is waiting for the reviewer. They get no notification, so send them this." : "Send this so the reviewer is ready if the sides disagree.") : ""}
       <div class="card" id="wal"></div><div id="cmsg" class="small"></div>`;
     bindReviewerInvite();
     if ($("#shownames")) $("#shownames").onclick = () => { namesFor2 = Number(id); pkCase(id); };
@@ -524,5 +554,5 @@
     };
   }
 
-  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: [...(await scan(V4().agreements, readAgreement)), ...(await legacyAgreements())], cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree, myPasskey: mine,  agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { LEGACY = {cases: eraOf(tag) || (CFG.v4 || {}).cases, agreements: V2AG()}; return pkCase(id); }, legacyAgreement: id => { LEGACY = {cases: (OLDER()[0] || {}).addr || (CFG.v4 || {}).cases, agreements: V2AG(), v2: true}; return pkAgreement(id); }, parseClaim, createPasskey, signAction};
+  window.TB_PASSKEYS = {usage: async () => deployed() ? {agreements: [...(await scan(V4().agreements, readAgreement)), ...(await legacyAgreements())], cases: [...(await scan(V4().cases, readCase)), ...(await legacyCases())]} : null, inbox, all: pkAll, join, mine: mineView, relay, agree: pkAgree,  agreement: pkAgreement, case: pkCase, legacyCase: (id, tag) => { const e = eraOf(tag) || {addr: (CFG.v4 || {}).cases, ag: V2AG()}; LEGACY = {cases: e.addr, agreements: e.ag, agTag: regTag(e.ag)}; return pkCase(id); }, legacyAgreement: (id, tag) => { const ag = tag === "v7" ? (CFG.v7 || {}).agreements : V2AG(), e = OLDER().find(o => same(o.ag, ag)) || {addr: (CFG.v4 || {}).cases}; LEGACY = {cases: e.addr, agreements: ag, agTag: tag === "v7" ? "v7" : "v2"}; return pkAgreement(id); }, canCards, myPasskey: mine, parseClaim, createPasskey, signAction};
 })();

@@ -29,7 +29,7 @@ const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromiu
 const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), errs = [];
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 400))); if (!c) fails++; };
 const w = ms => new Promise(r => setTimeout(r, ms));
-const cfg = cfg0.replace("https://rpc.xlayer.tech", ANVIL).replace(/\n\s*v7: \{[^}]*\},[^\n]*/, "");   // this story is the V6 era, so the later v7 line is dropped
+const cfg = cfg0.replace("https://rpc.xlayer.tech", ANVIL).replace(/\n\s*v[78]: \{[^}]*\},[^\n]*/g, "");   // this story is the V6 era, so the later v7 and v8 lines are dropped
 const p = await b.newPage(); await p.setViewport({width: 1280, height: 1000}); p.on("pageerror", e => errs.push(e.message));
 await p.setRequestInterception(true); p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", body: cfg}); else r.continue(); });
 await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });

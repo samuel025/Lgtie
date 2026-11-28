@@ -18,6 +18,7 @@ const c = await page(); await c.goto(BASE + "#templates");
 ok("every template card offers 'Create deal link'", await until(async () => (await c.$$('.tpl a[href^="#deal/"]')).length === 5), await T(c, "main"));
 await c.goto(BASE + "#deal/secondhand");
 ok("the creator page opens with the template's question count", await until(async () => /5 yes\/no questions/.test(await T(c, "main"))), await T(c, "main"));
+ok("where signed cards are available but the rules are not published, the box turns itself off with a reason and an ordinary link is made", !(await c.$("#dl-card")) || (await c.$eval("#dl-card", e => e.disabled && !e.checked) && /Not available for these rules/.test(await T(c, "#dl-cardnote")) && !!(await c.$("#dl-msg"))), await T(c, "main"));
 await type(c, "#dl-a", "Samuel"); await type(c, "#dl-b", "Amina"); await type(c, "#dl-w", "iPhone 12, 128GB, blue"); await type(c, "#dl-p", "₦250,000"); await type(c, "#dl-v", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"); await c.$eval("#dl-d", e => { e.value = "2030-01-31"; e.dispatchEvent(new Event("input")); });
 const msg = await c.$eval("#dl-msg", e => e.value);
 ok("the message names the sender, the thing, the price and the date, and ends with the link", /Samuel invited you/.test(msg) && /iPhone 12/.test(msg) && /₦250,000/.test(msg) && /2030-01-31/.test(msg) && /\/deal\/secondhand\.html#/.test(msg.split("\n").pop()), msg);

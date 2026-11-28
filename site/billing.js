@@ -5,7 +5,7 @@
   "use strict";
   const K = window.TB_PK, CFG = window.TB_CONFIG, W = () => window.TB_WALLET, main = document.querySelector("#main"), $ = s => document.querySelector(s);
   const ZERO = "0x" + "0".repeat(40);
-  const V5 = () => (CFG.v7 && CFG.v7.billing ? CFG.v7 : CFG.v6 && CFG.v6.billing ? CFG.v6 : CFG.v5) || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
+  const V5 = () => [CFG.v8, CFG.v7, CFG.v6, CFG.v5].find(c => c && c.billing) || {}, deployed = () => !!(V5().billing && V5().billing !== ZERO && V5().cases && V5().cases !== ZERO);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
   const short = a => a.slice(0, 6) + "…" + a.slice(-4);
   const enc = (name, types = [], vals = []) => K.hex(K.call(name, types, vals));
@@ -89,7 +89,7 @@
         <li>${inf.live ? `Every payment goes straight to <code>${esc(inf.treasury)}</code>.` : "Every payment goes straight to LGtie's address."} The billing contract never holds any money, and a test checks that after every kind of payment it holds exactly nothing.</li>
         <li>Prices can be changed, but never above caps written into the contract: at most 10 USDT per case, 500 per month and 5,000 per year. The reviewer's own fee, if any, is agreed and paid directly between the parties, and LGtie takes no cut of it.</li>
         <li>A plan does not renew by itself, because there is no server to charge you. Subscribe again before it ends; time is added on top. Switching to a higher plan starts it now and does not refund the rest of the old one.</li>
-        <li>The contracts are unaudited. Everything recorded is public.</li>${(() => { const act = (V5().billing || "").toLowerCase(), old = [CFG.v6, CFG.v5].filter(c => c && c.billing && c.billing.toLowerCase() !== act).map(c => c.billing); return old.length && act ? `<li>New cases now open on a newer contract with its own billing. A plan bought earlier, on ${old.map(a => `<code>${short(a)}</code>`).join(" or ")}, does not cover them: subscribe again here.</li>` : ""; })()}</ul></div>`;
+        <li>The contracts are unaudited. Everything recorded is public.</li>${(() => { const act = (V5().billing || "").toLowerCase(), old = [CFG.v7, CFG.v6, CFG.v5].filter(c => c && c.billing && c.billing.toLowerCase() !== act).map(c => c.billing); return old.length && act ? `<li>New cases now open on a newer contract with its own billing. A plan bought earlier, on ${old.map(a => `<code>${short(a)}</code>`).join(" or ")}, does not cover them: subscribe again here.</li>` : ""; })()}</ul></div>`;
     const msg = (t, cls) => { const m = $("#minebody"); if (m) m.innerHTML = `<p class="small ${cls || "mute"}">${esc(t)}</p>`; };
     const showPlan = async () => {
       try {

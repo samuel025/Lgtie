@@ -13,7 +13,7 @@ const read = (to, sig, ...args) => sh(`cast call ${to} "${sig}" ${args.map(a => 
 const OWNER = "0x0aE117C07A277D74D9326eb4e33013439dC68fD5", BUSINESS = "0x7e57000000000000000000000000000000000d11", RELAYER = "0x7e57000000000000000000000000000000000e11", REVIEWER = "0x7e57000000000000000000000000000000000f11";
 for (const a of [OWNER, BUSINESS, RELAYER]) { await rpc("anvil_setBalance", [a, "0x56bc75e2d63100000"]); await rpc("anvil_impersonateAccount", [a]); }
 // ---- the real deploy script, on the fork, with the per-case fee at zero so no dollar token is needed
-const CFGT = "/tmp/lgtie-v7-config.js"; fs.writeFileSync(CFGT, fs.readFileSync(SITE + "/site/config.js", "utf8").replace(/\n\s*v7: \{[^}]*\},[^\n]*/, ""));
+const CFGT = "/tmp/lgtie-v7-config.js"; fs.writeFileSync(CFGT, fs.readFileSync(SITE + "/site/config.js", "utf8").replace(/\n\s*v[78]: \{[^}]*\},[^\n]*/g, ""));
 const dep = sh(`CASE_FEE=0 DEPLOYER=${OWNER} RPC_URL=${ANVIL} CONFIG=${CFGT} SIGNER_ARGS="--unlocked --from ${OWNER}" scripts/deploy-v7.sh deploy 2>&1 | tail -3`);
 const AG3 = /AgreementRegistryV3:\s+(0x[0-9a-fA-F]{40})/.exec(dep)[1], CASES = /TiebreakCaseV6 \(2nd\):\s+(0x[0-9a-fA-F]{40})/.exec(dep)[1];
 const cfgText = fs.readFileSync(CFGT, "utf8"), PK = /v4: \{passkeys: "(0x[0-9a-fA-F]{40})"/.exec(cfgText)[1], cfg = cfgText.replace("https://rpc.xlayer.tech", ANVIL);

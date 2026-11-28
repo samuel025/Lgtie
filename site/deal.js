@@ -18,7 +18,7 @@
   function clean(o) {
     if (!o || typeof o !== "object" || !keys().includes(String(o.t || ""))) return null;
     const s = k => String(o[k] == null ? "" : o[k]).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, LIM[k]);
-    return {t: String(o.t), a: s("a"), b: s("b"), w: s("w"), p: s("p"), d: /^\d{4}-\d{2}-\d{2}$/.test(String(o.d || "")) ? o.d : "", r: Number.isInteger(o.r) && o.r > 0 && o.r < 1e9 ? o.r : 0, v: /^0x[0-9a-fA-F]{40}$/.test(String(o.v || "")) ? String(o.v) : ""};
+    return {t: String(o.t), a: s("a"), b: s("b"), w: s("w"), p: s("p"), d: /^\d{4}-\d{2}-\d{2}$/.test(String(o.d || "")) ? o.d : "", r: Number.isInteger(o.r) && o.r > 0 && o.r < 1e9 ? o.r : 0, v: /^0x[0-9a-fA-F]{40}$/.test(String(o.v || "")) ? String(o.v) : "", k: /^lgtie1\.[A-Za-z0-9_-]{40,1200}$/.test(String(o.k || "")) ? String(o.k) : ""};
   }
   const encodeDeal = o => { const c = clean(o), out = {}; Object.keys(c).forEach(k => { if (c[k]) out[k] = c[k]; }); return b64e(JSON.stringify(out)); };
   const parseDeal = str => { try { const d = clean(JSON.parse(b64d(str))); return d ? {deal: d} : {error: "This link is for rules this page does not have."}; } catch { return {error: "This link is not valid. Ask the person who sent it to send it again."}; } };
@@ -52,11 +52,17 @@
         <div class="fgrid2"><label class="field"><span>Price (optional)</span><input id="dl-p" type="text" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
           <label class="field"><span>Date (optional)</span><input id="dl-d" type="date"></label></div>
         <label class="field"><span>Neutral reviewer's wallet address, if you already have someone in mind (optional)</span><input id="dl-v" type="text" maxlength="42" autocomplete="off" placeholder="0x… (leave empty to agree on one later)"></label>
+        ${window.TB_CARDS && window.TB_CARDS.on() ? `<label class="check"><input type="checkbox" id="dl-card"> <span><b>Sign it with passkeys</b> (recommended). You both sign on your phones with your fingerprint or face. No wallet, no fee, and nothing goes on X Layer unless there is a dispute. <em class="mute" id="dl-cardnote"></em></span></label>` : ""}
         <label class="field"><span>Rule set number, if you have published these rules on X Layer (optional)</span><input id="dl-r" type="number" min="1" step="1" placeholder="${CFG.published && CFG.published[k] ? "default: " + CFG.published[k].ruleSetId : "leave empty"}"></label></div>
       <div class="card" id="dl-out"></div>`;
-    const val = id => $(id).value, build = () => ({t: val("#dl-t"), a: val("#dl-a"), b: val("#dl-b"), w: val("#dl-w"), p: val("#dl-p"), d: val("#dl-d"), r: Number(val("#dl-r")) || 0, v: val("#dl-v").trim()});
-    let edited = false;
+    const val = id => $(id).value, build = () => ({t: val("#dl-t"), a: val("#dl-a"), b: val("#dl-b"), w: val("#dl-w"), p: val("#dl-p"), d: val("#dl-d"), r: Number(val("#dl-r")) || 0, v: val("#dl-v").trim(), k: wantCard() && kClaim ? kClaim : ""});
+    let edited = false, kClaim = "", cardPref = true;
+    try { const my = window.TB_PASSKEYS && window.TB_PASSKEYS.myPasskey && window.TB_PASSKEYS.myPasskey(); if (my && my.claim) kClaim = my.claim; } catch (e) {}   // a passkey already on this phone is reused
+    const cardsOn = () => !!(window.TB_CARDS && window.TB_CARDS.on()), hasRule = () => !!ruleOf(clean({...baseOf(), k: ""})), wantCard = () => cardsOn() && !!$("#dl-card") && $("#dl-card").checked && hasRule();
+    const baseOf = () => ({t: val("#dl-t"), a: val("#dl-a"), b: val("#dl-b"), w: val("#dl-w"), p: val("#dl-p"), d: val("#dl-d"), r: Number(val("#dl-r")) || 0, v: val("#dl-v").trim()});
     function render() {
+      if ($("#dl-card")) { const ok = hasRule(); $("#dl-card").disabled = !ok; $("#dl-card").checked = ok && cardPref; $("#dl-cardnote").textContent = ok ? "" : "Not available for these rules: signed cards need rules published on X Layer (only the Warranty rules are today, or enter your own rule set number below). You get an ordinary deal link instead."; }
+      if (wantCard() && !kClaim) { $("#dl-out").innerHTML = `<h3>First, make your passkey</h3><p class="small">It stays on this phone (it is the same thing that unlocks it). Your public key goes in the link so the other person can sign a card with you. Nothing secret is shared.</p><div class="row"><button class="btn" id="dl-mk" type="button">Make my passkey on this phone</button></div><p id="dl-mkmsg" class="small"></p>`; $("#dl-mk").onclick = async () => { $("#dl-mk").disabled = true; try { kClaim = await window.TB_CARDS.senderClaim(); render(); } catch (e) { $("#dl-mkmsg").className = "small err"; $("#dl-mkmsg").textContent = (e && e.message) || String(e); $("#dl-mk").disabled = false; } }; return; }
       const d = clean(build()), link = shareLink(d), text = edited && $("#dl-msg") ? $("#dl-msg").value : message(d, link), enc = encodeURIComponent, tg = text.replace(link, "").trim();
       $("#dl-out").innerHTML = `<h3>Your message</h3><p class="small mute">Edit it if you like. The link at the end is the deal.</p>
         <textarea id="dl-msg" rows="7" aria-label="Message to send">${esc(text)}</textarea>
@@ -76,6 +82,7 @@
       if ($("#dl-sh")) $("#dl-sh").onclick = () => navigator.share({text: $("#dl-msg").value}).catch(() => {});
     }
     ["#dl-a", "#dl-b", "#dl-w", "#dl-p", "#dl-d", "#dl-r", "#dl-v"].forEach(s => { $(s).oninput = () => { edited = false; render(); }; });
+    if ($("#dl-card")) $("#dl-card").onchange = () => { cardPref = $("#dl-card").checked; edited = false; render(); };
     $("#dl-t").onchange = () => { location.hash = "#deal/" + val("#dl-t"); };
     render();
   }
@@ -94,7 +101,7 @@
       <div class="card"><h3>Read it first (free, no wallet)</h3><p class="small mute">The ${qs.length} questions you would both answer:</p><ol class="small">${qs.map(q => `<li>${esc(q.text)}</li>`).join("")}</ol>
         <div class="row"><a class="btn ghost" href="#check/${esc(d.t)}">Try the checker</a></div></div>
       <div class="card" id="dd-agree"><h3>Happy with it? Agree with your passkey</h3>
-        <p class="small">Takes about a minute. No wallet and no app: you make a passkey on this phone (the same thing that unlocks it), then send a short reply${d.a ? " to " + esc(d.a) : ""}. They set the agreement up; you accept it on this phone.</p>
+        ${d.k && window.TB_CARDS && window.TB_CARDS.on() ? `<p class="small">Takes about a minute. No wallet, no app and no fee: you make a passkey on this phone (the same thing that unlocks it) and sign this deal with it. Then send a short reply${d.a ? " to " + esc(d.a) : ""} so they can sign too. Nothing goes on X Layer unless there is a dispute.</p>` : `<p class="small">Takes about a minute. No wallet and no app: you make a passkey on this phone (the same thing that unlocks it), then send a short reply${d.a ? " to " + esc(d.a) : ""}. They set the agreement up; you accept it on this phone.</p>`}
         <div class="row"><button class="btn" id="dd-go" type="button">Agree with my passkey</button></div><div id="dd-out"></div>
         <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p></div>
       <div class="card" id="dd-mine"><h3>If you made this link</h3>
@@ -104,6 +111,13 @@
     goBtn.onclick = async () => {
       const out = $("#dd-out"); goBtn.disabled = true; out.innerHTML = `<p class="small mute">Follow your device's prompt…</p>`;
       try {
+        if (d.k && window.TB_CARDS && window.TB_CARDS.on()) {   // a signed card: sign now, with no wallet and no fee
+          const r = await window.TB_CARDS.respond(d, payload, d.b), t2 = lang() === "zh" ? `${d.b ? "我是" + d.b + "。" : ""}我同意这些规则${d.w ? "（" + d.w + "）" : ""}，我已经签名。点这个链接你也签名就完成了：${r.link}`
+            : `${d.b ? "This is " + d.b + ". " : ""}I agree to the rules${d.w ? " for " + d.w : ""} and I have signed. Tap to sign too and finish: ${r.link}`;
+          out.innerHTML = `<div class="note ok-note"><b>✓ You have signed with your passkey.</b> No wallet and no fee.</div><p class="small"><b>Next:</b> send this${d.a ? " to " + esc(d.a) : " back in the chat"}.</p><textarea id="dd-msg" rows="4" readonly>${esc(t2)}</textarea>${shareHtml("dd-share", t2, r.link)}
+            <p class="small"><b>Then:</b> when ${d.a ? esc(d.a) : "they"} sign too, you both have the finished card. It is saved on this phone (<a href="#cards">My signed deals</a>). Nothing is recorded on X Layer unless there is a dispute.</p>`;
+          bindShare("dd-share", t2); const m0 = $("#dd-msg"); m0.style.height = "auto"; m0.style.height = Math.max(110, m0.scrollHeight + 4) + "px"; goBtn.hidden = true; return;
+        }
         const P = window.TB_PASSKEYS, have = P.myPasskey && P.myPasskey(), info = have && have.claim ? have : await P.createPasskey(d.b || "LGtie deal");
         const link = appPage() + "#pk/agree/" + info.claim + "/" + payload;
         const text = lang() === "zh" ? `${d.b ? "我是" + d.b + "。" : ""}我同意这些规则${d.w ? "（" + d.w + "）" : ""}。点这个链接把我们的协议建好（里面有我的通行密钥代码）：${link}`
@@ -118,5 +132,5 @@
     $("#dd-ct").onclick = e => copy(terms, e.target);
     if ($("#dd-inv")) $("#dd-inv").onclick = () => { try { sessionStorage.setItem("lgtie.dealTerms", terms); sessionStorage.setItem("lgtie.dealRule", String(rule)); } catch (e) {} location.hash = "#pk/agree"; };
   }
-  window.TB_DEAL = {create, deal, encodeDeal, parseDeal, clean, termsText, message, shareLink, ruleOf, shareHtml, bindShare};
+  window.TB_DEAL = {create, deal, encodeDeal, parseDeal, clean, termsText, message, shareLink, ruleOf, shareHtml, bindShare, info};
 })();

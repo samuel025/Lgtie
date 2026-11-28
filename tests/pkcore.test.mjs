@@ -76,4 +76,20 @@ ok("the V3 proposal and withdrawal payloads match what the contract hashes", () 
   assert.equal(K.hex(K.payload.propose({proposerPasskey: 7, counterpartyWallet: "0x" + "00".repeat(20), counterpartyPasskey: 9, ruleSetId: 1, termsHash: TH, reviewer: R, answerWindow: 259200, reviewWindow: 172800})), cast("keccak", enc2));
   assert.equal(K.hex(K.payload.cancelAgreement(5)), cast("keccak", cast("abi-encode", "f(string,uint256)", "CANCEL_AGREEMENT", "5")));
 });
+ok("the agreement-card digest matches what AgreementRegistryV4 hashes", () => {
+  const REG = "0x1111111111111111111111111111111111111111", RV = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", TH = "0x" + "ab".repeat(32), SALT = "0x" + "5a".repeat(32);
+  const ka = {x: 1234567890123456789n, y: 987654321987654321n, rpIdHash: "0x" + "11".repeat(32)}, kb = {x: 5555n, y: 6666n, rpIdHash: "0x" + "22".repeat(32)};
+  const t = {ruleSetId: 1, termsHash: TH, reviewer: RV, answerWindow: 604800, reviewWindow: 604800, expiry: 1900000000, salt: SALT};
+  const kh = k => cast("keccak", cast("abi-encode", "f(uint256,uint256,bytes32)", String(k.x), String(k.y), k.rpIdHash));
+  const card = cast("keccak", Buffer.from("LGtie.AgreementCard.v1").length ? "0x" + Buffer.from("LGtie.AgreementCard.v1").toString("hex") : "0x");
+  const want = cast("keccak", cast("abi-encode", "f(bytes32,uint256,address,bytes32,bytes32,uint256,bytes32,address,uint32,uint32,uint64,bytes32)", card, "196", REG, kh(ka), kh(kb), "1", TH, RV, "604800", "604800", "1900000000", SALT));
+  assert.equal(K.hex(K.cardDigest({chainId: 196, registry: REG, keyA: ka, keyB: kb, t})), want);
+  assert.notEqual(K.hex(K.cardDigest({chainId: 196, registry: REG, keyA: kb, keyB: ka, t})), want);   // the order of the signers matters
+  assert.equal(K.hex(K.keyHash(ka)), kh(ka));
+});
+ok("the reviewer proposal and approval payloads match what TiebreakCaseV7 hashes", () => {
+  const R = "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC";
+  for (const [fn, label] of [["proposeReviewer", "PROPOSE_REVIEWER"], ["approveReviewer", "APPROVE_REVIEWER"]]) for (const asFiler of [true, false])
+    assert.equal(K.hex(K.payload[fn](9, asFiler, R)), cast("keccak", cast("abi-encode", "f(string,uint256,bool,address)", label, "9", String(asFiler), R)));
+});
 console.log(process.exitCode ? "FAILED" : `all ${n} passed`);

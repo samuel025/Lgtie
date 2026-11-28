@@ -358,6 +358,8 @@
     if (view === "pricing") return window.TB_BILLING.page();
     if (view === "deal") return window.TB_DEAL.create(key);
     if (view === "d") return window.TB_DEAL.deal([key, ...rest].join("/"));
+    if (view === "card") return window.TB_CARDS.page([key, ...rest].join("/"));
+    if (view === "cards") return window.TB_CARDS.list();
     if (view === "auto") return window.TB_AUTOPREVIEW.page(key);   // unlisted preview, see docs/AUTO-QUESTIONS.md
     if (view === "reviewer") return key ? window.TB_CASES.reviewer(key) : window.TB_CASES.reviewers();
     if (view === "receipt") return key ? window.TB_CASES.receipt(key) : window.TB_CASES.list();
@@ -366,7 +368,7 @@
     if (view === "mine") return window.TB_PASSKEYS.mine();
     if (view === "relay") return window.TB_PASSKEYS.relay(key || "");
     if (view === "inbox") return window.TB_PASSKEYS.inbox();
-    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "", rest[1] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : /^v[456]case$/.test(key) ? window.TB_PASSKEYS.legacyCase(rest[0] || 1, key.slice(0, 2)) : key === "v2agreement" ? window.TB_PASSKEYS.legacyAgreement(rest[0] || 1) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
+    if (view === "pk") return key === "agree" ? window.TB_PASSKEYS.agree(rest[0] || "", rest[1] || "") : key === "agreement" ? window.TB_PASSKEYS.agreement(rest[0] || 1) : key === "cases" ? window.TB_PASSKEYS.all() : /^v[4567]case$/.test(key) ? window.TB_PASSKEYS.legacyCase(rest[0] || 1, key.slice(0, 2)) : /^v[27]agreement$/.test(key) ? window.TB_PASSKEYS.legacyAgreement(rest[0] || 1, key.slice(0, 2)) : key === "case" ? window.TB_PASSKEYS.case(rest[0] || 1, rest[1] === "decide") : window.TB_PASSKEYS.agree();
     if (view === "case") return key ? window.TB_CASES.view(key) : window.TB_CASES.list();
     if (view === "build") return window.TB_BUILD.build(key);
     if (view === "templates") return window.TB_TEMPLATES.page();

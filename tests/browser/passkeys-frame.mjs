@@ -21,7 +21,7 @@ const errs = []; p.on("pageerror", e => errs.push("pageerror: " + e.message));
 let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL ") + n + (c ? "" : " " + String(x).slice(0, 400))); if (!c) fails++; };
 const w = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 30000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn().catch(() => false)) return true; await w(300); } return false; }
-const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`).replace(/\n\s*v[567]: \{[^}]*\},[^\n]*/g, "");   // this story tests the V4 contracts it deploys, so the later (billing and V6) lines are dropped
+const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`).replace(/\n\s*v[5678]: \{[^}]*\},[^\n]*/g, "");   // this story tests the V4 contracts it deploys, so the later (billing and V6) lines are dropped
 await p.setRequestInterception(true);
 p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", headers: {"access-control-allow-origin": "*"}, body: cfg}); else r.continue(); });
 await p.evaluateOnNewDocument(ANVIL => { window.ethereum = {request: async ({method, params}) => {
@@ -51,7 +51,7 @@ ok("the frame resized itself to its content", (await p.$eval('iframe[src*="#embe
 await p.goto(SITE + "?" + Date.now()); await p.evaluate(a => localStorage.setItem("acct", a), BUSINESS);
 await p.goto(invite.replace("index.html", "index.html?" + Date.now()));
 ok("the claim code is prefilled from the link", await until(async () => /^lgtie1\./.test(await p.$eval("#cc", e => e.value))));
-await p.type("#rv", REVIEWER); await p.click("#go");
+await p.$eval("#rv", e => { e.value = ""; }); await p.type("#rv", REVIEWER); await p.click("#go");
 ok("the business registers the passkey and proposes the agreement", await until(async () => /^#pk\/agreement\/1$/.test(await p.evaluate(() => location.hash))), await p.$eval("#msg", e => e.innerText).catch(() => ""));
 
 // ---- Back on Acme's page: the customer's own view, in the frame, using the passkey cross-site.

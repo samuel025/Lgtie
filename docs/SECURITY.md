@@ -171,3 +171,29 @@ Known limits, stated plainly:
 - **Whoever submits pays.** A passkey can sign but not send. Between two people with no wallet at all, nobody can submit; LGtie runs no relayer. A proposal signed by a passkey proposer is public once someone submits it, and anyone can submit it, so the submitter chooses when it lands, not what it says.
 - **A signed proposal that nobody submits does nothing**, and it stays valid until its account's nonce moves on (signing something else that is submitted first invalidates it).
 - Subscriptions bought on earlier billing contracts do not carry over to this one.
+
+## Agreement cards and a reviewer agreed later (AgreementRegistryV4, TiebreakCaseV7; deployed Nov 28, 2026)
+
+Unaudited, like the others. Design: `docs/AGREEMENT-CARDS.md`. The site now opens cases and charges through these.
+
+| Contract | Address |
+|---|---|
+| AgreementRegistryV4 | `0x2Fc18c3E2adAFEF0659Ac8A693b245d50c0E4A7F` |
+| LGtieBilling (fourth instance, linked to the case contract below only) | `0xA8C3A268b6427754e6209A4E235c1F173eb2F07d` |
+| TiebreakCaseV7 | `0xeB56EC9462B07Bdc5461117Ac141Fba41B155f7A` |
+
+They reuse the live RuleSetRegistry, PasskeyRegistry, processor and FactSpecRegistry. Read back on mainnet after deployment: the registry points at the live rule-set and passkey registries; the billing contract is linked to the case contract; the case contract points back at the billing contract, the new registry, the spec registry and the live processor; none holds any OKB.
+
+What was checked (414 contract tests; the whole earlier suite was re-run against V4 and against V7, and the end-to-end path runs in a browser on the real deployed contracts, on a fork):
+
+- **A card cannot be altered or moved.** The signed digest commits to both public keys in order, the rule set, a fingerprint of the terms, the reviewer (or none), both time windows, a last day to record it, a random salt, the chain and this registry's address. Changing any one makes the signatures invalid; a card cannot be recorded on another chain or registry, or twice; a third passkey cannot take the other person's seat; an expired card is refused.
+- **Recording is open, and harmless.** Anyone can submit a card; it only creates what both people signed. The two passkey accounts are created (or reused if already registered with the same key) at that moment.
+- **A reviewer agreed later cannot be forced.** With no reviewer named, nobody can decide until both sides have approved one; an approval names the reviewer, so it cannot be spent on a different one; proposing again resets the approvals; with none agreed by the review deadline the case ends with no decision. An agreement that named a reviewer still fixes it.
+
+Known limits, stated plainly:
+
+- **Handle squatting.** If someone registers a passkey handle to a different key before the card is recorded, recording that card reverts. The people make new passkeys and a new card.
+- **A card nobody records is only a signed record.** It proves both agreed; it decides nothing until recorded and a case is opened.
+- **Costs move to dispute time.** Whoever records the card and opens the case pays the network fees and the case fee (unless covered by a subscription). A reviewer needs a wallet, so someone must find one both sides accept.
+- **Whoever submits chooses the timing, not the content.**
+- Subscriptions bought on earlier billing contracts do not carry over.

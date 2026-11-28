@@ -77,7 +77,8 @@
   const ASSERTION = {tuple: ["bytes", "string", "uint256", "uint256", "uint256", "uint256"]};     // authenticatorData, clientDataJSON, typeIndex, challengeIndex, r, s
   const SIGAUTH = {tuple: ["uint256", "uint256", "uint8", ASSERTION]};                            // nonce, deadline, keyIndex, assertion
   const KEY = {tuple: ["uint256", "uint256", "bytes32"]};                                         // x, y, rpIdHash
-  const PARTY = {tuple: ["address", "uint256"]};                                                  // wallet, passkey account id
+  const PARTY = {tuple: ["address", "uint256"]};
+  const SIGNER = {tuple: [KEY, "bytes32", ASSERTION]};                                            // key, handleHash, assertion (a card signer)                                                  // wallet, passkey account id
 
   // ---------- what a passkey signs ----------
   const DOMAIN = keccak256(utf8("LGtie.PasskeyRegistry.v1"));
@@ -90,11 +91,21 @@
     termsDigest: a => keccak256(encode([PARTY, PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], [[a.proposerWallet, a.proposerPasskey], [a.counterpartyWallet, a.counterpartyPasskey], a.ruleSetId, a.termsHash, a.reviewer, a.answerWindow, a.reviewWindow])),
     // AgreementRegistryV3: a passkey proposes (every term is signed) or withdraws its own proposal
     propose: p => keccak256(encode(["string", "uint256", PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], ["PROPOSE_AGREEMENT", p.proposerPasskey, [p.counterpartyWallet, p.counterpartyPasskey], p.ruleSetId, p.termsHash, p.reviewer, p.answerWindow, p.reviewWindow])),
+    // TiebreakCaseV7: a side proposes or approves the reviewer after a dispute starts
+    proposeReviewer: (id, asFiler, reviewer) => keccak256(encode(["string", "uint256", "bool", "address"], ["PROPOSE_REVIEWER", id, asFiler, reviewer])),
+    approveReviewer: (id, asFiler, reviewer) => keccak256(encode(["string", "uint256", "bool", "address"], ["APPROVE_REVIEWER", id, asFiler, reviewer])),
     cancelAgreement: id => keccak256(encode(["string", "uint256"], ["CANCEL_AGREEMENT", id])),
     accept: (id, termsDigest) => keccak256(encode(["string", "uint256", "bytes32"], ["ACCEPT_AGREEMENT", id, hex(termsDigest)])),
     addKey: key => keccak256(encode(["string", "uint256", "uint256", "bytes32"], ["ADD_KEY", key.x, key.y, key.rpIdHash])),
     removeKey: index => keccak256(encode(["string", "uint8"], ["REMOVE_KEY", index]))
   };
+  // ---------- agreement cards (AgreementRegistryV4) ----------
+  // Two passkeys each sign this one digest; it is also the WebAuthn challenge. Order matters: `keyA` is the first signer.
+  const CARD = keccak256(utf8("LGtie.AgreementCard.v1"));
+  const keyHash = k => keccak256(encode(["uint256", "uint256", "bytes32"], [k.x, k.y, k.rpIdHash]));
+  const cardDigest = ({chainId, registry, keyA, keyB, t}) => keccak256(encode(["bytes32", "uint256", "address", "bytes32", "bytes32", "uint256", "bytes32", "address", "uint32", "uint32", "uint64", "bytes32"],
+    [hex(CARD), chainId, registry, hex(keyHash(keyA)), hex(keyHash(keyB)), t.ruleSetId, t.termsHash, t.reviewer, t.answerWindow, t.reviewWindow, t.expiry, t.salt]));
+  const TERMS = {tuple: ["uint256", "bytes32", "address", "uint32", "uint32", "uint64", "bytes32"]};
   // keccak256(abi.encode(DOMAIN, chainid, registry, consumer, id, nonce, deadline, payloadHash)): the WebAuthn challenge
   const challenge = ({chainId, registry, consumer, accountId, nonce, deadline, payloadHash}) =>
     keccak256(encode(["bytes32", "uint256", "address", "address", "uint256", "uint256", "uint256", "bytes32"], [hex(DOMAIN), chainId, registry, consumer, accountId, nonce, deadline, hex(payloadHash)]));
@@ -117,6 +128,6 @@
   }
   const sigAuthTuple = (nonce, deadline, keyIndex, assertion) => [nonce, deadline, keyIndex, assertion];
 
-  const api = {keccak256, keccak: kHex, hex, unhex, utf8, concat, u256, encode, call, typeStr, ASSERTION, SIGAUTH, KEY, PARTY, DOMAIN, payload, challenge, b64u, unb64u, derToRS, assertionTuple, sigAuthTuple};
+  const api = {keccak256, keccak: kHex, hex, unhex, utf8, concat, u256, encode, call, typeStr, ASSERTION, SIGAUTH, KEY, PARTY, DOMAIN, payload, challenge, b64u, unb64u, derToRS, assertionTuple, sigAuthTuple, CARD, keyHash, cardDigest, TERMS, SIGNER};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.TB_PK = api;
 })();

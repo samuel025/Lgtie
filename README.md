@@ -71,7 +71,7 @@ flowchart TD
 
 - **A static site.** No server and no database: the web app, the rule compiler and the checks run in the browser (`site/`). The built site is one page in `dist/`.
 - **Rules are data, not code.** A rule set compiles to a small circuit of NAND gates and is stored on the existing **TapeOut processor**, so it cannot hold hidden state or an admin key.
-- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. `AgreementRegistryV3` lets a passkey account propose an agreement, not only accept one. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
+- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. `AgreementRegistryV3` lets a passkey account propose an agreement, not only accept one. `AgreementRegistryV4` adds agreement cards (a deal both passkeys sign off-chain, recorded only if needed) and `TiebreakCaseV7` lets the reviewer be agreed after a dispute starts. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
 - **No wallet for customers.** A passkey signs each action; any wallet (usually the business's) submits it and pays the small fee. Signed actions travel through public Nostr relays to the business's inbox.
 - **Optional bridge** (`bridge/`): a script a business runs itself to forward those messages to Slack, Discord or any webhook.
 
@@ -104,6 +104,7 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 - **Embeddable checker.** Put the claim checker on your own website with one line, so customers get a result and a reason without leaving your page (see below).
 - **Agreements and cases.** Agree rules, a neutral reviewer and deadlines up front, then open as many cases as you need under one agreement. A business inbox collects what customers sign with a passkey.
 - **Contract clause.** Generates a short clause for your written contract that points disagreements at the published rules. It is a template, not legal advice.
+- **Signed deals with no wallet and no fee.** A deal link can carry a passkey signature from each side (an agreement card). Nothing is recorded on X Layer unless there is a dispute, and the reviewer can be agreed after the dispute starts. [How it works](docs/AGREEMENT-CARDS.md).
 - **Deal links.** On any template, "Create deal link" makes a chat-ready message and a link to send on WhatsApp, Telegram or email before money moves. The other person opens a page with the deal, the yes/no questions and a free checker, and agrees with a passkey. The details stay in the link after the `#`, so the page sends them to no server, and chat apps show a preview card for the template. [How it works](docs/FEATURES.md).
 - **Automatic questions.** A publisher marks questions the chain answers (evidence attached in time, case opened by a date, or a value read from another contract) at `#auto/<rule set number>`, with a review screen before writing it once. Case pages mark them "Answered by the chain" and do not ask the sides about them.
 - **Pricing and subscriptions** on the `#pricing` page.
@@ -166,9 +167,12 @@ LGtie holds no money and takes no cut of any dispute. It earns from using the sy
 | `FactSpecRegistry` | `0x735021f45B93ecb23B006B57795b455703f27542` (a rule set's publisher writes once which questions the chain answers) |
 | `LGtieBilling` (second instance) | `0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf` (same token, treasury and prices; linked to the first V6; superseded) |
 | `TiebreakCaseV6` | `0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36` (V5 plus automatic questions; superseded by the instance below, its cases stay readable) |
-| `AgreementRegistryV3` | `0xd8506F400064086ddfD98195bDd4DDb287bCE790` (a passkey account can propose, and withdraw, by signature; the site uses it) |
-| `LGtieBilling` (third instance) | `0x63a4972f4e34ac588698Dc0f3101578a318D836F` (same token, treasury and prices; linked to the case contract below; the site charges here) |
-| `TiebreakCaseV6` (second instance) | `0x61Cb55451028AEf609461e6b258DeCbA87D42eCf` (the same code, pointed at `AgreementRegistryV3`; the site opens cases here) |
+| `AgreementRegistryV3` | `0xd8506F400064086ddfD98195bDd4DDb287bCE790` (a passkey account can propose, and withdraw, by signature; superseded by V4, its agreements stay readable) |
+| `LGtieBilling` (third instance) | `0x63a4972f4e34ac588698Dc0f3101578a318D836F` (same token, treasury and prices; linked to the second `TiebreakCaseV6`; superseded) |
+| `TiebreakCaseV6` (second instance) | `0x61Cb55451028AEf609461e6b258DeCbA87D42eCf` (the same code, pointed at `AgreementRegistryV3`; superseded, its cases stay readable) |
+| `AgreementRegistryV4` | `0x2Fc18c3E2adAFEF0659Ac8A693b245d50c0E4A7F` (V3 plus agreement cards: two passkeys sign off-chain and it is recorded only if needed; the site uses it) |
+| `LGtieBilling` (fourth instance) | `0xA8C3A268b6427754e6209A4E235c1F173eb2F07d` (same token, treasury and prices; linked to `TiebreakCaseV7`; the site charges here) |
+| `TiebreakCaseV7` | `0xeB56EC9462B07Bdc5461117Ac141Fba41B155f7A` (V6 plus a reviewer who can be agreed after a dispute starts; the site opens cases here) |
 
 The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the project's builder; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
 

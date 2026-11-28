@@ -21,7 +21,7 @@ let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL "
 const shot = async n => { if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, {recursive: true}); await w(1500); await p.screenshot({path: process.env.SHOTS + "/" + n + ".png", fullPage: true}); } };   // SHOTS=/some/dir saves screenshots
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 30000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await w(300); } return false; }
-const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`).replace(/\n\s*v5: \{[^}]*\},[^\n]*/, "").replace(/\n\s*v[67]: \{[^}]*\},[^\n]*/g, "");   // this story tests the free V4 contract it deploys; billing (v5) is covered by billing.mjs
+const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`).replace(/\n\s*v5: \{[^}]*\},[^\n]*/, "").replace(/\n\s*v[678]: \{[^}]*\},[^\n]*/g, "");   // this story tests the free V4 contract it deploys; billing (v5) is covered by billing.mjs
 await p.setRequestInterception(true);
 p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", body: cfg}); else r.continue(); });
 await p.evaluateOnNewDocument(ANVIL => { window.ethereum = {request: async ({method, params}) => {
@@ -44,7 +44,7 @@ const claim = await p.$eval("#claim", e => e.value);
 ok("the page shows a short read-back code for a phone or chat check", /Read-back code/.test(await T("main")));
 
 // ---- 2. The business registers her passkey and proposes an agreement.
-await as(BUSINESS, "#pk/agree"); await p.type("#cc", claim); await p.type("#rv", REVIEWER); await p.type("#terms", "Acme Laptops sales terms v1");
+await as(BUSINESS, "#pk/agree"); await p.type("#cc", claim); await p.$eval("#rv", e => { e.value = ""; }); await p.type("#rv", REVIEWER); await p.type("#terms", "Acme Laptops sales terms v1");
 await p.click("#go");
 ok("the business registers the customer and lands on the agreement", await until(async () => /^#pk\/agreement\/1$/.test(await p.evaluate(() => location.hash))), await T("#msg"));
 ok("the reviewer is remembered, so the next invite page has it already", (await p.evaluate(() => localStorage.getItem("lgtie.lastReviewer"))) === REVIEWER);
@@ -183,11 +183,11 @@ ok("a passkey nobody has registered finds no account", await until(async () => /
 const parsed = JSON.parse(Buffer.from(claim2.slice(7).replace(/-/g, "+").replace(/_/g, "/"), "base64").toString());
 const ev = crypto.generateKeyPairSync("ec", {namedCurve: "prime256v1"}).publicKey.export({format: "jwk"}), hx = s => "0x" + Buffer.from(s, "base64url").toString("hex");
 const forged = "lgtie1." + b64u({x: hx(ev.x), y: hx(ev.y), rp: parsed.rp, h: parsed.h, id: "localhost"});   // Sam's handle, but someone else's key
-await as(BUSINESS, "#pk/agree"); await p.type("#cc", forged); await p.type("#rv", REVIEWER); await p.click("#go");
+await as(BUSINESS, "#pk/agree"); await p.type("#cc", forged); await p.$eval("#rv", e => { e.value = ""; }); await p.type("#rv", REVIEWER); await p.click("#go");
 ok("a dishonest business can register an account under Sam's handle with its own key (the chain cannot stop that)", await until(async () => /^#pk\/agreement\/2$/.test(await p.evaluate(() => location.hash))), await T("#msg"));
 await as("", "#mine"); await p.click("#find");
 ok("Sam's page warns him not to use that account, because his passkey does not control it", await until(async () => /Do not use this account/.test(await T("#list"))), await T("#fm") + await T("#list"));
-await as(BUSINESS, "#pk/agree"); await p.type("#cc", claim2); await p.type("#rv", REVIEWER); await p.click("#go");
+await as(BUSINESS, "#pk/agree"); await p.type("#cc", claim2); await p.$eval("#rv", e => { e.value = ""; }); await p.type("#rv", REVIEWER); await p.click("#go");
 ok("registering Sam's real claim afterwards is refused, because the handle is taken by a different key", await until(async () => /already registered to a different key/.test(await T("#msg"))), await T("#msg"));
 ok("no page errors", errs.length === 0, errs.join(" | "));
 await b.close(); console.log(fails ? fails + " FAILED" : "all passed"); process.exit(fails ? 1 : 0);

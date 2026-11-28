@@ -21,7 +21,7 @@ let fails = 0; const ok = (n, c, x = "") => { console.log((c ? "ok   " : "FAIL "
 const shot = async n => { if (process.env.SHOTS) { fs.mkdirSync(process.env.SHOTS, {recursive: true}); await w(1500); await p.screenshot({path: process.env.SHOTS + "/" + n + ".png", fullPage: true}); } };   // SHOTS=/some/dir saves screenshots
 const T = sel => p.$eval(sel, e => e.innerText).catch(() => ""), w = ms => new Promise(r => setTimeout(r, ms));
 async function until(fn, ms = 30000) { const t = Date.now(); while (Date.now() - t < ms) { if (await fn()) return true; await w(300); } return false; }
-const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`);
+const cfg = fs.readFileSync(CFGP, "utf8").replace("https://rpc.xlayer.tech", ANVIL).replace(/v4: \{[^}]*\}/, `v4: {passkeys: "${PK}", agreements: "${AG}", cases: "${CS}"}`).replace(/\n\s*v[5678]: \{[^}]*\},[^\n]*/g, "");   // this story tests the V4 contracts it deploys, so the later billing, V6 and card lines are dropped
 await p.setRequestInterception(true);
 p.on("request", r => { if (r.url().endsWith("/config.js")) r.respond({status: 200, contentType: "application/javascript", body: cfg}); else r.continue(); });
 await p.evaluateOnNewDocument(ANVIL => { window.ethereum = {request: async ({method, params}) => {
@@ -57,7 +57,7 @@ const b64u = o => Buffer.from(JSON.stringify(o)).toString("base64").replace(/\+/
 await as("", "#join"); await p.click("#mk");
 await until(async () => /^lgtie1\./.test(await p.$eval("#claim", e => e.value).catch(() => "")));
 const claim = await p.$eval("#claim", e => e.value);
-await as(BUSINESS, "#pk/agree"); await p.type("#cc", claim); await p.type("#rv", REVIEWER); await p.type("#terms", "Acme Laptops sales terms v1"); await p.click("#go");
+await as(BUSINESS, "#pk/agree"); await p.type("#cc", claim); await p.$eval("#rv", e => { e.value = ""; }); await p.type("#rv", REVIEWER); await p.type("#terms", "Acme Laptops sales terms v1"); await p.click("#go");
 ok("the business registers the customer and proposes", await until(async () => /^#pk\/agreement\/1$/.test(await p.evaluate(() => location.hash))), await T("#msg"));
 
 // ---- A. Notify-only mode: no relayer key. The bridge tells the webhook; the business still submits from #inbox.

@@ -1,4 +1,4 @@
-# Agreement cards: sign now, record only if there is a dispute (contracts built and tested, not deployed)
+# Agreement cards: sign now, record only if there is a dispute (deployed Nov 28, 2026)
 
 A chat deal should not need a wallet, a fee or a reviewer's address before anything has gone wrong. An **agreement card** is one deal that both people sign
 with their passkeys, off-chain. It is recorded on X Layer only if it is ever needed (a dispute), and anyone can do that.
@@ -31,7 +31,8 @@ If a handle was already registered to a different key, recording that card rever
 - **A card nobody records is only a signed record.** It proves both people agreed to those terms; it does not decide anything by itself.
 - **Handle squatting** can block recording a card (see above). Unaudited.
 
-## Deploying (you run it)
+## Deployed
+AgreementRegistryV4 `0x2Fc18c3E2adAFEF0659Ac8A693b245d50c0E4A7F`, a new LGtieBilling `0xA8C3A268b6427754e6209A4E235c1F173eb2F07d`, TiebreakCaseV7 `0xeB56EC9462B07Bdc5461117Ac141Fba41B155f7A`.
 `scripts/deploy-v8.sh preflight`, then `deploy`: four transactions (AgreementRegistryV4, a new `LGtieBilling` because the live one can be linked to a case contract
 only once, TiebreakCaseV7, the link). It reuses the live passkey registry, rule-set registry, processor and spec registry, and writes a `v8:` line to
 `site/config.js`. Existing subscribers would subscribe again on the new billing contract.
