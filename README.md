@@ -24,12 +24,12 @@ When a claim or a report is disputed (a warranty repair, a refund, a bug's sever
 ## Solution
 
 1. The business **publishes its rules in advance** as yes or no questions. Once published they cannot be changed quietly.
-2. Both sides **agree up front** on those rules, on a neutral reviewer (who can sign a named, checkable identity) and on the time limits.
+2. Both sides **agree up front** on those rules, on a neutral reviewer (who can sign a named, checkable identity) and on the time limits. A reviewer can also be left open and agreed together if a dispute starts.
 3. If a dispute comes, **both sides answer the same questions**. Where the answers match, it is settled.
 4. **Only the disputed questions** go to the reviewer. Nothing else.
 5. The published rules give a **result and a reason**. Anyone can recompute it and get the same result.
 
-A customer uses a passkey and does not need a wallet. LGtie never holds anyone's money, and it cannot tell whether someone is telling the truth; the reviewer settles the facts the two sides disagree on.
+A customer uses a passkey and does not need a wallet, and two people can even sign a deal with passkeys alone, with nothing recorded on X Layer unless there is a dispute. LGtie never holds anyone's money, and it cannot tell whether someone is telling the truth; the reviewer settles the facts the two sides disagree on.
 
 <p><img src="docs/img/home.png" alt="LGtie home page running the real published warranty circuit: tap an answer and the result and reason change" width="100%"></p>
 <p><sub>The home page runs the real published warranty circuit: tap an answer and the result and the reason change.</sub></p>
@@ -66,12 +66,13 @@ flowchart TD
     P -.-> RES
     S --> V["Anyone can re-run it"]
     RES --> V
+    CARD["Signed card, off-chain"] -.->|recorded only if there is a dispute| AR
     CASE -.->|fee| BILL["Billing: pays the treasury"]
 ```
 
 - **A static site.** No server and no database: the web app, the rule compiler and the checks run in the browser (`site/`). The built site is one page in `dist/`.
 - **Rules are data, not code.** A rule set compiles to a small circuit of NAND gates and is stored on the existing **TapeOut processor**, so it cannot hold hidden state or an admin key.
-- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. `AgreementRegistryV3` lets a passkey account propose an agreement, not only accept one. `AgreementRegistryV4` adds agreement cards (a deal both passkeys sign off-chain, recorded only if needed) and `TiebreakCaseV7` lets the reviewer be agreed after a dispute starts. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
+- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V7, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. `AgreementRegistryV3` lets a passkey account propose an agreement, not only accept one. `AgreementRegistryV4` adds agreement cards (a deal both passkeys sign off-chain, recorded only if needed) and `TiebreakCaseV7` lets the reviewer be agreed after a dispute starts. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
 - **No wallet for customers.** A passkey signs each action; any wallet (usually the business's) submits it and pays the small fee. Signed actions travel through public Nostr relays to the business's inbox.
 - **Optional bridge** (`bridge/`): a script a business runs itself to forward those messages to Slack, Discord or any webhook.
 
@@ -82,7 +83,7 @@ The contract addresses and what is live are listed [below](#live-on-x-layer-chai
 
 ## What makes it different
 
-- **Neither side is forced to accept the other's reviewer.** A reviewer is proposed in the agreement and takes effect only when both sides accept it, and it cannot be swapped afterwards. Before accepting, a person sees who the reviewer is, their signed identity and their own declaration of any relationship with the parties, with a plain warning if there is only a wallet address.
+- **Neither side is forced to accept the other's reviewer.** A reviewer takes effect only when both sides accept it. One named in the agreement cannot be swapped afterwards, and an agreement card can leave it open to be agreed together if a dispute starts. Before accepting, a person sees who the reviewer is, their signed identity and their own declaration of any relationship with the parties, with a plain warning if there is only a wallet address.
 - **Fewer disputes by design.** A rule set can mark questions that need no human, such as "was the evidence attached in time?" or "does this on-chain value meet the agreed threshold?". The contract answers those itself, the sides cannot dispute them and a reviewer cannot change them. It decides only when something was recorded or what a chain says, never whether evidence is true. [Design](docs/AUTO-QUESTIONS.md).
 - **Only the disagreement is judged.** Matching answers settle at once; a neutral person answers only the questions the sides differ on, and must write reasons and declare no conflict of interest first.
 - **The rules cannot be changed quietly.** Rule sets are permanent; a change is a new version with a public history, and an agreement stays bound to the exact version it accepted.
@@ -104,7 +105,7 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 - **Embeddable checker.** Put the claim checker on your own website with one line, so customers get a result and a reason without leaving your page (see below).
 - **Agreements and cases.** Agree rules, a neutral reviewer and deadlines up front, then open as many cases as you need under one agreement. A business inbox collects what customers sign with a passkey.
 - **Contract clause.** Generates a short clause for your written contract that points disagreements at the published rules. It is a template, not legal advice.
-- **Signed deals with no wallet and no fee.** A deal link can carry a passkey signature from each side (an agreement card). Nothing is recorded on X Layer unless there is a dispute, and the reviewer can be agreed after the dispute starts. [How it works](docs/AGREEMENT-CARDS.md).
+- **Signed deals with no wallet and no fee.** A deal link can carry a passkey signature from each side (an agreement card). Nothing is recorded on X Layer unless there is a dispute; then anyone with a wallet records the card (and pays the small fees), and the reviewer can be agreed after the dispute starts. [How it works](docs/AGREEMENT-CARDS.md).
 - **Deal links.** On any template, "Create deal link" makes a chat-ready message and a link to send on WhatsApp, Telegram or email before money moves. The other person opens a page with the deal, the yes/no questions and a free checker, and agrees with a passkey. The details stay in the link after the `#`, so the page sends them to no server, and chat apps show a preview card for the template. [How it works](docs/FEATURES.md).
 - **Automatic questions.** A publisher marks questions the chain answers (evidence attached in time, case opened by a date, or a value read from another contract) at `#auto/<rule set number>`, with a review screen before writing it once. Case pages mark them "Answered by the chain" and do not ask the sides about them.
 - **Pricing and subscriptions** on the `#pricing` page.
@@ -112,6 +113,7 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 **For a customer**
 - **No wallet.** Join with a passkey (the fingerprint, face or PIN that unlocks your phone) and approve each step on your own device.
 - **Check a claim** and see the result and the reason, with nothing to install.
+- **My signed deals.** Agreement cards you have signed are saved on your phone, with whether each has been recorded on X Layer.
 - **A receipt** for any decided case: a one-page record of who answered what and who settled each question, printable as a PDF.
 
 **For a reviewer**
@@ -135,7 +137,7 @@ The box is a sealed frame from LGtie's site. Your page cannot read what is insid
 
 ## Business model and revenue
 
-LGtie holds no money and takes no cut of any dispute. It earns from using the system, through two payments built into the contracts (`LGtieBilling` and `TiebreakCaseV6`) and paid in USDT on X Layer:
+LGtie holds no money and takes no cut of any dispute. It earns from using the system, through two payments built into the contracts (`LGtieBilling` and `TiebreakCaseV7`) and paid in USDT on X Layer:
 
 | Plan | Price | What it covers |
 | --- | --- | --- |
@@ -152,27 +154,30 @@ LGtie holds no money and takes no cut of any dispute. It earns from using the sy
 
 ## Live on X Layer (chain 196)
 
+**What the site uses now**
+
 | Contract | Address |
 | --- | --- |
 | TapeOut processor (existing, reused) | `0x9e2849c04a513fe64db07521cbe52d078d905c0e` |
 | Warranty rules | circuit #13: 7 questions, 39 logic gates, checked against the written rules on all 128 situations |
 | `RuleSetRegistry` | `0x25E87D367316038a2d3B6A4fe3d58AA453D4c219` (rules #1 is "Warranty claims") |
-| `AgreementRegistry` | `0xC3e61E38d977Be9e9B4649e5965892bF6f675180` |
-| `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (wallet parties; used by the real case) |
 | `PasskeyRegistry` | `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E` |
-| `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` (the other party can be a passkey account) |
-| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey parties; accepts only the official processor; free, superseded) |
-| `LGtieBilling` | `0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De` (pays USD₮0 `0x779D…3736` straight to the treasury `0x0aE1…8fD5`; holds nothing) |
-| `TiebreakCaseV5` | `0x1c261952b583fc6DA59e1525Ff52c15b39eD146a` (V4 plus billing; superseded by V6, its cases stay readable) |
 | `FactSpecRegistry` | `0x735021f45B93ecb23B006B57795b455703f27542` (a rule set's publisher writes once which questions the chain answers) |
-| `LGtieBilling` (second instance) | `0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf` (same token, treasury and prices; linked to the first V6; superseded) |
-| `TiebreakCaseV6` | `0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36` (V5 plus automatic questions; superseded by the instance below, its cases stay readable) |
-| `AgreementRegistryV3` | `0xd8506F400064086ddfD98195bDd4DDb287bCE790` (a passkey account can propose, and withdraw, by signature; superseded by V4, its agreements stay readable) |
-| `LGtieBilling` (third instance) | `0x63a4972f4e34ac588698Dc0f3101578a318D836F` (same token, treasury and prices; linked to the second `TiebreakCaseV6`; superseded) |
-| `TiebreakCaseV6` (second instance) | `0x61Cb55451028AEf609461e6b258DeCbA87D42eCf` (the same code, pointed at `AgreementRegistryV3`; superseded, its cases stay readable) |
-| `AgreementRegistryV4` | `0x2Fc18c3E2adAFEF0659Ac8A693b245d50c0E4A7F` (V3 plus agreement cards: two passkeys sign off-chain and it is recorded only if needed; the site uses it) |
-| `LGtieBilling` (fourth instance) | `0xA8C3A268b6427754e6209A4E235c1F173eb2F07d` (same token, treasury and prices; linked to `TiebreakCaseV7`; the site charges here) |
-| `TiebreakCaseV7` | `0xeB56EC9462B07Bdc5461117Ac141Fba41B155f7A` (V6 plus a reviewer who can be agreed after a dispute starts; the site opens cases here) |
+| `AgreementRegistryV4` | `0x2Fc18c3E2adAFEF0659Ac8A693b245d50c0E4A7F` (agreements; a passkey can propose; agreement cards are recorded here) |
+| `TiebreakCaseV7` | `0xeB56EC9462B07Bdc5461117Ac141Fba41B155f7A` (cases; a reviewer can be agreed after a dispute starts) |
+| `LGtieBilling` | `0xA8C3A268b6427754e6209A4E235c1F173eb2F07d` (pays USD₮0 `0x779D…3736` straight to the treasury `0x0aE1…8fD5`; holds nothing; linked to `TiebreakCaseV7`) |
+
+**Earlier versions** (superseded; their agreements and cases stay readable on the site)
+
+| Contract | Address | What it was |
+| --- | --- | --- |
+| `AgreementRegistry` | `0xC3e61E38d977Be9e9B4649e5965892bF6f675180` | the first agreements |
+| `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` | wallet parties only; used by the real case |
+| `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` | the other party can be a passkey account |
+| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` | wallet or passkey parties; official processor only; free |
+| `LGtieBilling` + `TiebreakCaseV5` | `0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De` · `0x1c261952b583fc6DA59e1525Ff52c15b39eD146a` | V4 plus billing |
+| `LGtieBilling` + `TiebreakCaseV6` | `0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf` · `0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36` | V5 plus automatic questions |
+| `AgreementRegistryV3` + `LGtieBilling` + `TiebreakCaseV6` | `0xd8506F400064086ddfD98195bDd4DDb287bCE790` · `0x63a4972f4e34ac588698Dc0f3101578a318D836F` · `0x61Cb55451028AEf609461e6b258DeCbA87D42eCf` | a passkey can propose |
 
 The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the project's builder; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
 
@@ -186,6 +191,8 @@ The contract names keep the project's earlier name, Tiebreak. There is one real 
 | Ready-made templates (second-hand sale, freelance, rental deposit, bug bounty, warranty) | https://lgtie.vercel.app/#templates |
 | Every published rule set and its version history | https://lgtie.vercel.app/#rules |
 | Prove a circuit on X Layer implements its rules | https://lgtie.vercel.app/#verify |
+| Make a deal link to send on WhatsApp or Telegram (try the Warranty template for a signed card) | https://lgtie.vercel.app/#deal/warranty |
+| Prices and plans | https://lgtie.vercel.app/#pricing |
 | Everything a business can do | https://lgtie.vercel.app/#for-business |
 
 ## Run it yourself
@@ -199,9 +206,10 @@ node tests/nostr.test.mjs                      # Nostr signatures, against the o
 node tests/verify.test.mjs                     # the formal check: agrees with brute force on 400 random policies and 3,000 corrupted circuits
 node scripts/verify-circuit.mjs warranty --circuit 13   # read circuit #13 from X Layer and prove it equals the warranty rules
 node tests/lint.test.mjs                       # the rule check
-node tests/templates.test.mjs                  # the five templates, in both languages
+node tests/templates.test.mjs                  # the five templates
+node tests/autoq.test.mjs                      # automatic questions: the reference the contracts are checked against
 node tests/reviewerid.test.mjs                 # named reviewers: wallet signatures, profile codes
-cd contracts && forge test                     # 182 contract tests, including billing (some run on a fork of X Layer and need network access)
+cd contracts && forge test                     # 414 contract tests, including billing, cards and automatic questions (many run on a fork of X Layer and need network access)
 node tests/mainnet-verify.mjs                  # read-only check of circuit #13 on X Layer
 ```
 
@@ -211,10 +219,10 @@ Browser tests are in `tests/browser/`; see its README for what they need. **Depl
 
 | Path | What is in it |
 | --- | --- |
-| `site/` | The web app, with no server: rules and compiler, builder, cases, agreements, receipts, reviewers, templates, rule check, formal check, languages, passkeys and inbox, publishing, embed |
+| `site/` | The web app, with no server: rules and compiler, builder, cases, agreements, receipts, reviewers, templates, rule check, formal check, passkeys and inbox, deal links, agreement cards, automatic questions, pricing, publishing, embed |
 | `contracts/` | Foundry project with the contracts above and their tests |
 | `bridge/` | The optional self-hosted bridge |
 | `dist/` | The built site, a single self-contained page |
-| `scripts/` | Deploy, publish and verify scripts. Each has a read-only `preflight` mode |
+| `scripts/` | Deploy (`deploy-v5.sh` to `deploy-v8.sh`), publish and verify scripts; each deploy has a read-only `preflight` mode. Also the bundler and the generators for the deal preview pages and pictures |
 | `tests/`, `test/` | Rule engine, passkey encoding, mainnet check and browser tests |
-| `docs/` | [FEATURES.md](docs/FEATURES.md) (every part in detail), [VERIFICATION.md](docs/VERIFICATION.md), [PASSKEYS.md](docs/PASSKEYS.md), [VERDICT.md](docs/VERDICT.md), [SECURITY.md](docs/SECURITY.md), [USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md), [VALIDATION.md](docs/VALIDATION.md), [SUBMISSION.md](docs/SUBMISSION.md) |
+| `docs/` | [FEATURES.md](docs/FEATURES.md) (every part in detail), [VERIFICATION.md](docs/VERIFICATION.md), [PASSKEYS.md](docs/PASSKEYS.md), [VERDICT.md](docs/VERDICT.md), [SECURITY.md](docs/SECURITY.md), [USING-WITH-CONTRACTS.md](docs/USING-WITH-CONTRACTS.md), [VALIDATION.md](docs/VALIDATION.md), [SUBMISSION.md](docs/SUBMISSION.md), [AUTO-QUESTIONS.md](docs/AUTO-QUESTIONS.md), [AGREEMENTS-V3.md](docs/AGREEMENTS-V3.md), [AGREEMENT-CARDS.md](docs/AGREEMENT-CARDS.md) |
