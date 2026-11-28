@@ -18,7 +18,7 @@ const c = await page(); await c.goto(BASE + "#templates");
 ok("every template card offers 'Create deal link'", await until(async () => (await c.$$('.tpl a[href^="#deal/"]')).length === 5), await T(c, "main"));
 await c.goto(BASE + "#deal/secondhand");
 ok("the creator page opens with the template's question count", await until(async () => /5 yes\/no questions/.test(await T(c, "main"))), await T(c, "main"));
-await type(c, "#dl-a", "Samuel"); await type(c, "#dl-b", "Amina"); await type(c, "#dl-w", "iPhone 12, 128GB, blue"); await type(c, "#dl-p", "₦250,000"); await c.$eval("#dl-d", e => { e.value = "2030-01-31"; e.dispatchEvent(new Event("input")); });
+await type(c, "#dl-a", "Samuel"); await type(c, "#dl-b", "Amina"); await type(c, "#dl-w", "iPhone 12, 128GB, blue"); await type(c, "#dl-p", "₦250,000"); await type(c, "#dl-v", "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"); await c.$eval("#dl-d", e => { e.value = "2030-01-31"; e.dispatchEvent(new Event("input")); });
 const msg = await c.$eval("#dl-msg", e => e.value);
 ok("the message names the sender, the thing, the price and the date, and ends with the link", /Samuel invited you/.test(msg) && /iPhone 12/.test(msg) && /₦250,000/.test(msg) && /2030-01-31/.test(msg) && /\/deal\/secondhand\.html#/.test(msg.split("\n").pop()), msg);
 ok("it says no wallet is needed and that only disagreements go to a neutral person", /No wallet needed/.test(msg) && /neutral person/.test(msg));
@@ -31,7 +31,7 @@ await c.$eval("#dl-msg", e => { e.value = e.value + "\nSee you soon"; e.dispatch
 ok("editing the message updates the share links", decodeURIComponent((await c.$eval("#dl-wa", a => a.href)).slice(20)).endsWith("See you soon"));
 const link = msg.split("\n").pop(), payload = link.split("#")[1];
 const dec = JSON.parse(Buffer.from(payload, "base64url").toString());
-ok("the link holds the details as plain fields and nothing else", dec.t === "secondhand" && dec.a === "Samuel" && dec.b === "Amina" && dec.w === "iPhone 12, 128GB, blue" && dec.p === "₦250,000" && dec.d === "2030-01-31" && !("r" in dec), JSON.stringify(dec));
+ok("the link holds the details as plain fields and nothing else", dec.t === "secondhand" && dec.a === "Samuel" && dec.b === "Amina" && dec.w === "iPhone 12, 128GB, blue" && dec.p === "₦250,000" && dec.d === "2030-01-31" && dec.v === "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" && !("r" in dec), JSON.stringify(dec));
 await c.$eval("#dl-t", e => { e.value = "freelance"; e.dispatchEvent(new Event("change")); });
 ok("choosing another situation switches the page", await until(async () => /Freelance milestone/.test(await T(c, "#dl-out")) && /4 yes\/no questions/.test(await T(c, "main"))));
 
@@ -42,13 +42,14 @@ ok("it lists the five questions", (await o.$$("main ol")).length >= 1 && (await 
 ok("it links to the free checker and offers one button to agree with a passkey", (await o.$eval('a[href="#check/secondhand"]', a => a.textContent)).length > 0 && /Agree with my passkey/.test(await T(o, "#dd-go")));
 ok("the free part comes before the agreement step", /Read it first \(free, no wallet\)/.test(await T(o, "main")) && (await o.$eval("#dd-agree", e => e.previousElementSibling.innerText)).includes("Read it first"));
 ok("it says plainly it is not binding until accepted on X Layer, and not legal advice", /Not binding by itself/.test(await T(o, "main")) && /not a court/.test(await T(o, "main")));
+ok("a reviewer named by the sender is shown, abbreviated, with who named it", /Reviewer\s+0x709979…[0-9a-fA-F]{6}[\s\S]*named by Samuel/.test(await T(o, "main")), await T(o, "main"));
 ok("it shows a fingerprint of the terms", /Fingerprint of these terms: 0x[0-9a-f]{16}/.test(await T(o, "main")));
 ok("secondhand rules are not published, so the creator is told to publish first and cannot invite yet", /not published on X Layer yet/.test(await T(o, "main")) && !(await o.$("#dd-inv")));
 
 // ---- the recipient agrees in one tap, and the sender's link opens the invite already filled in
 const rp = await page(), cdp = await rp.target().createCDPSession(); await cdp.send("WebAuthn.enable");
 await cdp.send("WebAuthn.addVirtualAuthenticator", {options: {protocol: "ctap2", transport: "internal", hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true}});
-await rp.goto(BASE + "#d/" + b64({t: "warranty", a: "Samuel", b: "Amina", w: "Laptop repair"})); await w(1200);
+await rp.goto(BASE + "#d/" + b64({t: "warranty", a: "Samuel", b: "Amina", w: "Laptop repair", v: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"})); await w(1200);
 await rp.click("#dd-go");
 ok("one tap makes the passkey and gives a reply ready to send", await until(async () => /^This is Amina\. I agree to the rules for Laptop repair\./.test(await rp.$eval("#dd-msg", e => e.value).catch(() => ""))), await T(rp, "#dd-out"));
 const reply = await rp.$eval("#dd-msg", e => e.value), rlink = reply.split(": ").pop();
@@ -57,15 +58,16 @@ ok("it offers WhatsApp, Telegram and copy, and says what to do next", (await rp.
 ok("the claim code in the reply never contains a private key (it is a public key only)", !/private|"d":/.test(Buffer.from(rlink.split("/")[0].split("lgtie1.")[1] || "", "base64url").toString()));
 const snd = await page(); await snd.goto(rlink);
 ok("the sender taps it and the invite page is already filled in: claim code, terms and rule set", await until(async () => /^lgtie1\./.test(await snd.$eval("#cc", e => e.value).catch(() => "")) && /LGtie deal/.test(await snd.$eval("#terms", e => e.value).catch(() => "")) && /Laptop repair/.test(await snd.$eval("#terms", e => e.value).catch(() => "")) && (await snd.$eval("#rs", e => e.value).catch(() => "")) === "1"), await T(snd, "main"));
+ok("the reviewer the sender named is already in the invite page, so there is nothing to type", (await snd.$eval("#rv", e => e.value).catch(() => "")) === "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" && /Reviewer: 0x70997970C51812dc3A010C7d01b50e0d17dc79C8/.test(await snd.$eval("#terms", e => e.value).catch(() => "")));
 ok("and it says where this came from", /From a deal link: Amina agreed to the rules for Laptop repair/.test(await T(snd, "main")));
 await rp.reload(); await w(1500); await rp.evaluate(() => document.querySelector("#dd-go").click());   // a DOM click: a mouse click right after a reload can stall in this browser build
 ok("tapping again on the same phone reuses the passkey instead of making another", await until(async () => /Using the passkey already on this phone/.test(await T(rp, "#dd-out"))), await T(rp, "#dd-out"));
 
 // ---- hostile and broken links
-const h = await page(); await h.goto(BASE + "#d/" + b64({t: "secondhand", a: '<img src=x onerror="window.__pwn=1">', w: "<b>bold</b>", p: "x".repeat(500), d: "not a date", r: -5}));
+const h = await page(); await h.goto(BASE + "#d/" + b64({t: "secondhand", a: '<img src=x onerror="window.__pwn=1">', w: "<b>bold</b>", p: "x".repeat(500), d: "not a date", r: -5, v: "0xnot-an-address"}));
 await w(1500);
 ok("text in a link is shown as text, never run or rendered", !(await h.$("main img")) && !(await h.$("main b + b")) && !(await h.evaluate(() => window.__pwn)) && /<img src=x/.test(await T(h, "main")), await T(h, "main"));
-ok("long values are cut and a bad date or rule number is dropped", !/x{100}/.test(await T(h, "main")) && !/not a date/.test(await T(h, "main")));
+ok("long values are cut and a bad date or rule number is dropped", !/x{100}/.test(await T(h, "main")) && !/not a date/.test(await T(h, "main")) && !/not-an-address/.test(await T(h, "main")));
 const bad = await page(); await bad.goto(BASE + "#d/%%%not-base64");
 ok("a broken link says so and offers the templates", await until(async () => /not valid/.test(await T(bad, "main")) && !!(await bad.$('a[href="#templates"]'))), await T(bad, "main"));
 await bad.goto(BASE + "#d/" + b64({t: "../../etc", a: "x"}));

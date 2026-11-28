@@ -397,7 +397,8 @@
         <div class="row"><button class="btn" id="go" type="button">Register the customer and propose</button></div><p id="msg" class="small"></p></div>`;
     if (prefill) $("#cc").value = prefill;
     // a deal link's payload fills in the written terms and the rules, and says what this is for
-    if (dealPayload && window.TB_DEAL) { const dr = window.TB_DEAL.parseDeal(dealPayload); if (dr.deal) { const dl = dr.deal, rid = window.TB_DEAL.ruleOf(dl); $("#terms").value = window.TB_DEAL.termsText(dl); if (rid) { if (!$("#rs").querySelector(`option[value="${rid}"]`)) $("#rs").insertAdjacentHTML("beforeend", `<option value="${rid}">Rule set #${rid}</option>`); $("#rs").value = String(rid); }
+    try { const lr = localStorage.getItem("lgtie.lastReviewer"); if (lr && isAddr(lr) && !$("#rv").value) $("#rv").value = lr; } catch (e) {}
+    if (dealPayload && window.TB_DEAL) { const dr = window.TB_DEAL.parseDeal(dealPayload); if (dr.deal) { const dl = dr.deal, rid = window.TB_DEAL.ruleOf(dl); $("#terms").value = window.TB_DEAL.termsText(dl); if (dl.v) $("#rv").value = dl.v; if (rid) { if (!$("#rs").querySelector(`option[value="${rid}"]`)) $("#rs").insertAdjacentHTML("beforeend", `<option value="${rid}">Rule set #${rid}</option>`); $("#rs").value = String(rid); }
       $("h1").insertAdjacentHTML("afterend", `<div class="note"><b>From a deal link:</b> ${esc(dl.b || "The other person")} agreed to the rules${dl.w ? " for " + esc(dl.w) : ""}. Their passkey code and the terms are filled in below: check them, add the reviewer's address and tap the button.</div>`); } }
     try { const t = sessionStorage.getItem("lgtie.dealTerms"), r = Number(sessionStorage.getItem("lgtie.dealRule")); if (t) { $("#terms").value = t; sessionStorage.removeItem("lgtie.dealTerms"); }   // a deal link fills in the written terms and its rules
       if (r > 0 && !$("#rs").querySelector(`option[value="${r}"]`)) { $("#rs").insertAdjacentHTML("beforeend", `<option value="${r}">Rule set #${r}</option>`); } if (r > 0) { $("#rs").value = String(r); sessionStorage.removeItem("lgtie.dealRule"); } } catch (e) {}
@@ -416,6 +417,7 @@
         const terms = [$("#terms").value.trim(), idl.line].filter(Boolean).join("\n\n"), th = terms ? await hashText(terms) : "0x" + "0".repeat(64);
         say("Confirm 2 of 2 in your wallet: propose the agreement…");
         const rc2 = await W().send(V4().agreements, enc("propose", [K.PARTY, "uint256", "bytes32", "address", "uint32", "uint32"], [[ZERO, id], Number($("#rs").value), th, rv, Number($("#aw").value) * DAY, Number($("#rw").value) * DAY]));
+        try { localStorage.setItem("lgtie.lastReviewer", rv); } catch (e) {}   // remembered so the next invite needs no typing
         const aid = logTopic(rc2, V4().agreements); location.hash = "#pk/agreement/" + aid;
       } catch (e) { say((e && e.message) || String(e), "err"); }
     };

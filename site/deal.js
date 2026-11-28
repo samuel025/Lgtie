@@ -18,12 +18,12 @@
   function clean(o) {
     if (!o || typeof o !== "object" || !keys().includes(String(o.t || ""))) return null;
     const s = k => String(o[k] == null ? "" : o[k]).replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, LIM[k]);
-    return {t: String(o.t), a: s("a"), b: s("b"), w: s("w"), p: s("p"), d: /^\d{4}-\d{2}-\d{2}$/.test(String(o.d || "")) ? o.d : "", r: Number.isInteger(o.r) && o.r > 0 && o.r < 1e9 ? o.r : 0};
+    return {t: String(o.t), a: s("a"), b: s("b"), w: s("w"), p: s("p"), d: /^\d{4}-\d{2}-\d{2}$/.test(String(o.d || "")) ? o.d : "", r: Number.isInteger(o.r) && o.r > 0 && o.r < 1e9 ? o.r : 0, v: /^0x[0-9a-fA-F]{40}$/.test(String(o.v || "")) ? String(o.v) : ""};
   }
   const encodeDeal = o => { const c = clean(o), out = {}; Object.keys(c).forEach(k => { if (c[k]) out[k] = c[k]; }); return b64e(JSON.stringify(out)); };
   const parseDeal = str => { try { const d = clean(JSON.parse(b64d(str))); return d ? {deal: d} : {error: "This link is for rules this page does not have."}; } catch { return {error: "This link is not valid. Ask the person who sent it to send it again."}; } };
   /// The exact text both people can check: it is what a written agreement would fingerprint.
-  const termsText = d => ["LGtie deal", "Rules: " + info(d.t).title + (d.r ? " (rule set #" + d.r + ")" : ""), d.a && "From: " + d.a, d.b && "With: " + d.b, d.w && "About: " + d.w, d.p && "Price: " + d.p, d.d && "Date: " + d.d].filter(Boolean).join("\n");
+  const termsText = d => ["LGtie deal", "Rules: " + info(d.t).title + (d.r ? " (rule set #" + d.r + ")" : ""), d.a && "From: " + d.a, d.b && "With: " + d.b, d.w && "About: " + d.w, d.p && "Price: " + d.p, d.d && "Date: " + d.d, d.v && "Reviewer: " + d.v].filter(Boolean).join("\n");
   const siteBase = () => location.href.split("#")[0].replace(/[^/]*$/, "");
   const shareLink = d => siteBase() + "deal/" + d.t + ".html#" + encodeDeal(d);
   const ruleOf = d => d.r || (CFG.published && CFG.published[d.t] ? CFG.published[d.t].ruleSetId : 0);
@@ -51,9 +51,10 @@
         <label class="field"><span>What is the deal about? (optional)</span><input id="dl-w" type="text" maxlength="${LIM.w}" autocomplete="off" placeholder="e.g. iPhone 12, 128GB, blue"></label>
         <div class="fgrid2"><label class="field"><span>Price (optional)</span><input id="dl-p" type="text" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
           <label class="field"><span>Date (optional)</span><input id="dl-d" type="date"></label></div>
+        <label class="field"><span>Neutral reviewer's wallet address, if you already have someone in mind (optional)</span><input id="dl-v" type="text" maxlength="42" autocomplete="off" placeholder="0x… (leave empty to agree on one later)"></label>
         <label class="field"><span>Rule set number, if you have published these rules on X Layer (optional)</span><input id="dl-r" type="number" min="1" step="1" placeholder="${CFG.published && CFG.published[k] ? "default: " + CFG.published[k].ruleSetId : "leave empty"}"></label></div>
       <div class="card" id="dl-out"></div>`;
-    const val = id => $(id).value, build = () => ({t: val("#dl-t"), a: val("#dl-a"), b: val("#dl-b"), w: val("#dl-w"), p: val("#dl-p"), d: val("#dl-d"), r: Number(val("#dl-r")) || 0});
+    const val = id => $(id).value, build = () => ({t: val("#dl-t"), a: val("#dl-a"), b: val("#dl-b"), w: val("#dl-w"), p: val("#dl-p"), d: val("#dl-d"), r: Number(val("#dl-r")) || 0, v: val("#dl-v").trim()});
     let edited = false;
     function render() {
       const d = clean(build()), link = shareLink(d), text = edited && $("#dl-msg") ? $("#dl-msg").value : message(d, link), enc = encodeURIComponent, tg = text.replace(link, "").trim();
@@ -74,7 +75,7 @@
       $("#dl-cm").onclick = e => copy($("#dl-msg").value, e.target); $("#dl-cl").onclick = e => copy(link, e.target);
       if ($("#dl-sh")) $("#dl-sh").onclick = () => navigator.share({text: $("#dl-msg").value}).catch(() => {});
     }
-    ["#dl-a", "#dl-b", "#dl-w", "#dl-p", "#dl-d", "#dl-r"].forEach(s => { $(s).oninput = () => { edited = false; render(); }; });
+    ["#dl-a", "#dl-b", "#dl-w", "#dl-p", "#dl-d", "#dl-r", "#dl-v"].forEach(s => { $(s).oninput = () => { edited = false; render(); }; });
     $("#dl-t").onchange = () => { location.hash = "#deal/" + val("#dl-t"); };
     render();
   }
@@ -88,7 +89,7 @@
     const row = (l, v) => v ? `<tr><td>${l}</td><td>${esc(v)}</td></tr>` : "";
     main.innerHTML = `<h1>${d.a ? esc(d.a) + " wants to agree the rules first" : "Agree the rules first"}</h1>
       <p class="lede">${d.w ? `For <b>${esc(d.w)}</b>. ` : ""}Before any money moves, you both see the same ${qs.length} yes/no questions. If something goes wrong, you each answer them. Where you agree, that settles it. Only the questions you answer differently go to a neutral person you both accept first.</p>
-      <div class="card"><h3>The deal</h3><table class="small vt"><tbody>${row("From", d.a)}${row("With", d.b)}${row("About", d.w)}${row("Price", d.p)}${row("Date", d.d)}<tr><td>Rules</td><td>${esc(i.title)}${d.r ? ` (rule set #${d.r})` : ""}</td></tr></tbody></table>
+      <div class="card"><h3>The deal</h3><table class="small vt"><tbody>${row("From", d.a)}${row("With", d.b)}${row("About", d.w)}${row("Price", d.p)}${row("Date", d.d)}${d.v ? `<tr><td>Reviewer</td><td><code>${esc(d.v.slice(0, 8))}…${esc(d.v.slice(-6))}</code> <span class="mute">(named by ${d.a ? esc(d.a) : "the sender"}; you can check it before agreeing)</span></td></tr>` : ""}<tr><td>Rules</td><td>${esc(i.title)}${d.r ? ` (rule set #${d.r})` : ""}</td></tr></tbody></table>
         <p class="small mute">Fingerprint of these terms: <code>${fp.slice(0, 18)}…</code> · <button class="btn small ghost" id="dd-ct" type="button">Copy the terms</button></p></div>
       <div class="card"><h3>Read it first (free, no wallet)</h3><p class="small mute">The ${qs.length} questions you would both answer:</p><ol class="small">${qs.map(q => `<li>${esc(q.text)}</li>`).join("")}</ol>
         <div class="row"><a class="btn ghost" href="#check/${esc(d.t)}">Try the checker</a></div></div>
