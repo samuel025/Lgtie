@@ -144,5 +144,7 @@ Contract changes the tests force, beyond what is listed above:
 - Runtime size 18.9 KB (limit 24.6 KB).
 - `contracts/test/AutoQuestions.t.sol` (24 tests, the same cases as `tests/autoq.test.mjs`) and `contracts/test/PasskeyV6.t.sol` (the whole V5 suite
   against V6 with no spec set, 36 tests). All 242 contract tests pass.
-- Not built yet: per-agreement values (`AgreementRegistryV3`), the deploy script, a new `LGtieBilling` for V6, the site reading V6 cases, and the
+- `scripts/deploy-v6.sh` (preflight, then four transactions: FactSpecRegistry, a new LGtieBilling, TiebreakCaseV6, link). Preflight was run against mainnet
+  (read-only, about 0.0002 OKB estimated) and a full deploy was run on a local fork; it writes a `v6:` line to `site/config.js`, which the site does not read yet.
+- Not built yet: per-agreement values (`AgreementRegistryV3`), the site reading V6 cases, and the
   builder control to publish a spec. Deploying V6 needs a new billing contract because `setCases` can be called only once.
