@@ -1,0 +1,34 @@
+// The #auto preview of automatic questions: marking a question as answered by the chain changes what goes to the reviewer.
+// Needs the site on http://localhost:8090 and puppeteer-core. Reads nothing from the chain.
+import puppeteer from "puppeteer-core";
+import fs from "node:fs";
+const BASE = process.env.BASE || "http://localhost:8090/index.html";
+const chrome = ["/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"].find(p => fs.existsSync(p));
+let fails = 0; const ok = (n, c, x) => { if (!c) fails++; console.log((c ? "PASS " : "FAIL ") + n + (c ? "" : " " + (x ?? ""))); };
+const w = ms => new Promise(r => setTimeout(r, ms));
+const b = await puppeteer.launch({executablePath: chrome, args: ["--no-sandbox"]}), errs = [];
+const p = await b.newPage(); await p.setViewport({width: 1280, height: 1000}); p.on("pageerror", e => errs.push(e.message));
+await p.evaluateOnNewDocument(() => { try { localStorage.setItem("lgtie.lang", "en"); } catch (e) {} });
+await p.goto(BASE + "#auto/freelance"); await w(800);
+const out = () => p.$eval("#ap-out", e => e.innerText);
+const set = (sel, v) => p.$eval(sel, (e, v) => { e.value = v; e.dispatchEvent(new Event("input")); }, v);
+const tick = sel => p.$eval(sel, e => { e.checked = true; e.dispatchEvent(new Event("change")); });
+ok("it says it is a preview and not enforced", /Preview only/.test(await p.$eval("main", e => e.innerText)));
+ok("it is not in the menu", !(await p.$$eval("#nav a, .more a", as => as.some(a => /#auto/.test(a.getAttribute("href"))))));
+ok("with no automatic questions and no answers, nothing is disputed", /No reviewer is needed/.test(await out()));
+await tick(".ap-f"); await w(150);
+ok("the two sides answering Q1 differently sends it to the reviewer", /Disputed/.test(await out()) && /A reviewer is needed/.test(await out()));
+await p.select("tr[data-i='0'] .ap-k", "evidenceBy"); await w(200);
+ok("marking Q1 as answered by the chain takes it out of dispute", /answered by the chain/.test(await out()) && /No reviewer is needed/.test(await out()), await out());
+ok("with no evidence attached the chain answers No", /No, answered by the chain/.test(await out()));
+await set("tr[data-i='0'] .ap-got", "3"); await w(150);
+ok("evidence attached in time makes the chain answer Yes", /Yes, answered by the chain/.test(await out()));
+await set("tr[data-i='0'] .ap-got", "20"); await w(150);
+ok("evidence attached too late makes it No again", /No, answered by the chain/.test(await out()));
+await p.select("tr[data-i='0'] .ap-k", "readAtLeast"); await w(200);
+await tick("tr[data-i='0'] .ap-fail"); await w(150);
+ok("a failing source puts the question back with the two sides", /Disputed/.test(await out()) && /could not be read/.test(await out()), await out());
+await p.goto(BASE + "#auto/nonsense"); await w(600);
+ok("an unknown rules key falls back to a template", (await p.$$("#ap-q tbody tr")).length > 0);
+ok("no page errors", errs.length === 0, errs.join("|"));
+await b.close(); console.log(fails ? fails + " FAILED" : "all passed"); process.exit(fails ? 1 : 0);
