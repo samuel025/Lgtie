@@ -53,7 +53,7 @@ h3{font-size:22px;margin:1em 0 .35em}h4{font-size:18px;margin:1em 0 .25em}
 :focus-visible{outline:1px solid var(--ink);outline-offset:4px}
 .card{background:var(--card);border-radius:28px;padding:28px 30px;margin:16px 0}
 .card h3{margin-top:0}
-input[type=text],input[type=number],select,textarea{font:400 16px var(--sans);letter-spacing:-.011em;background:#fff;color:var(--ink);border:1px solid var(--warm);border-radius:8px;padding:10px 13px;max-width:100%;min-width:0;transition:border-color .25s var(--ease)}
+input[type=text],input[type=number],input[type=date],select,textarea{font:400 16px var(--sans);letter-spacing:-.011em;background:#fff;color:var(--ink);border:1px solid var(--warm);border-radius:8px;padding:10px 13px;max-width:100%;min-width:0;transition:border-color .25s var(--ease)}
 input::placeholder,textarea::placeholder{color:var(--ash)}input:focus,textarea:focus,select:focus{border-color:var(--ink);outline:0}
 select{padding:8px 11px}textarea{width:100%}textarea.mono{min-height:340px;resize:vertical}
 pre,code,textarea.mono{font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}code{background:#fff;border-radius:6px;padding:1px 5px;overflow-wrap:anywhere}
@@ -462,7 +462,7 @@ html[lang^="zh"] .btn,html[lang^="zh"] input,html[lang^="zh"] select,html[lang^=
 .langsw button{font:400 13px/1 var(--sans);padding:7px 11px;border:0;background:transparent;color:var(--ink);cursor:pointer;letter-spacing:0}
 .langsw button.on{background:var(--ink);color:#fff}
 .langsw button:not(.on):hover{background:rgba(0,0,0,.06)}
-.dealcard{display:flex;max-width:520px;border:1px solid var(--warm);border-radius:14px;overflow:hidden;background:#fff;margin:8px 0 14px}.dc-img{flex:0 0 130px;background:var(--paper);display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px;border-right:1px solid var(--warm)}.dc-img b{font-size:20px}.dc-img span{font-size:12px;color:var(--stone)}.dc-txt{display:flex;flex-direction:column;gap:3px;padding:12px 14px;min-width:0}.dc-txt b{font-size:15px}.dc-txt span{font-size:13px;color:var(--stone)}.dc-txt em{font-size:12px;color:var(--ash);font-style:normal}#dl-msg{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--warm);border-radius:10px;resize:vertical}
+.fgrid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}.formcard .fgrid2 .field,.formcard .fgrid2 .field:first-child{margin-top:16px}@media(max-width:640px){.fgrid2{grid-template-columns:minmax(0,1fr)}}.formcard + #dl-out,#dl-out{margin-top:18px}#dl-out h3{margin:28px 0 10px}#dl-out h3:first-child{margin-top:0}#dl-out .row{margin:14px 0 4px}#dl-out textarea{margin-top:4px}.dealcard{display:flex;max-width:520px;border:1px solid var(--warm);border-radius:14px;overflow:hidden;background:#fff;margin:8px 0 14px}.dc-img{flex:0 0 130px;background:var(--paper);display:flex;flex-direction:column;justify-content:center;gap:6px;padding:14px;border-right:1px solid var(--warm)}.dc-img b{font-size:20px}.dc-img span{font-size:12px;color:var(--stone)}.dc-txt{display:flex;flex-direction:column;gap:3px;padding:12px 14px;min-width:0}.dc-txt b{font-size:15px}.dc-txt span{font-size:13px;color:var(--stone)}.dc-txt em{font-size:12px;color:var(--ash);font-style:normal}#dl-msg{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--warm);border-radius:10px;resize:vertical}
 </style></head>
 <body>
 <header><div class="bar"><a class="brand" href="#"><svg viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="7" fill="#111"/><path d="M6.5 6.5h5a5.5 5.5 0 010 11h-5z" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="19.2" cy="12" r="1.5" fill="none" stroke="#fff" stroke-width="1.5"/></svg>LGtie</a>
@@ -4002,10 +4002,10 @@ MY POLICY:
     main.innerHTML = `<h1>Create a deal link</h1><p class="lede">Send this to the other person in WhatsApp, Telegram or email <b>before</b> any money moves. They read the ${n} yes/no questions and see who decides if you disagree. Nothing is uploaded and nobody needs a wallet to read it.</p>
       <div class="card formcard">
         <label class="field"><span>Situation</span><select id="dl-t">${TB.LIBRARY.map(t => `<option value="${esc(t.key)}"${t.key === k ? " selected" : ""}>${esc(info(t.key).title)}</option>`).join("")}</select></label>
-        <div class="fgrid"><label class="field"><span>Your name (optional)</span><input id="dl-a" maxlength="${LIM.a}" autocomplete="off" placeholder="e.g. Samuel"></label>
-          <label class="field"><span>Their name (optional)</span><input id="dl-b" maxlength="${LIM.b}" autocomplete="off" placeholder="e.g. Amina"></label></div>
-        <label class="field"><span>What is the deal about? (optional)</span><input id="dl-w" maxlength="${LIM.w}" autocomplete="off" placeholder="e.g. iPhone 12, 128GB, blue"></label>
-        <div class="fgrid"><label class="field"><span>Price (optional)</span><input id="dl-p" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
+        <div class="fgrid2"><label class="field"><span>Your name (optional)</span><input id="dl-a" type="text" maxlength="${LIM.a}" autocomplete="off" placeholder="e.g. Samuel"></label>
+          <label class="field"><span>Their name (optional)</span><input id="dl-b" type="text" maxlength="${LIM.b}" autocomplete="off" placeholder="e.g. Amina"></label></div>
+        <label class="field"><span>What is the deal about? (optional)</span><input id="dl-w" type="text" maxlength="${LIM.w}" autocomplete="off" placeholder="e.g. iPhone 12, 128GB, blue"></label>
+        <div class="fgrid2"><label class="field"><span>Price (optional)</span><input id="dl-p" type="text" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
           <label class="field"><span>Date (optional)</span><input id="dl-d" type="date"></label></div>
         <label class="field"><span>Rule set number, if you have published these rules on X Layer (optional)</span><input id="dl-r" type="number" min="1" step="1" placeholder="${CFG.published && CFG.published[k] ? "default: " + CFG.published[k].ruleSetId : "leave empty"}"></label></div>
       <div class="card" id="dl-out"></div>`;
@@ -4025,7 +4025,8 @@ MY POLICY:
         <div class="dealcard"><div class="dc-img" aria-hidden="true"><b>LGtie</b><span>${esc(info(d.t).title)}</span></div><div class="dc-txt"><b>${esc(info(d.t).title)}: agree the rules before any money moves</b><span>${esc(info(d.t).blurb)} ${nQ(d.t)} yes/no questions. Tap to read them.</span><em>${esc(location.host || "lgtie")}</em></div></div>
         <p class="small mute">The details (names, price, date) are inside the link after the <code>#</code>, so this page sends them nowhere. Anyone who gets the link can read them, so share it only with the person you mean. The picture and title chat apps show come from the rules, not from your details.</p>
         <p class="small"><a href="${esc(link.replace(/^.*?#/, "#d/"))}">Open it as the other person will see it</a></p>`;
-      $("#dl-msg").oninput = () => { edited = true; const t = $("#dl-msg").value; $("#dl-wa").href = "https://wa.me/?text=" + enc(t); $("#dl-tg").href = "https://t.me/share/url?url=" + enc(link) + "&text=" + enc(t.replace(link, "").trim()); $("#dl-em").href = "mailto:?subject=" + enc("Let's agree the rules first") + "&body=" + enc(t); };
+      const fit = () => { const m = $("#dl-msg"); m.style.height = "auto"; m.style.height = Math.max(150, m.scrollHeight + 4) + "px"; }; fit();
+      $("#dl-msg").oninput = () => { edited = true; fit(); const t = $("#dl-msg").value; $("#dl-wa").href = "https://wa.me/?text=" + enc(t); $("#dl-tg").href = "https://t.me/share/url?url=" + enc(link) + "&text=" + enc(t.replace(link, "").trim()); $("#dl-em").href = "mailto:?subject=" + enc("Let's agree the rules first") + "&body=" + enc(t); };
       $("#dl-cm").onclick = e => copy($("#dl-msg").value, e.target); $("#dl-cl").onclick = e => copy(link, e.target);
       if ($("#dl-sh")) $("#dl-sh").onclick = () => navigator.share({text: $("#dl-msg").value}).catch(() => {});
     }
@@ -4051,8 +4052,8 @@ MY POLICY:
         <ol class="small"><li>On your phone, open <a href="#join">Create your passkey</a>. It is the same thing that unlocks your phone. You get a claim code that holds nothing secret.</li>
           <li>Send that code back in the chat${d.a ? " to " + esc(d.a) : ""}. They register it and propose the agreement.</li>
           <li>You accept on your own device with your passkey. No wallet and no OKB needed.</li></ol>
-        <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p>
-        <h3>If you made this link</h3>
+        <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p></div>
+      <div class="card" id="dd-mine"><h3>If you made this link</h3>
         ${rule ? `<p class="small">Wait for their claim code, then invite them. The rules (rule set #${rule}) and these terms are filled in for you.</p><div class="row"><button class="btn ghost" id="dd-inv" type="button">Invite them by passkey</button></div>`
           : `<p class="small">These rules are not published on X Layer yet, so an agreement cannot use them. Publish them in the <a href="#build/${esc(d.t)}">builder</a> (a small fee), then make the link again with the rule set number. The free checker works already.</p>`}</div>`;
     $("#dd-ct").onclick = e => copy(terms, e.target);

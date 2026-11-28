@@ -42,10 +42,10 @@
     main.innerHTML = `<h1>Create a deal link</h1><p class="lede">Send this to the other person in WhatsApp, Telegram or email <b>before</b> any money moves. They read the ${n} yes/no questions and see who decides if you disagree. Nothing is uploaded and nobody needs a wallet to read it.</p>
       <div class="card formcard">
         <label class="field"><span>Situation</span><select id="dl-t">${TB.LIBRARY.map(t => `<option value="${esc(t.key)}"${t.key === k ? " selected" : ""}>${esc(info(t.key).title)}</option>`).join("")}</select></label>
-        <div class="fgrid"><label class="field"><span>Your name (optional)</span><input id="dl-a" maxlength="${LIM.a}" autocomplete="off" placeholder="e.g. Samuel"></label>
-          <label class="field"><span>Their name (optional)</span><input id="dl-b" maxlength="${LIM.b}" autocomplete="off" placeholder="e.g. Amina"></label></div>
-        <label class="field"><span>What is the deal about? (optional)</span><input id="dl-w" maxlength="${LIM.w}" autocomplete="off" placeholder="e.g. iPhone 12, 128GB, blue"></label>
-        <div class="fgrid"><label class="field"><span>Price (optional)</span><input id="dl-p" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
+        <div class="fgrid2"><label class="field"><span>Your name (optional)</span><input id="dl-a" type="text" maxlength="${LIM.a}" autocomplete="off" placeholder="e.g. Samuel"></label>
+          <label class="field"><span>Their name (optional)</span><input id="dl-b" type="text" maxlength="${LIM.b}" autocomplete="off" placeholder="e.g. Amina"></label></div>
+        <label class="field"><span>What is the deal about? (optional)</span><input id="dl-w" type="text" maxlength="${LIM.w}" autocomplete="off" placeholder="e.g. iPhone 12, 128GB, blue"></label>
+        <div class="fgrid2"><label class="field"><span>Price (optional)</span><input id="dl-p" type="text" maxlength="${LIM.p}" autocomplete="off" placeholder="e.g. ₦250,000"></label>
           <label class="field"><span>Date (optional)</span><input id="dl-d" type="date"></label></div>
         <label class="field"><span>Rule set number, if you have published these rules on X Layer (optional)</span><input id="dl-r" type="number" min="1" step="1" placeholder="${CFG.published && CFG.published[k] ? "default: " + CFG.published[k].ruleSetId : "leave empty"}"></label></div>
       <div class="card" id="dl-out"></div>`;
@@ -65,7 +65,8 @@
         <div class="dealcard"><div class="dc-img" aria-hidden="true"><b>LGtie</b><span>${esc(info(d.t).title)}</span></div><div class="dc-txt"><b>${esc(info(d.t).title)}: agree the rules before any money moves</b><span>${esc(info(d.t).blurb)} ${nQ(d.t)} yes/no questions. Tap to read them.</span><em>${esc(location.host || "lgtie")}</em></div></div>
         <p class="small mute">The details (names, price, date) are inside the link after the <code>#</code>, so this page sends them nowhere. Anyone who gets the link can read them, so share it only with the person you mean. The picture and title chat apps show come from the rules, not from your details.</p>
         <p class="small"><a href="${esc(link.replace(/^.*?#/, "#d/"))}">Open it as the other person will see it</a></p>`;
-      $("#dl-msg").oninput = () => { edited = true; const t = $("#dl-msg").value; $("#dl-wa").href = "https://wa.me/?text=" + enc(t); $("#dl-tg").href = "https://t.me/share/url?url=" + enc(link) + "&text=" + enc(t.replace(link, "").trim()); $("#dl-em").href = "mailto:?subject=" + enc("Let's agree the rules first") + "&body=" + enc(t); };
+      const fit = () => { const m = $("#dl-msg"); m.style.height = "auto"; m.style.height = Math.max(150, m.scrollHeight + 4) + "px"; }; fit();
+      $("#dl-msg").oninput = () => { edited = true; fit(); const t = $("#dl-msg").value; $("#dl-wa").href = "https://wa.me/?text=" + enc(t); $("#dl-tg").href = "https://t.me/share/url?url=" + enc(link) + "&text=" + enc(t.replace(link, "").trim()); $("#dl-em").href = "mailto:?subject=" + enc("Let's agree the rules first") + "&body=" + enc(t); };
       $("#dl-cm").onclick = e => copy($("#dl-msg").value, e.target); $("#dl-cl").onclick = e => copy(link, e.target);
       if ($("#dl-sh")) $("#dl-sh").onclick = () => navigator.share({text: $("#dl-msg").value}).catch(() => {});
     }
@@ -91,8 +92,8 @@
         <ol class="small"><li>On your phone, open <a href="#join">Create your passkey</a>. It is the same thing that unlocks your phone. You get a claim code that holds nothing secret.</li>
           <li>Send that code back in the chat${d.a ? " to " + esc(d.a) : ""}. They register it and propose the agreement.</li>
           <li>You accept on your own device with your passkey. No wallet and no OKB needed.</li></ol>
-        <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p>
-        <h3>If you made this link</h3>
+        <p class="small mute">Not binding by itself: until it is accepted on X Layer this is only the rules you both read. It is not a court, an arbitration or legal advice.</p></div>
+      <div class="card" id="dd-mine"><h3>If you made this link</h3>
         ${rule ? `<p class="small">Wait for their claim code, then invite them. The rules (rule set #${rule}) and these terms are filled in for you.</p><div class="row"><button class="btn ghost" id="dd-inv" type="button">Invite them by passkey</button></div>`
           : `<p class="small">These rules are not published on X Layer yet, so an agreement cannot use them. Publish them in the <a href="#build/${esc(d.t)}">builder</a> (a small fee), then make the link again with the rule set number. The free checker works already.</p>`}</div>`;
     $("#dd-ct").onclick = e => copy(terms, e.target);
