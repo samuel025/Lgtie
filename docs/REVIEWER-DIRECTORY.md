@@ -47,6 +47,8 @@ Sequence: both sides select and approve a reviewer, the reviewer accepts and con
 
 ## Wave 2: one coordinated contract release (V8)
 
+The detailed contract design for this wave is in [WAVE2-DESIGN.md](WAVE2-DESIGN.md).
+
 ### Reviewers who use a passkey
 Today a reviewer's wallet address does five jobs: identity, authenticating their profile and declaration, signing decisions and reasons, receiving appointments, and authorizing contract actions. V8 separates them.
 - **Identity:** a reviewer is a wallet **or a passkey account** (`PasskeyRegistry`). The contract stores which, and verifies the same identity later.
