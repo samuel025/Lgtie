@@ -71,7 +71,7 @@ flowchart TD
 
 - **A static site.** No server and no database: the web app, the rule compiler and the checks run in the browser (`site/`). The built site is one page in `dist/`.
 - **Rules are data, not code.** A rule set compiles to a small circuit of NAND gates and is stored on the existing **TapeOut processor**, so it cannot hold hidden state or an admin key.
-- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3, V4 and V5, `PasskeyRegistry`, `LGtieBilling`. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
+- **Contracts** (`contracts/`, Foundry): `RuleSetRegistry`, `AgreementRegistry` (and V2), `TiebreakCase` V3 to V6, `PasskeyRegistry`, `LGtieBilling`, `FactSpecRegistry`. V4 accepts only the official processor and lets a party be a passkey account, using X Layer's built-in P-256 check.
 - **No wallet for customers.** A passkey signs each action; any wallet (usually the business's) submits it and pays the small fee. Signed actions travel through public Nostr relays to the business's inbox.
 - **Optional bridge** (`bridge/`): a script a business runs itself to forward those messages to Slack, Discord or any webhook.
 
@@ -83,6 +83,7 @@ The contract addresses and what is live are listed [below](#live-on-x-layer-chai
 ## What makes it different
 
 - **Neither side is forced to accept the other's reviewer.** A reviewer is proposed in the agreement and takes effect only when both sides accept it, and it cannot be swapped afterwards. Before accepting, a person sees who the reviewer is, their signed identity and their own declaration of any relationship with the parties, with a plain warning if there is only a wallet address.
+- **Fewer disputes by design.** A rule set can mark questions that need no human, such as "was the evidence attached in time?" or "does this on-chain value meet the agreed threshold?". The contract answers those itself, the sides cannot dispute them and a reviewer cannot change them. It decides only when something was recorded or what a chain says, never whether evidence is true. [Design](docs/AUTO-QUESTIONS.md).
 - **Only the disagreement is judged.** Matching answers settle at once; a neutral person answers only the questions the sides differ on, and must write reasons and declare no conflict of interest first.
 - **The rules cannot be changed quietly.** Rule sets are permanent; a change is a new version with a public history, and an agreement stays bound to the exact version it accepted.
 - **A formal proof, not a few examples.** The compiled circuit is proved equal to the written rules for every possible set of answers (a decision-diagram check, run in the browser and on the circuit read back from X Layer). A 40-question policy takes about 0.1 seconds. [How it works and its limits](docs/VERIFICATION.md).
@@ -103,6 +104,7 @@ Other entries also compile rules to TapeOut circuits; we do not claim to be firs
 - **Embeddable checker.** Put the claim checker on your own website with one line, so customers get a result and a reason without leaving your page (see below).
 - **Agreements and cases.** Agree rules, a neutral reviewer and deadlines up front, then open as many cases as you need under one agreement. A business inbox collects what customers sign with a passkey.
 - **Contract clause.** Generates a short clause for your written contract that points disagreements at the published rules. It is a template, not legal advice.
+- **Automatic questions.** A publisher marks questions the chain answers (evidence attached in time, case opened by a date, or a value read from another contract) at `#auto/<rule set number>`, with a review screen before writing it once. Case pages mark them "Answered by the chain" and do not ask the sides about them.
 - **Pricing and subscriptions** on the `#pricing` page.
 
 **For a customer**
@@ -131,7 +133,7 @@ The box is a sealed frame from LGtie's site. Your page cannot read what is insid
 
 ## Business model and revenue
 
-LGtie holds no money and takes no cut of any dispute. It earns from using the system, through two payments built into the contracts (`LGtieBilling` and `TiebreakCaseV5`) and paid in USDT on X Layer:
+LGtie holds no money and takes no cut of any dispute. It earns from using the system, through two payments built into the contracts (`LGtieBilling` and `TiebreakCaseV6`) and paid in USDT on X Layer:
 
 | Plan | Price | What it covers |
 | --- | --- | --- |
@@ -157,9 +159,12 @@ LGtie holds no money and takes no cut of any dispute. It earns from using the sy
 | `TiebreakCaseV3` | `0xF6C636e1f08bdE711d1FDdc40eb23DEa7719Ec67` (wallet parties; used by the real case) |
 | `PasskeyRegistry` | `0xC3c0E2Fa6D8452A14063c01DC50159487E78522E` |
 | `AgreementRegistryV2` | `0x802995325A576b69175DCE24e8D643553C9ba2ed` (the other party can be a passkey account) |
-| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey parties; accepts only the official processor; free, superseded by V5) |
+| `TiebreakCaseV4` | `0x178bB4ddC548F3456bD5AE2de7Abe67A8DCb02d0` (wallet or passkey parties; accepts only the official processor; free, superseded) |
 | `LGtieBilling` | `0x03a36B3183b2Be2dCe7F821db674DeD9B6C003De` (pays USD₮0 `0x779D…3736` straight to the treasury `0x0aE1…8fD5`; holds nothing) |
-| `TiebreakCaseV5` | `0x1c261952b583fc6DA59e1525Ff52c15b39eD146a` (V4 plus billing; the site opens cases here) |
+| `TiebreakCaseV5` | `0x1c261952b583fc6DA59e1525Ff52c15b39eD146a` (V4 plus billing; superseded by V6, its cases stay readable) |
+| `FactSpecRegistry` | `0x735021f45B93ecb23B006B57795b455703f27542` (a rule set's publisher writes once which questions the chain answers) |
+| `LGtieBilling` (second instance) | `0xC9dC6cfC3bCf55E3092072f376BD56374330d9Bf` (same token, treasury and prices; linked to V6; the site charges here) |
+| `TiebreakCaseV6` | `0xe3286A52E70fd5399FC50A212BBc07e3BeF80d36` (V5 plus automatic questions; the site opens cases here) |
 
 The contract names keep the project's earlier name, Tiebreak. There is one real run on mainnet (agreement #1 and case #1), played by the project's builder; there is no real passkey case yet. `node tests/mainnet-verify.mjs` checks circuit #13 against the rules for all 128 situations, read-only.
 
